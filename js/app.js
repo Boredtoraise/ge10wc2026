@@ -77,7 +77,7 @@ function navigate(view) {
 async function renderCurrentView() {
   switch (state.currentView) {
     case 'schedule': renderSchedule(); break;
-    case 'predict': renderPredictions(); break;
+    // case 'predict': renderPredictions(); break;
     case 'bet': renderBetting(); break;
     case 'admin': renderAdmin(); break;
     case 'summary': await renderSummaryLazy(); break;
