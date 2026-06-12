@@ -393,7 +393,7 @@ function updateBettingSummary(picks, container) {
 
     payoutEl.innerHTML = `${lang === 'th' ? 'ถูก' : 'Win'}: ${payout}฿ (+${profit}) · ${lang === 'th' ? 'ผิด' : 'Lose'}: -${betAmount}฿`;
     payoutEl.style.color = 'var(--accent)';
-    saveBtn.disabled = betAmount < 100;
+    saveBtn.disabled = betAmount < 10;
   } else {
     const combinedOdds = Object.values(picks).reduce((acc, p) => acc * p.odds, 1);
     oddsEl.textContent = `${lang === 'th' ? 'ราคารวม' : 'Odds'}: ${combinedOdds.toFixed(3)}`;
