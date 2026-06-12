@@ -167,7 +167,8 @@ function renderBetting() {
     else if (matchCount >= 3) valid = true;
     else if (matchCount === 2 && pickCount >= 4) valid = true;
 
-    if (betAmount < 10 || !valid) return;
+    if (!valid) return;
+    if (betAmount < 10) { showToast(lang === 'th' ? 'ขั้นต่ำ 10฿' : 'Min 10฿'); return; }
 
     const picks = pickEntries.map(([, data]) => ({
       match_id: data.matchId,
@@ -393,7 +394,7 @@ function updateBettingSummary(picks, container) {
 
     payoutEl.innerHTML = `${lang === 'th' ? 'ถูก' : 'Win'}: ${payout}฿ (+${profit}) · ${lang === 'th' ? 'ผิด' : 'Lose'}: -${betAmount}฿`;
     payoutEl.style.color = 'var(--accent)';
-    saveBtn.disabled = betAmount < 10;
+    if (saveBtn) saveBtn.disabled = false;
   } else {
     const combinedOdds = Object.values(picks).reduce((acc, p) => acc * p.odds, 1);
     oddsEl.textContent = `${lang === 'th' ? 'ราคารวม' : 'Odds'}: ${combinedOdds.toFixed(3)}`;
