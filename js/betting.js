@@ -73,7 +73,7 @@ function renderBetting() {
 
   // Slips
   const slipSource = state.allSlips.length ? state.allSlips : (state.slips || []);
-  const allFiltered = slipSource.filter(s => s.status !== 'cancelled').sort((a, b) => b.timestamp - a.timestamp);
+  const allFiltered = slipSource.filter(s => s.status !== 'cancelled').sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   const mySlips = allFiltered.filter(s => s.player === state.currentPlayer);
   const otherSlips = allFiltered.filter(s => s.player !== state.currentPlayer);
 
