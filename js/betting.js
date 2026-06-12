@@ -1,13 +1,18 @@
 // Betting — unified single + step (AH + O/U)
 // 1 pick = single, 3+ picks = step/parlay
 
-function renderBetting() {
+async function renderBetting() {
   const container = document.getElementById('view-bet');
   const lang = currentLang;
 
   if (!state.currentPlayer) {
     renderBettingLoginForm(container);
     return;
+  }
+
+  if (!state.allSlips.length && typeof API_BASE_URL !== 'undefined' && API_BASE_URL) {
+    const allSlips = await fetchAPI('allslips');
+    if (allSlips) state.allSlips = allSlips;
   }
 
   let html = '';
@@ -409,7 +414,7 @@ function renderSlip(slip, idx) {
   const picks = slip.picks || [];
   const isStep = picks.length >= 3;
 
-  const canDelete = !state.isAdmin && slip.status === 'pending' && !picks.some(p => {
+  const canDelete = slip.player === state.currentPlayer && slip.status === 'pending' && !picks.some(p => {
     const match = MATCHES.find(m => m.id === p.match_id);
     return match && isMatchLocked(match);
   });
