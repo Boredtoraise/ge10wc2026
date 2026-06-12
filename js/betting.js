@@ -414,10 +414,9 @@ function renderSlip(slip, idx) {
   const picks = slip.picks || [];
   const isStep = picks.length >= 3;
 
-  const canDelete = slip.player === state.currentPlayer && slip.status === 'pending' && !picks.some(p => {
-    const match = MATCHES.find(m => m.id === p.match_id);
-    return match && isMatchLocked(match);
-  });
+  const ownPending = slip.player === state.currentPlayer && slip.status === 'pending';
+  const noLockedPicks = !picks.some(p => { const match = MATCHES.find(m => m.id === p.match_id); return match && isMatchLocked(match); });
+  const canDelete = ownPending && (state.isAdmin || noLockedPicks);
 
   let cardStyle = '';
   if (displayStatus === 'won') cardStyle = 'border:2px solid var(--accent);box-shadow:0 0 12px rgba(212,160,23,0.15);background:rgba(212,160,23,0.04);';
