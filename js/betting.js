@@ -18,15 +18,9 @@ function renderBetting() {
   html += `<button class="logout-btn" id="bet-logout">${t('logout')}</button>`;
   html += `</div>`;
 
-  // Admin (Pok): no betting, just view all slips
-  if (state.isAdmin) {
-    html += `<h2 style="font-size:1.1rem;margin-bottom:12px">${lang === 'th' ? 'สลิปทั้งหมด' : 'All Slips'}</h2>`;
-  } else {
-    html += `<h2 style="font-size:1.1rem;margin-bottom:12px">${lang === 'th' ? 'แทงบอล' : 'Place Bets'}</h2>`;
-  }
+  html += `<h2 style="font-size:1.1rem;margin-bottom:12px">${lang === 'th' ? 'แทงบอล' : 'Place Bets'}</h2>`;
 
-  // Betting cards — only for non-admin players
-  if (!state.isAdmin) {
+  {
     const byKickoff = (a, b) => new Date(a.date) - new Date(b.date);
 
     // Matches with lines that haven't kicked off
