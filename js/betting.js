@@ -62,7 +62,7 @@ function renderBetting() {
       html += `<div id="bet-summary" style="font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'เลือก' : 'Picks'}: 0</div>`;
       html += `<div style="margin-top:8px;display:flex;align-items:center;gap:8px">`;
       html += `<label style="font-size:0.85rem">${lang === 'th' ? 'จำนวนเงิน' : 'Amount'}</label>`;
-      html += `<input type="number" id="bet-amount" min="100" step="100" value="100" style="width:100px;padding:6px 8px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:0.9rem;text-align:right">`;
+      html += `<input type="number" id="bet-amount" min="10" step="10" value="10" style="width:100px;padding:6px 8px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:0.9rem;text-align:right">`;
       html += `<span style="color:var(--accent)">฿</span>`;
       html += `</div>`;
       html += `<div id="bet-odds-display" style="margin-top:8px;font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'ราคารวม' : 'Odds'}: -</div>`;
@@ -167,7 +167,7 @@ function renderBetting() {
     else if (matchCount >= 3) valid = true;
     else if (matchCount === 2 && pickCount >= 4) valid = true;
 
-    if (betAmount < 100 || !valid) return;
+    if (betAmount < 10 || !valid) return;
 
     const picks = pickEntries.map(([, data]) => ({
       match_id: data.matchId,
@@ -435,7 +435,7 @@ function renderSlip(slip, idx) {
   }
   html += `<div style="display:flex;align-items:center;gap:8px">`;
   if (canDelete) {
-    html += `<button class="slip-delete-btn" data-ts="${slip.timestamp}" style="background:none;border:1px solid var(--wrong);color:var(--wrong);padding:2px 8px;border-radius:4px;font-size:0.7rem;cursor:pointer">${lang === 'th' ? 'ลบ' : 'Del'}</button>`;
+    html += `<button class="slip-delete-btn" data-ts="${slip.timestamp}" style="background:var(--wrong);border:none;color:#fff;padding:5px 14px;border-radius:6px;font-size:0.85rem;font-weight:700;cursor:pointer">🗑 ${lang === 'th' ? 'ลบสลิป' : 'Delete'}</button>`;
   }
   const isResolved = displayStatus === 'won' || displayStatus === 'lost';
   if (state.isAdmin && isResolved && slip.status !== 'approved' && slip.status !== 'cancelled') {
