@@ -71,70 +71,53 @@ function renderBetting() {
     }
   }
 
-  // Slips — everyone sees all slips
+  // Slips
   const slipSource = state.allSlips.length ? state.allSlips : (state.slips || []);
-  let filteredSlips = slipSource.filter(s => s.status !== 'cancelled')
-    .sort((a, b) => b.timestamp - a.timestamp);
-
-  // Player filter for admin
-  if (state.isAdmin) {
-    const slipPlayers = [...new Set(filteredSlips.map(s => s.player))].sort();
-    html += `<div style="margin-top:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">`;
-    html += `<span style="font-size:0.8rem;color:var(--text-muted)">${lang === 'th' ? 'กรอง' : 'Filter'}:</span>`;
-    html += `<button class="slip-filter-btn" data-filter="all" style="background:var(--accent);color:#000;border:none;padding:3px 10px;border-radius:4px;font-size:0.75rem;font-weight:700;cursor:pointer">${lang === 'th' ? 'ทั้งหมด' : 'All'}</button>`;
-    slipPlayers.forEach(p => {
-      html += `<button class="slip-filter-btn" data-filter="${p}" style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);padding:3px 10px;border-radius:4px;font-size:0.75rem;font-weight:600;cursor:pointer">${p}</button>`;
-    });
-    html += `</div>`;
-  }
-
-  const pendingSlips = [], resolvedSlips = [];
-  filteredSlips.forEach(s => {
-    const resolved = typeof resolveSlip === 'function' ? resolveSlip(s) : { status: s.status };
-    if (resolved.status === 'pending') pendingSlips.push(s);
-    else resolvedSlips.push(s);
-  });
+  const allFiltered = slipSource.filter(s => s.status !== 'cancelled').sort((a, b) => b.timestamp - a.timestamp);
+  const mySlips = allFiltered.filter(s => s.player === state.currentPlayer);
+  const otherSlips = allFiltered.filter(s => s.player !== state.currentPlayer);
 
   html += `<div id="slip-list">`;
-  if (pendingSlips.length > 0) {
-    html += `<h3 style="font-size:0.95rem;color:var(--primary);margin:20px 0 8px">${state.isAdmin ? (lang === 'th' ? 'สลิปทั้งหมด (ยังไม่ออก)' : 'All Active Slips') : (lang === 'th' ? 'สลิปที่ยังไม่ออก' : 'Active Slips')}</h3>`;
-    pendingSlips.forEach((slip, idx) => { html += renderSlip(slip, idx); });
+
+  // My slips — full cards
+  html += `<h3 style="font-size:0.95rem;color:var(--primary);margin:20px 0 8px">${lang === 'th' ? 'สลิปของฉัน' : 'My Slips'}</h3>`;
+  if (mySlips.length === 0) {
+    html += `<div style="color:var(--text-muted);font-size:0.85rem;padding:8px 0">${lang === 'th' ? 'ยังไม่มีสลิป' : 'No slips yet'}</div>`;
+  } else {
+    mySlips.forEach((slip, idx) => { html += renderSlip(slip, idx); });
   }
-  if (resolvedSlips.length > 0) {
-    html += `<h3 style="font-size:0.95rem;color:var(--text-muted);margin:20px 0 8px">${state.isAdmin ? (lang === 'th' ? 'ตัดสินแล้ว (ทั้งหมด)' : 'All Settled') : (lang === 'th' ? 'ตัดสินแล้ว' : 'Settled')}</h3>`;
-    resolvedSlips.forEach((slip, idx) => { html += renderSlip(slip, idx); });
+
+  // Others' slips — compact table
+  if (otherSlips.length > 0) {
+    html += `<h3 style="font-size:0.95rem;color:var(--text-muted);margin:20px 0 8px">${lang === 'th' ? 'สลิปเพื่อน' : 'Friends\' Slips'}</h3>`;
+    html += `<table style="width:100%;border-collapse:collapse;font-size:0.82rem">`;
+    html += `<thead><tr style="color:var(--text-muted);border-bottom:1px solid var(--border)">`;
+    html += `<th style="text-align:left;padding:4px 6px">${lang === 'th' ? 'ชื่อ' : 'Player'}</th>`;
+    html += `<th style="text-align:left;padding:4px 6px">Type</th>`;
+    html += `<th style="text-align:right;padding:4px 6px">${lang === 'th' ? 'ลงไป' : 'Bet'}</th>`;
+    html += `<th style="text-align:right;padding:4px 6px">${lang === 'th' ? 'จ่าย' : 'Payout'}</th>`;
+    html += `<th style="text-align:right;padding:4px 6px">${lang === 'th' ? 'สถานะ' : 'Status'}</th>`;
+    html += `</tr></thead><tbody>`;
+    const statusColors = { pending: 'var(--text-muted)', won: 'var(--accent)', lost: 'var(--wrong)' };
+    const statusLabels = { pending: lang === 'th' ? 'รอ' : 'Pending', won: lang === 'th' ? 'ถูก' : 'Won', lost: lang === 'th' ? 'ผิด' : 'Lost' };
+    otherSlips.forEach(slip => {
+      const resolved = typeof resolveSlip === 'function' ? resolveSlip(slip) : { status: slip.status };
+      const isStep = (slip.picks || []).length >= 3;
+      const st = resolved.status;
+      html += `<tr style="border-bottom:1px solid var(--border)">`;
+      html += `<td style="padding:5px 6px;font-weight:600">${slip.player}</td>`;
+      html += `<td style="padding:5px 6px;color:var(--text-muted)">${isStep ? 'STEP' : 'SINGLE'}</td>`;
+      html += `<td style="padding:5px 6px;text-align:right">${slip.bet}฿</td>`;
+      html += `<td style="padding:5px 6px;text-align:right;color:var(--accent)">${slip.payout}฿</td>`;
+      html += `<td style="padding:5px 6px;text-align:right;font-weight:700;color:${statusColors[st]}">${statusLabels[st]}</td>`;
+      html += `</tr>`;
+    });
+    html += `</tbody></table>`;
   }
+
   html += `</div>`;
 
   container.innerHTML = html;
-
-  // Player filter buttons (admin)
-  container.querySelectorAll('.slip-filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const filter = btn.dataset.filter;
-      // Update button styles
-      container.querySelectorAll('.slip-filter-btn').forEach(b => {
-        b.style.background = 'var(--bg-card)';
-        b.style.color = 'var(--text-primary)';
-        b.style.border = '1px solid var(--border)';
-      });
-      btn.style.background = 'var(--accent)';
-      btn.style.color = '#000';
-      btn.style.border = 'none';
-      // Show/hide slips
-      container.querySelectorAll('#slip-list .card').forEach(card => {
-        if (filter === 'all') {
-          card.style.display = '';
-        } else {
-          const playerEl = card.querySelector('b[style*="accent"]');
-          const slipPlayer = playerEl ? playerEl.textContent.trim() : '';
-          card.style.display = slipPlayer === filter ? '' : 'none';
-        }
-      });
-      // Show/hide section headers
-      container.querySelectorAll('#slip-list h3').forEach(h => h.style.display = '');
-    });
-  });
 
   // Pick state: key = "matchId_ah" or "matchId_ou"
   let betPicks = {};
