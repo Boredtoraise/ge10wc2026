@@ -6,12 +6,11 @@ function renderSchedule() {
   const lang = currentLang;
 
   const groups = Object.keys(GROUPS);
-  const firstGroup = groups[0];
 
   let html = '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">';
-  groups.forEach((g, i) => {
-    const active = i === 0;
-    html += `<button class="sch-group-btn btn${active ? ' active' : ''}" data-group="${g}" style="padding:6px 12px;font-size:0.8rem;background:${active ? 'var(--primary)' : 'var(--bg-input)'};border:1px solid ${active ? 'var(--primary)' : 'var(--border)'};color:${active ? '#fff' : 'var(--text-primary)'};border-radius:var(--radius);font-weight:700">${g}</button>`;
+  html += `<button class="sch-group-btn btn active" data-group="ALL" style="padding:6px 12px;font-size:0.8rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700">${currentLang === 'th' ? 'ทั้งหมด' : 'All'}</button>`;
+  groups.forEach(g => {
+    html += `<button class="sch-group-btn btn" data-group="${g}" style="padding:6px 12px;font-size:0.8rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700">${g}</button>`;
   });
   html += '<button class="sch-group-btn btn" data-group="KO" style="padding:6px 12px;font-size:0.8rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700">KO</button>';
   html += '</div>';
@@ -19,7 +18,7 @@ function renderSchedule() {
   html += '<div id="sch-groups-content"></div>';
   container.innerHTML = html;
 
-  showScheduleGroup(firstGroup);
+  showScheduleGroup('ALL');
 
   container.querySelectorAll('.sch-group-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -47,19 +46,16 @@ function showScheduleGroup(groupKey) {
     }
   });
 
-  if (groupKey === 'KO') {
-    renderKnockoutSchedule(content);
+  if (groupKey === 'ALL') {
+    const sorted = [...MATCHES].sort((a, b) => new Date(a.date) - new Date(b.date));
+    let html = '';
+    sorted.forEach(m => { html += renderScheduleMatchCard(m); });
+    content.innerHTML = html;
     return;
   }
 
-  // EPL: just show matches, no group table
-  if (groupKey === 'EPL') {
-    const matches = MATCHES.filter(m => m.stage === 'epl');
-    let html = '';
-    matches.forEach(m => {
-      html += renderScheduleMatchCard(m);
-    });
-    content.innerHTML = html;
+  if (groupKey === 'KO') {
+    renderKnockoutSchedule(content);
     return;
   }
 
