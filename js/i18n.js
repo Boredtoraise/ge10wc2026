@@ -2,7 +2,7 @@ const I18N = {
   th: {
     'nav.schedule': 'ตารางแข่ง',
     'nav.predict': 'ทายผล',
-    'nav.bet': 'แทงเงิน',
+    'nav.bet': 'แทงบอล',
     'nav.summary': 'สรุป',
     'nav.admin': 'แอดมิน',
     'login.title': 'เลือกชื่อ + ใส่ PIN',

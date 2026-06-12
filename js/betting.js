@@ -22,7 +22,7 @@ function renderBetting() {
   if (state.isAdmin) {
     html += `<h2 style="font-size:1.1rem;margin-bottom:12px">${lang === 'th' ? 'สลิปทั้งหมด' : 'All Slips'}</h2>`;
   } else {
-    html += `<h2 style="font-size:1.1rem;margin-bottom:12px">${lang === 'th' ? 'แทงเงิน' : 'Place Bets'}</h2>`;
+    html += `<h2 style="font-size:1.1rem;margin-bottom:12px">${lang === 'th' ? 'แทงบอล' : 'Place Bets'}</h2>`;
   }
 
   // Betting cards — only for non-admin players

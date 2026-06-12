@@ -46,42 +46,14 @@ function renderSummaryTab() {
   const lang = currentLang;
   let html = '';
 
-  // Overall ranking
+  // Overall ranking by money
   const allPlayers = getPlayers();
   const summary = [];
   allPlayers.forEach(player => {
-    const scores = calculatePlayerScores(player);
     const money = calculatePlayerMoney(player);
-    summary.push({ player, scores, money, totalBalance: money.profit });
+    summary.push({ player, money, totalBalance: money.profit });
   });
-  summary.sort((a, b) => {
-    if (b.scores.resultPts !== a.scores.resultPts) return b.scores.resultPts - a.scores.resultPts;
-    return b.totalBalance - a.totalBalance;
-  });
-
-  // Score leaderboard
-  html += `<div class="lb-section open">`;
-  html += `<div class="lb-section-header"><h3>${lang === 'th' ? 'ทายผล — คะแนน' : 'Score Predictions'}</h3><span class="lb-section-arrow">▼</span></div>`;
-  html += `<div class="lb-section-body">`;
-  html += '<table class="lb-table"><thead><tr>';
-  html += `<th class="rank">#</th><th>${lang === 'th' ? 'ผู้เล่น' : 'Player'}</th>`;
-  html += `<th class="pts-cell">${lang === 'th' ? 'ตรง' : 'Exact'}</th>`;
-  html += `<th class="pts-cell">${lang === 'th' ? 'ทิศทาง' : 'Dir'}</th>`;
-  html += `<th class="pts-cell">${lang === 'th' ? 'คะแนน' : 'Pts'}</th>`;
-  html += '</tr></thead><tbody>';
-
-  summary.forEach((s, i) => {
-    const isMe = s.player === state.currentPlayer;
-    html += `<tr class="${isMe ? 'me' : ''}">`;
-    html += `<td class="rank">${i + 1}</td>`;
-    html += `<td class="player-name">${s.player}</td>`;
-    html += `<td class="pts-cell">${s.scores.exactCount}</td>`;
-    html += `<td class="pts-cell">${s.scores.correctCount}</td>`;
-    html += `<td class="pts-cell" style="color:var(--accent)">${s.scores.resultPts}</td>`;
-    html += '</tr>';
-  });
-  html += '</tbody></table>';
-  html += `</div></div>`;
+  summary.sort((a, b) => b.totalBalance - a.totalBalance);
 
   // Money leaderboard
   html += `<div class="lb-section open">`;
@@ -126,7 +98,6 @@ function renderSummaryTab() {
 // --- Per-user dashboard ---
 function renderUserDashboard(player) {
   const lang = currentLang;
-  const scores = calculatePlayerScores(player);
   const slipsDetail = calculatePlayerSlipsDetailed(player);
   const totalBalance = slipsDetail.total.profit;
 
@@ -139,7 +110,6 @@ function renderUserDashboard(player) {
   html += `<div style="text-align:center;padding:16px;margin-bottom:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg)">`;
   html += `<div style="font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'ยอดรวมทั้งหมด' : 'Grand Total'}</div>`;
   html += `<div style="font-size:1.8rem;font-weight:700;color:${moneyColor(totalBalance)}">${fmtMoney(totalBalance)}</div>`;
-  html += `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">${lang === 'th' ? 'ทายผล' : 'Score'}: ${scores.resultPts} ${lang === 'th' ? 'คะแนน' : 'pts'}</div>`;
   html += `</div>`;
 
   // Slips detail
@@ -300,16 +270,7 @@ function renderRulesInline() {
   const lang = currentLang;
   return `
     <div class="rules-section">
-      <h3>${lang === 'th' ? 'ทายผล' : 'Score Prediction'}</h3>
-      <table class="rules-table">
-        <tr><td>${lang === 'th' ? 'ทายสกอร์ตรงเป๊ะ' : 'Exact score'}</td><td style="color:var(--exact);font-weight:700">3 ${lang === 'th' ? 'คะแนน' : 'pts'}</td></tr>
-        <tr><td>${lang === 'th' ? 'ทายทิศทางถูก' : 'Correct direction'}</td><td style="color:var(--correct);font-weight:700">1 ${lang === 'th' ? 'คะแนน' : 'pt'}</td></tr>
-        <tr><td>${lang === 'th' ? 'ทายผิด' : 'Wrong'}</td><td style="font-weight:700">0</td></tr>
-      </table>
-    </div>
-
-    <div class="rules-section">
-      <h3>${lang === 'th' ? 'แทงเงิน (AH / สูงต่ำ)' : 'Betting (AH / O/U)'}</h3>
+      <h3>${lang === 'th' ? 'แทงบอล (AH / สูงต่ำ)' : 'Betting (AH / O/U)'}</h3>
       <table class="rules-table">
         <tr><td>${lang === 'th' ? '1 คู่ = Single' : '1 pick = Single'}</td><td style="font-weight:700">${lang === 'th' ? 'ลงเงิน × odds' : 'Bet × odds'}</td></tr>
         <tr><td>${lang === 'th' ? '3+ คู่ = Step' : '3+ picks = Step'}</td><td style="font-weight:700">${lang === 'th' ? 'ลงเงิน × odds รวม' : 'Bet × combined odds'}</td></tr>
