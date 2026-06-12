@@ -168,9 +168,7 @@ async function refreshData() {
     if (state.currentPlayer) {
       calls.preds = fetchAPI('allpredictions');
       calls.slips = fetchAPI('slips&player=' + state.currentPlayer);
-      if (state.isAdmin) {
-        calls.allSlips = fetchAPI('allslips');
-      }
+      calls.allSlips = fetchAPI('allslips');
     }
 
     const results = await Promise.all(Object.values(calls));

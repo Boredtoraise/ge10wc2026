@@ -71,14 +71,10 @@ function renderBetting() {
     }
   }
 
-  // Slips — admin sees all, player sees own
-  const slipSource = state.isAdmin
-    ? (state.allSlips.length ? state.allSlips : (state.slips || []))
-    : (state.slips || []);
-  let filteredSlips = slipSource.filter(s => {
-    if (s.status === 'cancelled') return false;
-    return state.isAdmin || s.player === state.currentPlayer;
-  }).sort((a, b) => b.timestamp - a.timestamp);
+  // Slips — everyone sees all slips
+  const slipSource = state.allSlips.length ? state.allSlips : (state.slips || []);
+  let filteredSlips = slipSource.filter(s => s.status !== 'cancelled')
+    .sort((a, b) => b.timestamp - a.timestamp);
 
   // Player filter for admin
   if (state.isAdmin) {
