@@ -146,14 +146,16 @@ function init() {
   applyTranslations();
   updateAdminUI();
 
+  // Show immediately with hardcoded data — don't wait for API
+  const hash = location.hash.slice(1) || 'schedule';
+  navigate(hash);
+
+  // Fetch API data in background, then re-render
   refreshData().then(() => {
     buildLinesFromMatches();
-    const hash = location.hash.slice(1) || 'schedule';
-    console.log('navigating to:', hash);
-    navigate(hash);
+    renderCurrentView();
   }).catch(e => {
     console.error('refreshData error:', e);
-    navigate('schedule');
   });
 }
 
