@@ -27,18 +27,18 @@ function renderBetting() {
 
   // Betting cards — only for non-admin players
   if (!state.isAdmin) {
-    // Get EPL matches with lines that haven't kicked off
+    // Matches with lines that haven't kicked off
     const available = MATCHES.filter(m => {
-      return m.stage === 'epl' && (state.ahLines[m.id] || state.ouLines[m.id]) && !isMatchLocked(m);
+      return (state.ahLines[m.id] || state.ouLines[m.id]) && !isMatchLocked(m);
     });
 
     if (available.length === 0) {
       html += `<div style="color:var(--text-muted);text-align:center;padding:20px">${lang === 'th' ? 'ยังไม่มีคู่ที่เปิดรับแทง' : 'No open matches with lines'}</div>`;
     }
 
-    // Locked/finished EPL matches
+    // Locked/finished matches
     const locked = MATCHES.filter(m => {
-      return m.stage === 'epl' && (state.ahLines[m.id] || state.ouLines[m.id]) && isMatchLocked(m);
+      return (state.ahLines[m.id] || state.ouLines[m.id]) && isMatchLocked(m);
     });
 
     if (locked.length > 0) {
