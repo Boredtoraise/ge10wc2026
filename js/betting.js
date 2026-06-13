@@ -61,7 +61,7 @@ async function renderBetting() {
       html += `<div id="bet-summary" style="font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'เลือก' : 'Picks'}: 0</div>`;
       html += `<div style="margin-top:8px;display:flex;align-items:center;gap:8px">`;
       html += `<label style="font-size:0.85rem">${lang === 'th' ? 'จำนวนเงิน' : 'Amount'}</label>`;
-      html += `<input type="number" id="bet-amount" min="10" step="10" value="10" style="width:100px;padding:6px 8px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:0.9rem;text-align:right">`;
+      html += `<input type="number" id="bet-amount" min="1" step="10" value="10" style="width:100px;padding:6px 8px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:0.9rem;text-align:right">`;
       html += `<span style="color:var(--accent)">฿</span>`;
       html += `</div>`;
       html += `<div id="bet-odds-display" style="margin-top:8px;font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'ราคารวม' : 'Odds'}: -</div>`;
