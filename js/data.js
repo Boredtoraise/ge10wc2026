@@ -98,7 +98,7 @@ const MATCHES = [
 
   // Group D
   { id: 'M019', num: 19, stage: 'group', group: 'D', date: '2026-06-12T21:00', tz: 'ET', team1: 'USA', team2: 'PAR', venue: 'SoFi Stadium (Inglewood, USA)' },
-  { id: 'M020', num: 20, stage: 'group', group: 'D', date: '2026-06-13T21:00', tz: 'ET', team1: 'AUS', team2: 'TUR', venue: 'BC Place (Vancouver, CAN)' },
+  { id: 'M020', num: 20, stage: 'group', group: 'D', date: '2026-06-14T00:00', tz: 'ET', team1: 'AUS', team2: 'TUR', venue: 'BC Place (Vancouver, CAN)' },
   { id: 'M021', num: 21, stage: 'group', group: 'D', date: '2026-06-20T00:00', tz: 'ET', team1: 'TUR', team2: 'PAR', venue: "Levi's Stadium (Santa Clara, USA)" },
   { id: 'M022', num: 22, stage: 'group', group: 'D', date: '2026-06-19T15:00', tz: 'ET', team1: 'USA', team2: 'AUS', venue: 'Lumen Field (Seattle, USA)' },
   { id: 'M023', num: 23, stage: 'group', group: 'D', date: '2026-06-25T22:00', tz: 'ET', team1: 'TUR', team2: 'USA', venue: 'SoFi Stadium (Inglewood, USA)' },
@@ -115,8 +115,8 @@ const MATCHES = [
   // Group F
   { id: 'M031', num: 31, stage: 'group', group: 'F', date: '2026-06-14T16:00', tz: 'ET', team1: 'NED', team2: 'JPN', venue: "AT&T Stadium (Arlington, USA)" },
   { id: 'M032', num: 32, stage: 'group', group: 'F', date: '2026-06-14T22:00', tz: 'ET', team1: 'SWE', team2: 'TUN', venue: 'Estadio BBVA (Monterrey, MEX)' },
-  { id: 'M033', num: 33, stage: 'group', group: 'F', date: '2026-06-20T13:00', tz: 'ET', team1: 'TUN', team2: 'JPN', venue: 'Estadio BBVA (Monterrey, MEX)' },
-  { id: 'M034', num: 34, stage: 'group', group: 'F', date: '2026-06-20T00:00', tz: 'ET', team1: 'NED', team2: 'SWE', venue: 'NRG Stadium (Houston, USA)' },
+  { id: 'M033', num: 33, stage: 'group', group: 'F', date: '2026-06-21T00:00', tz: 'ET', team1: 'TUN', team2: 'JPN', venue: 'Estadio BBVA (Monterrey, MEX)' },
+  { id: 'M034', num: 34, stage: 'group', group: 'F', date: '2026-06-20T13:00', tz: 'ET', team1: 'NED', team2: 'SWE', venue: 'NRG Stadium (Houston, USA)' },
   { id: 'M035', num: 35, stage: 'group', group: 'F', date: '2026-06-25T19:00', tz: 'ET', team1: 'TUN', team2: 'NED', venue: "AT&T Stadium (Arlington, USA)" },
   { id: 'M036', num: 36, stage: 'group', group: 'F', date: '2026-06-25T19:00', tz: 'ET', team1: 'JPN', team2: 'SWE', venue: 'Arrowhead Stadium (Kansas City, USA)' },
 
@@ -125,8 +125,8 @@ const MATCHES = [
   { id: 'M038', num: 38, stage: 'group', group: 'G', date: '2026-06-15T21:00', tz: 'ET', team1: 'IRN', team2: 'NZL', venue: 'Lumen Field (Seattle, USA)' },
   { id: 'M039', num: 39, stage: 'group', group: 'G', date: '2026-06-21T15:00', tz: 'ET', team1: 'BEL', team2: 'IRN', venue: 'SoFi Stadium (Inglewood, USA)' },
   { id: 'M040', num: 40, stage: 'group', group: 'G', date: '2026-06-21T21:00', tz: 'ET', team1: 'NZL', team2: 'EGY', venue: 'BC Place (Vancouver, CAN)' },
-  { id: 'M041', num: 41, stage: 'group', group: 'G', date: '2026-06-26T20:00', tz: 'ET', team1: 'NZL', team2: 'BEL', venue: 'Lumen Field (Seattle, USA)' },
-  { id: 'M042', num: 42, stage: 'group', group: 'G', date: '2026-06-26T20:00', tz: 'ET', team1: 'EGY', team2: 'IRN', venue: 'BC Place (Vancouver, CAN)' },
+  { id: 'M041', num: 41, stage: 'group', group: 'G', date: '2026-06-26T23:00', tz: 'ET', team1: 'NZL', team2: 'BEL', venue: 'Lumen Field (Seattle, USA)' },
+  { id: 'M042', num: 42, stage: 'group', group: 'G', date: '2026-06-26T23:00', tz: 'ET', team1: 'EGY', team2: 'IRN', venue: 'BC Place (Vancouver, CAN)' },
 
   // Group H
   { id: 'M043', num: 43, stage: 'group', group: 'H', date: '2026-06-15T12:00', tz: 'ET', team1: 'ESP', team2: 'CPV', venue: 'Mercedes-Benz Stadium (Atlanta, USA)' },
