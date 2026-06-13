@@ -98,7 +98,7 @@ const MATCHES = [
 
   // Group D
   { id: 'M019', num: 19, stage: 'group', group: 'D', date: '2026-06-12T21:00', tz: 'ET', team1: 'USA', team2: 'PAR', venue: 'SoFi Stadium (Inglewood, USA)' },
-  { id: 'M020', num: 20, stage: 'group', group: 'D', date: '2026-06-13T00:00', tz: 'ET', team1: 'AUS', team2: 'TUR', venue: 'BC Place (Vancouver, CAN)' },
+  { id: 'M020', num: 20, stage: 'group', group: 'D', date: '2026-06-13T21:00', tz: 'ET', team1: 'AUS', team2: 'TUR', venue: 'BC Place (Vancouver, CAN)' },
   { id: 'M021', num: 21, stage: 'group', group: 'D', date: '2026-06-20T00:00', tz: 'ET', team1: 'TUR', team2: 'PAR', venue: "Levi's Stadium (Santa Clara, USA)" },
   { id: 'M022', num: 22, stage: 'group', group: 'D', date: '2026-06-19T15:00', tz: 'ET', team1: 'USA', team2: 'AUS', venue: 'Lumen Field (Seattle, USA)' },
   { id: 'M023', num: 23, stage: 'group', group: 'D', date: '2026-06-25T22:00', tz: 'ET', team1: 'TUR', team2: 'USA', venue: 'SoFi Stadium (Inglewood, USA)' },
