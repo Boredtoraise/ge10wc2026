@@ -15,6 +15,20 @@ async function renderBetting() {
     if (allSlips) state.allSlips = allSlips;
   }
 
+  const tabStyleOn  = 'padding:8px 16px;font-size:0.85rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700';
+  const tabStyleOff = 'padding:8px 16px;font-size:0.85rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700';
+
+  const byKickoff  = (a, b) => new Date(a.date) - new Date(b.date);
+  const byNewest   = (a, b) => new Date(b.date) - new Date(a.date);
+
+  const available = MATCHES.filter(m => (state.ahLines[m.id] || state.ouLines[m.id]) && !isMatchLocked(m)).sort(byKickoff);
+  const locked    = MATCHES.filter(m => (state.ahLines[m.id] || state.ouLines[m.id]) && isMatchLocked(m)).sort(byNewest);
+
+  const slipSource  = state.allSlips.length ? state.allSlips : (state.slips || []);
+  const allFiltered = slipSource.filter(s => s.status !== 'cancelled').sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  const mySlips     = allFiltered.filter(s => s.player === state.currentPlayer);
+  const otherSlips  = allFiltered.filter(s => s.player !== state.currentPlayer);
+
   let html = '';
 
   // User bar
@@ -23,64 +37,38 @@ async function renderBetting() {
   html += `<button class="logout-btn" id="bet-logout">${t('logout')}</button>`;
   html += `</div>`;
 
+  // Sub-tabs
+  html += `<div style="display:flex;gap:8px;margin-bottom:16px">`;
+  html += `<button class="bet-tab-btn" data-tab="open" style="${tabStyleOn}">${lang === 'th' ? 'เปิดรับแทง' : 'Open'}</button>`;
+  html += `<button class="bet-tab-btn" data-tab="past" style="${tabStyleOff}">${lang === 'th' ? 'ผ่านไปแล้ว' : 'Past'}${locked.length ? ` (${locked.length})` : ''}</button>`;
+  html += `</div>`;
+
+  // ── Tab: เปิดรับแทง ──────────────────────────────
+  html += `<div id="bet-tab-open">`;
   html += `<h2 style="font-size:1.1rem;margin-bottom:12px">${lang === 'th' ? 'แทงบอล' : 'Place Bets'}</h2>`;
 
-  {
-    const byKickoff = (a, b) => new Date(a.date) - new Date(b.date);
+  if (available.length === 0) {
+    html += `<div style="color:var(--text-muted);text-align:center;padding:20px">${lang === 'th' ? 'ยังไม่มีคู่ที่เปิดรับแทง' : 'No open matches with lines'}</div>`;
+  } else {
+    html += `<p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px">${lang === 'th' ? 'กดเลือก กดอีกที=ยกเลิก<br>1 pick = single<br>2 คู่ = 4 picks (AH+O/U ทั้งคู่)<br>3 คู่+ = step (pick ละคู่ก็ได้)' : 'Tap to select, tap again to deselect<br>1 pick = single<br>2 matches = 4 picks (AH+O/U both)<br>3+ matches = step (1 pick/match ok)'}</p>`;
+    available.forEach(m => { html += renderBettingCard(m); });
 
-    // Matches with lines that haven't kicked off
-    const available = MATCHES.filter(m => {
-      return (state.ahLines[m.id] || state.ouLines[m.id]) && !isMatchLocked(m);
-    }).sort(byKickoff);
-
-    if (available.length === 0) {
-      html += `<div style="color:var(--text-muted);text-align:center;padding:20px">${lang === 'th' ? 'ยังไม่มีคู่ที่เปิดรับแทง' : 'No open matches with lines'}</div>`;
-    }
-
-    // Locked/finished matches
-    const locked = MATCHES.filter(m => {
-      return (state.ahLines[m.id] || state.ouLines[m.id]) && isMatchLocked(m);
-    }).sort(byKickoff);
-
-    if (locked.length > 0) {
-      html += `<h3 style="font-size:0.95rem;color:var(--text-muted);margin:20px 0 8px">${lang === 'th' ? 'หมดเวลาแทง' : 'Locked / Finished'}</h3>`;
-      locked.forEach(m => {
-        html += renderBettingCardLocked(m);
-      });
-    }
-
-    if (available.length > 0) {
-      html += `<p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px">${lang === 'th' ? 'กดเลือก กดอีกที=ยกเลิก<br>1 pick = single<br>2 คู่ = 4 picks (AH+O/U ทั้งคู่)<br>3 คู่+ = step (pick ละคู่ก็ได้)' : 'Tap to select, tap again to deselect<br>1 pick = single<br>2 matches = 4 picks (AH+O/U both)<br>3+ matches = step (1 pick/match ok)'}</p>`;
-
-      available.forEach(m => {
-        html += renderBettingCard(m);
-      });
-
-      // Bet amount + summary
-      html += `<div style="margin-top:12px;padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg)">`;
-      html += `<div id="bet-summary" style="font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'เลือก' : 'Picks'}: 0</div>`;
-      html += `<div style="margin-top:8px;display:flex;align-items:center;gap:8px">`;
-      html += `<label style="font-size:0.85rem">${lang === 'th' ? 'จำนวนเงิน' : 'Amount'}</label>`;
-      html += `<input type="number" id="bet-amount" min="1" step="10" value="10" style="width:100px;padding:6px 8px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:0.9rem;text-align:right">`;
-      html += `<span style="color:var(--accent)">฿</span>`;
-      html += `</div>`;
-      html += `<div id="bet-odds-display" style="margin-top:8px;font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'ราคารวม' : 'Odds'}: -</div>`;
-      html += `<div id="bet-payout-display" style="margin-top:4px;font-size:1rem;font-weight:700;color:var(--accent)">${lang === 'th' ? 'จ่าย' : 'Payout'}: -</div>`;
-      html += `<button class="btn btn-primary" id="bet-save-btn" style="margin-top:10px" disabled>${lang === 'th' ? 'ลงเงิน' : 'Place Bet'}</button>`;
-      html += `</div>`;
-      html += `<div style="height:20px"></div>`;
-    }
+    html += `<div style="margin-top:12px;padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg)">`;
+    html += `<div id="bet-summary" style="font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'เลือก' : 'Picks'}: 0</div>`;
+    html += `<div style="margin-top:8px;display:flex;align-items:center;gap:8px">`;
+    html += `<label style="font-size:0.85rem">${lang === 'th' ? 'จำนวนเงิน' : 'Amount'}</label>`;
+    html += `<input type="number" id="bet-amount" min="1" step="10" value="10" style="width:100px;padding:6px 8px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:0.9rem;text-align:right">`;
+    html += `<span style="color:var(--accent)">฿</span>`;
+    html += `</div>`;
+    html += `<div id="bet-odds-display" style="margin-top:8px;font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'ราคารวม' : 'Odds'}: -</div>`;
+    html += `<div id="bet-payout-display" style="margin-top:4px;font-size:1rem;font-weight:700;color:var(--accent)">${lang === 'th' ? 'จ่าย' : 'Payout'}: -</div>`;
+    html += `<button class="btn btn-primary" id="bet-save-btn" style="margin-top:10px" disabled>${lang === 'th' ? 'ลงเงิน' : 'Place Bet'}</button>`;
+    html += `</div>`;
+    html += `<div style="height:20px"></div>`;
   }
 
-  // Slips
-  const slipSource = state.allSlips.length ? state.allSlips : (state.slips || []);
-  const allFiltered = slipSource.filter(s => s.status !== 'cancelled').sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  const mySlips = allFiltered.filter(s => s.player === state.currentPlayer);
-  const otherSlips = allFiltered.filter(s => s.player !== state.currentPlayer);
-
-  html += `<div id="slip-list">`;
-
   // My slips — full cards
+  html += `<div id="slip-list">`;
   html += `<h3 style="font-size:0.95rem;color:var(--primary);margin:20px 0 8px">${lang === 'th' ? 'สลิปของฉัน' : 'My Slips'}</h3>`;
   if (mySlips.length === 0) {
     html += `<div style="color:var(--text-muted);font-size:0.85rem;padding:8px 0">${lang === 'th' ? 'ยังไม่มีสลิป' : 'No slips yet'}</div>`;
@@ -88,7 +76,7 @@ async function renderBetting() {
     mySlips.forEach((slip, idx) => { html += renderSlip(slip, idx); });
   }
 
-  // Others' slips — compact table
+  // Others' slips — compact table + approve button for admin
   if (otherSlips.length > 0) {
     html += `<h3 style="font-size:0.95rem;color:var(--text-muted);margin:20px 0 8px">${lang === 'th' ? 'สลิปเพื่อน' : 'Friends\' Slips'}</h3>`;
     html += `<table style="width:100%;border-collapse:collapse;font-size:0.82rem">`;
@@ -98,27 +86,59 @@ async function renderBetting() {
     html += `<th style="text-align:right;padding:4px 6px">${lang === 'th' ? 'ลงไป' : 'Bet'}</th>`;
     html += `<th style="text-align:right;padding:4px 6px">${lang === 'th' ? 'จ่าย' : 'Payout'}</th>`;
     html += `<th style="text-align:right;padding:4px 6px">${lang === 'th' ? 'สถานะ' : 'Status'}</th>`;
+    if (state.isAdmin) html += `<th style="padding:4px 6px"></th>`;
     html += `</tr></thead><tbody>`;
-    const statusColors = { pending: 'var(--text-muted)', won: 'var(--accent)', lost: 'var(--wrong)' };
-    const statusLabels = { pending: lang === 'th' ? 'รอ' : 'Pending', won: lang === 'th' ? 'ถูก' : 'Won', lost: lang === 'th' ? 'ผิด' : 'Lost' };
+    const statusColors = { pending: 'var(--text-muted)', won: 'var(--accent)', lost: 'var(--wrong)', approved: 'var(--accent)' };
+    const statusLabels = { pending: lang === 'th' ? 'รอ' : 'Pending', won: lang === 'th' ? 'ถูก' : 'Won', lost: lang === 'th' ? 'ผิด' : 'Lost', approved: lang === 'th' ? 'ยืนยัน' : 'OK' };
     otherSlips.forEach(slip => {
       const resolved = typeof resolveSlip === 'function' ? resolveSlip(slip) : { status: slip.status };
       const isStep = (slip.picks || []).length >= 3;
       const st = resolved.status;
+      const canApprove = state.isAdmin && (st === 'won' || st === 'lost') && slip.status !== 'approved' && slip.status !== 'cancelled';
       html += `<tr style="border-bottom:1px solid var(--border)">`;
       html += `<td style="padding:5px 6px;font-weight:600">${slip.player}</td>`;
       html += `<td style="padding:5px 6px;color:var(--text-muted)">${isStep ? 'STEP' : 'SINGLE'}</td>`;
       html += `<td style="padding:5px 6px;text-align:right">${slip.bet}฿</td>`;
       html += `<td style="padding:5px 6px;text-align:right;color:var(--accent)">${slip.payout}฿</td>`;
       html += `<td style="padding:5px 6px;text-align:right;font-weight:700;color:${statusColors[st]}">${statusLabels[st]}</td>`;
+      if (state.isAdmin) {
+        html += `<td style="padding:5px 6px">`;
+        if (canApprove) {
+          html += `<button class="slip-approve-btn" data-ts="${slip.timestamp}" style="background:var(--accent);color:#000;border:none;padding:2px 10px;border-radius:4px;font-size:0.75rem;font-weight:700;cursor:pointer">✓</button>`;
+        } else if (slip.status === 'approved') {
+          html += `<span style="color:var(--accent);font-size:0.75rem">✓</span>`;
+        }
+        html += `</td>`;
+      }
       html += `</tr>`;
     });
     html += `</tbody></table>`;
   }
+  html += `</div>`; // slip-list
+  html += `</div>`; // bet-tab-open
 
-  html += `</div>`;
+  // ── Tab: ผ่านไปแล้ว ──────────────────────────────
+  html += `<div id="bet-tab-past" style="display:none">`;
+  if (locked.length === 0) {
+    html += `<div style="color:var(--text-muted);text-align:center;padding:40px">${lang === 'th' ? 'ยังไม่มีผลการแข่ง' : 'No results yet'}</div>`;
+  } else {
+    locked.forEach(m => { html += renderBettingCardLocked(m); });
+  }
+  html += `</div>`; // bet-tab-past
 
   container.innerHTML = html;
+
+  // Tab switching
+  container.querySelectorAll('.bet-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      container.querySelectorAll('.bet-tab-btn').forEach(b => {
+        b.style.cssText = b.dataset.tab === tab ? tabStyleOn : tabStyleOff;
+      });
+      container.querySelector('#bet-tab-open').style.display = tab === 'open' ? '' : 'none';
+      container.querySelector('#bet-tab-past').style.display = tab === 'past' ? '' : 'none';
+    });
+  });
 
   // Pick state: key = "matchId_ah" or "matchId_ou"
   let betPicks = {};
