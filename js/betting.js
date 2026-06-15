@@ -520,7 +520,7 @@ function renderSlip(slip, idx) {
   if (displayStatus === 'won') {
     html += `<span style="color:var(--accent);font-weight:700">+${resolved.profit}฿</span>`;
   } else if (displayStatus === 'lost') {
-    html += `<span style="color:#D94F4F;font-weight:700">-${slip.bet}฿</span>`;
+    html += `<span style="color:#D94F4F;font-weight:700">${resolved.profit}฿</span>`;
   } else {
     html += `<span style="color:var(--accent)">${lang === 'th' ? 'จ่าย' : 'Payout'}: ${slip.payout}฿</span>`;
   }

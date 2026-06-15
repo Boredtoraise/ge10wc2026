@@ -399,11 +399,13 @@ function resolveSlip(slip) {
     return { pick: p, outcome: getPickOutcome(p, result) };
   });
 
-  // If any resolved pick is a loss → step slip is dead immediately
-  // (half_loss also kills a step since one leg failed)
+  // Step: full loss on any leg = whole step dead
+  // half_loss on any leg = half the step pushed back, half lost
   if (isStep) {
-    const anyLoss = outcomes.some(o => o.outcome === 'loss' || o.outcome === 'half_loss');
-    if (anyLoss) return { status: 'lost', profit: -slip.bet };
+    const anyFullLoss = outcomes.some(o => o.outcome === 'loss');
+    const anyHalfLoss = outcomes.some(o => o.outcome === 'half_loss');
+    if (anyFullLoss) return { status: 'lost', profit: -slip.bet };
+    if (anyHalfLoss) return { status: 'lost', profit: -Math.round(slip.bet / 2) };
   }
 
   // Check if ALL picks have scores
