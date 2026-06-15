@@ -399,13 +399,9 @@ function resolveSlip(slip) {
     return { pick: p, outcome: getPickOutcome(p, result) };
   });
 
-  // Step: full loss on any leg = whole step dead
-  // half_loss on any leg = half the step pushed back, half lost
-  if (isStep) {
-    const anyFullLoss = outcomes.some(o => o.outcome === 'loss');
-    const anyHalfLoss = outcomes.some(o => o.outcome === 'half_loss');
-    if (anyFullLoss) return { status: 'lost', profit: -slip.bet };
-    if (anyHalfLoss) return { status: 'lost', profit: -Math.round(slip.bet / 2) };
+  // Step: full loss on any leg = whole step dead immediately
+  if (isStep && outcomes.some(o => o.outcome === 'loss')) {
+    return { status: 'lost', profit: -slip.bet };
   }
 
   // Check if ALL picks have scores
@@ -413,14 +409,19 @@ function resolveSlip(slip) {
   if (!allResolved) return { status: 'pending', profit: 0 };
 
   if (isStep) {
+    // half_loss: half the bet dies, the surviving half continues at ×1 for that leg
+    // multiple half_loss legs compound: survivalFactor = (0.5)^N
+    let survivalFactor = 1;
     let combinedOdds = 1;
     outcomes.forEach(({ pick: p, outcome }) => {
       if (outcome === 'full') combinedOdds *= p.odds;
       else if (outcome === 'half') combinedOdds *= (1 + (p.odds - 1) / 2);
-      // push = skip (multiply by 1)
+      else if (outcome === 'half_loss') survivalFactor *= 0.5;
+      // push: ×1 (skip)
     });
-    const payout = Math.round(slip.bet * combinedOdds);
-    return { status: 'won', profit: payout - slip.bet };
+    const payout = Math.round(slip.bet * survivalFactor * combinedOdds);
+    const profit = payout - slip.bet;
+    return { status: profit >= 0 ? 'won' : 'lost', profit };
   }
 
   // Single: independent outcome
