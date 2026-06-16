@@ -99,8 +99,29 @@ function showToast(msg, duration) {
   duration = duration || 3000;
   const toast = document.getElementById('toast');
   toast.textContent = msg;
-  toast.classList.remove('hidden');
-  setTimeout(() => toast.classList.add('hidden'), duration);
+  toast.classList.remove('hidden', 'toast-out');
+  void toast.offsetWidth; // force reflow to restart animation
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(() => {
+    toast.classList.add('toast-out');
+    setTimeout(() => { toast.classList.add('hidden'); toast.classList.remove('toast-out'); }, 260);
+  }, duration);
+}
+
+// --- Badge (admin: pending approve count) ---
+function updateTabBadges() {
+  const count = (state.isAdmin && state.allSlips.length)
+    ? state.allSlips.filter(s => {
+        if (s.player === state.currentPlayer) return false;
+        const resolved = typeof resolveSlip === 'function' ? resolveSlip(s) : { status: s.status };
+        const st = resolved.status;
+        return (st === 'won' || st === 'lost') && s.status !== 'approved' && s.status !== 'cancelled';
+      }).length
+    : 0;
+  document.querySelectorAll('.bet-badge').forEach(b => {
+    if (count > 0) { b.textContent = count; b.classList.remove('hidden'); }
+    else b.classList.add('hidden');
+  });
 }
 
 // --- Loading ---
@@ -153,10 +174,26 @@ function init() {
   // Fetch API data in background, then re-render
   refreshData().then(() => {
     buildLinesFromMatches();
+    updateTabBadges();
     renderCurrentView();
   }).catch(e => {
     console.error('refreshData error:', e);
   });
+
+  // Swipe left/right to change tab
+  (function initSwipe() {
+    let startX = 0;
+    const tabOrder = ['schedule', 'bet', 'summary'];
+    const app = document.getElementById('app');
+    app.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
+    app.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - startX;
+      if (Math.abs(dx) < 60) return;
+      const idx = tabOrder.indexOf(state.currentView);
+      if (dx < 0 && idx < tabOrder.length - 1) navigate(tabOrder[idx + 1]);
+      if (dx > 0 && idx > 0) navigate(tabOrder[idx - 1]);
+    }, { passive: true });
+  })();
 }
 
 async function refreshData() {
@@ -213,6 +250,7 @@ async function manualRefresh() {
     buildLinesFromMatches();
     state.allSlips = [];
     await renderCurrentView();
+    updateTabBadges();
     showToast(currentLang === 'th' ? 'อัปเดตแล้ว' : 'Updated');
   } finally {
     btn.disabled = false;

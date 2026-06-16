@@ -73,6 +73,18 @@ async function renderBetting() {
   if (mySlips.length === 0) {
     html += `<div style="color:var(--text-muted);font-size:0.85rem;padding:8px 0">${lang === 'th' ? 'ยังไม่มีสลิป' : 'No slips yet'}</div>`;
   } else {
+    // Summary bar
+    const totalBet = mySlips.reduce((s, sl) => s + (sl.bet || 0), 0);
+    const myResolved = mySlips.map(s => ({ slip: s, st: (typeof resolveSlip === 'function' ? resolveSlip(s) : { status: s.status, profit: 0 }) }));
+    const nWon  = myResolved.filter(({st}) => st.status === 'won' || st.status === 'approved').length;
+    const nLost = myResolved.filter(({st}) => st.status === 'lost').length;
+    const nPend = myResolved.filter(({st}) => st.status === 'pending').length;
+    const pendPayout = myResolved.filter(({st}) => st.status === 'pending').reduce((s, {slip}) => s + (slip.payout || 0), 0);
+    html += `<div style="display:flex;flex-wrap:wrap;gap:12px;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius);margin-bottom:12px;font-size:0.82rem">`;
+    html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'ลงไป' : 'Bet'} <b style="color:var(--text-primary)">${totalBet}฿</b></span>`;
+    html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'ถูก' : 'Won'} <b style="color:var(--accent)">${nWon}</b> · ${lang === 'th' ? 'ผิด' : 'Lost'} <b style="color:var(--wrong)">${nLost}</b> · ${lang === 'th' ? 'รอ' : 'Pend'} <b>${nPend}</b></span>`;
+    if (pendPayout > 0) html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'รอรับ' : 'Pend payout'} <b style="color:var(--accent)">${pendPayout}฿</b></span>`;
+    html += `</div>`;
     mySlips.forEach((slip, idx) => { html += renderSlip(slip, idx); });
   }
 
@@ -319,6 +331,7 @@ async function renderBetting() {
         const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
         const slip = allSlips.find(s => String(s.timestamp) === String(ts));
         if (slip) slip.status = 'approved';
+        updateTabBadges();
         showToast(lang === 'th' ? 'ยืนยันแล้ว' : 'Approved');
         renderBetting();
       } else {

@@ -120,14 +120,20 @@ function renderScheduleMatchCard(match) {
   const ouOddsO = state.ouOddsO[match.id] || '';
   const ouOddsU = state.ouOddsU[match.id] || '';
 
+  const kickoff = etToThai(match.date);
+  const now = new Date();
+  const isLive = now >= kickoff && now < new Date(kickoff.getTime() + 115 * 60 * 1000);
+
   let scoreDisplay = '';
   if (typeof score1 === 'number' && typeof score2 === 'number') {
     scoreDisplay = `<span class="badge badge-exact">${score1} - ${score2}</span>`;
+  } else if (isLive) {
+    scoreDisplay = `<span class="live-badge">LIVE</span>`;
   } else {
     scoreDisplay = '<span style="color:var(--text-muted)">vs</span>';
   }
 
-  let html = `<div class="card match-card">`;
+  let html = `<div class="card match-card${isLive ? ' match-card-live' : ''}">`;
   html += `<div class="match-header">`;
   html += `<span>${formatMatchDate(match, lang)}</span>`;
   html += `<span class="match-stage">${match.stage === 'group' ? match.group : STAGE_LABELS[lang][match.stage]}</span>`;
