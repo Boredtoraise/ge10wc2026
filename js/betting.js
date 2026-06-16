@@ -124,7 +124,15 @@ async function renderBetting() {
       }
 
       s += `<div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid var(--border)">`;
-      s += `<span style="font-size:0.82rem;color:var(--text-muted)">${slip.bet}฿ × ${slip.combined_odds || '-'} → <b style="color:var(--accent)">${slip.payout}฿</b></span>`;
+      s += `<span style="font-size:0.82rem;color:var(--text-muted)">${slip.bet}฿ × ${slip.combined_odds || '-'}`;
+      if (st === 'won' || st === 'approved') {
+        s += ` → <b style="color:var(--accent)">+${resolved.profit}฿</b>`;
+      } else if (st === 'lost') {
+        s += ` → <b style="color:var(--wrong)">-${slip.bet}฿</b>`;
+      } else {
+        s += ` → <b style="color:var(--accent)">${lang === 'th' ? 'จ่าย' : 'Payout'} ${slip.payout}฿</b>`;
+      }
+      s += `</span>`;
       if (needsApprove) {
         s += `<button class="slip-approve-btn" data-ts="${slip.timestamp}" style="background:var(--accent);color:#000;border:none;padding:4px 12px;border-radius:4px;font-size:0.78rem;font-weight:700;cursor:pointer">${lang === 'th' ? '✓ ยืนยัน' : '✓ Approve'}</button>`;
       }
