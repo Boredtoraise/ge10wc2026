@@ -40,7 +40,7 @@ async function renderBetting() {
   // Sub-tabs
   html += `<div style="display:flex;gap:8px;margin-bottom:16px">`;
   html += `<button class="bet-tab-btn" data-tab="open" style="${tabStyleOn}">${lang === 'th' ? 'เปิดรับแทง' : 'Open'}</button>`;
-  html += `<button class="bet-tab-btn" data-tab="past" style="${tabStyleOff}">${lang === 'th' ? 'สลิปของฉัน' : 'My Slips'}${mySlips.length ? ` (${mySlips.length})` : ''}</button>`;
+  html += `<button class="bet-tab-btn" data-tab="past" style="${tabStyleOff}">${lang === 'th' ? 'สลิปเพื่อน' : 'Friends'}${otherSlips.length ? ` (${otherSlips.length})` : ''}</button>`;
   html += `</div>`;
 
   // ── Tab: เปิดรับแทง ──────────────────────────────
@@ -67,9 +67,32 @@ async function renderBetting() {
     html += `<div style="height:20px"></div>`;
   }
 
+  // My slips — full cards (tab 1)
   html += `<div id="slip-list">`;
+  html += `<h3 style="font-size:0.95rem;color:var(--primary);margin:20px 0 8px">${lang === 'th' ? 'สลิปของฉัน' : 'My Slips'}</h3>`;
+  if (mySlips.length === 0) {
+    html += `<div style="color:var(--text-muted);font-size:0.85rem;padding:8px 0">${lang === 'th' ? 'ยังไม่มีสลิป' : 'No slips yet'}</div>`;
+  } else {
+    const totalBet = mySlips.reduce((s, sl) => s + (sl.bet || 0), 0);
+    const myResolved = mySlips.map(s => ({ slip: s, st: (typeof resolveSlip === 'function' ? resolveSlip(s) : { status: s.status, profit: 0 }) }));
+    const nWon  = myResolved.filter(({st}) => st.status === 'won' || st.status === 'approved').length;
+    const nLost = myResolved.filter(({st}) => st.status === 'lost').length;
+    const nPend = myResolved.filter(({st}) => st.status === 'pending').length;
+    const pendPayout = myResolved.filter(({st}) => st.status === 'pending').reduce((s, {slip}) => s + (slip.payout || 0), 0);
+    html += `<div style="display:flex;flex-wrap:wrap;gap:12px;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius);margin-bottom:12px;font-size:0.82rem">`;
+    html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'ลงไป' : 'Bet'} <b style="color:var(--text-primary)">${totalBet}฿</b></span>`;
+    html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'ถูก' : 'Won'} <b style="color:var(--accent)">${nWon}</b> · ${lang === 'th' ? 'ผิด' : 'Lost'} <b style="color:var(--wrong)">${nLost}</b> · ${lang === 'th' ? 'รอ' : 'Pend'} <b>${nPend}</b></span>`;
+    if (pendPayout > 0) html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'รอรับ' : 'Pend payout'} <b style="color:var(--accent)">${pendPayout}฿</b></span>`;
+    html += `</div>`;
+    mySlips.forEach((slip, idx) => { html += renderSlip(slip, idx); });
+  }
 
-  // Others' slips — grouped by status
+  html += `</div>`; // slip-list
+  html += `</div>`; // bet-tab-open
+
+  // ── Tab: สลิปเพื่อน ──────────────────────────────
+  html += `<div id="bet-tab-past" style="display:none">`;
+
   if (otherSlips.length > 0) {
     const statusColors = { pending: 'var(--text-muted)', won: 'var(--accent)', lost: 'var(--wrong)', approved: 'var(--secondary)' };
     const statusLabels = { pending: lang === 'th' ? 'รอผล' : 'Pending', won: lang === 'th' ? 'ถูก' : 'Won', lost: lang === 'th' ? 'ผิด' : 'Lost', approved: lang === 'th' ? 'ยืนยันแล้ว' : 'Approved' };
@@ -172,28 +195,10 @@ async function renderBetting() {
       html += `</div>`;
     });
   }
-  html += `</div>`; // slip-list
-  html += `</div>`; // bet-tab-open
-
-  // ── Tab: สลิปของฉัน ──────────────────────────────
-  html += `<div id="bet-tab-past" style="display:none">`;
-  if (mySlips.length === 0) {
-    html += `<div style="color:var(--text-muted);text-align:center;padding:40px">${lang === 'th' ? 'ยังไม่มีสลิป' : 'No slips yet'}</div>`;
-  } else {
-    const totalBet = mySlips.reduce((s, sl) => s + (sl.bet || 0), 0);
-    const myResolved = mySlips.map(s => ({ slip: s, st: (typeof resolveSlip === 'function' ? resolveSlip(s) : { status: s.status, profit: 0 }) }));
-    const nWon  = myResolved.filter(({st}) => st.status === 'won' || st.status === 'approved').length;
-    const nLost = myResolved.filter(({st}) => st.status === 'lost').length;
-    const nPend = myResolved.filter(({st}) => st.status === 'pending').length;
-    const pendPayout = myResolved.filter(({st}) => st.status === 'pending').reduce((s, {slip}) => s + (slip.payout || 0), 0);
-    html += `<div style="display:flex;flex-wrap:wrap;gap:12px;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius);margin-bottom:12px;font-size:0.82rem">`;
-    html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'ลงไป' : 'Bet'} <b style="color:var(--text-primary)">${totalBet}฿</b></span>`;
-    html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'ถูก' : 'Won'} <b style="color:var(--accent)">${nWon}</b> · ${lang === 'th' ? 'ผิด' : 'Lost'} <b style="color:var(--wrong)">${nLost}</b> · ${lang === 'th' ? 'รอ' : 'Pend'} <b>${nPend}</b></span>`;
-    if (pendPayout > 0) html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'รอรับ' : 'Pend payout'} <b style="color:var(--accent)">${pendPayout}฿</b></span>`;
-    html += `</div>`;
-    mySlips.forEach((slip, idx) => { html += renderSlip(slip, idx); });
+  if (otherSlips.length === 0) {
+    html += `<div style="color:var(--text-muted);text-align:center;padding:40px">${lang === 'th' ? 'ยังไม่มีสลิปเพื่อน' : "No friends' slips yet"}</div>`;
   }
-  html += `</div>`; // bet-tab-past (สลิปของฉัน)
+  html += `</div>`; // bet-tab-past
 
   container.innerHTML = html;
 
