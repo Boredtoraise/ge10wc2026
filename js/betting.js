@@ -76,13 +76,12 @@ async function renderBetting() {
     mySlips.forEach((slip, idx) => { html += renderSlip(slip, idx); });
   }
 
-  // Others' slips — all as cards
+  // Others' slips — grouped by status
   if (otherSlips.length > 0) {
-    html += `<h3 style="font-size:0.95rem;color:var(--text-muted);margin:20px 0 8px">${lang === 'th' ? 'สลิปเพื่อน' : 'Friends\' Slips'} (${otherSlips.length})</h3>`;
     const statusColors = { pending: 'var(--text-muted)', won: 'var(--accent)', lost: 'var(--wrong)', approved: 'var(--secondary)' };
     const statusLabels = { pending: lang === 'th' ? 'รอผล' : 'Pending', won: lang === 'th' ? 'ถูก' : 'Won', lost: lang === 'th' ? 'ผิด' : 'Lost', approved: lang === 'th' ? 'ยืนยันแล้ว' : 'Approved' };
 
-    otherSlips.forEach(slip => {
+    const renderFriendSlip = (slip) => {
       const resolved = typeof resolveSlip === 'function' ? resolveSlip(slip) : { status: slip.status };
       const st = resolved.status;
       const isStep = (slip.picks || []).length >= 3;
@@ -90,29 +89,24 @@ async function renderBetting() {
 
       let borderStyle = 'border:1px solid var(--border)';
       if (needsApprove) borderStyle = 'border:2px solid var(--accent)';
-      else if (st === 'approved') borderStyle = 'border:1px solid var(--secondary)';
+      else if (slip.status === 'approved') borderStyle = 'border:1px solid var(--secondary)';
       else if (st === 'lost') borderStyle = 'border:1px dashed var(--border)';
 
-      html += `<div style="padding:10px 12px;margin-bottom:8px;border-radius:var(--radius-lg);background:var(--bg-card);${borderStyle}">`;
+      let s = `<div style="padding:10px 12px;margin-bottom:8px;border-radius:var(--radius-lg);background:var(--bg-card);${borderStyle}">`;
+      s += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">`;
+      s += `<div style="display:flex;align-items:center;gap:8px">`;
+      s += `<span style="font-size:0.9rem;font-weight:700;color:var(--primary)">${slip.player}</span>`;
+      s += `<span style="font-size:0.72rem;color:var(--text-muted);background:var(--bg-input);padding:2px 7px;border-radius:4px">${isStep ? 'STEP' : 'SINGLE'}</span>`;
+      s += `</div>`;
+      s += `<span style="font-size:0.8rem;font-weight:700;color:${statusColors[st]}">${statusLabels[st]}</span>`;
+      s += `</div>`;
 
-      // Row 1: player name + type + status badge
-      html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">`;
-      html += `<div style="display:flex;align-items:center;gap:8px">`;
-      html += `<span style="font-size:0.9rem;font-weight:700;color:var(--primary)">${slip.player}</span>`;
-      html += `<span style="font-size:0.72rem;color:var(--text-muted);background:var(--bg-input);padding:2px 7px;border-radius:4px">${isStep ? 'STEP' : 'SINGLE'}</span>`;
-      html += `</div>`;
-      html += `<span style="font-size:0.8rem;font-weight:700;color:${statusColors[st]}">${statusLabels[st]}</span>`;
-      html += `</div>`;
-
-      // Row 2: picks summary (compact)
       const picks = slip.picks || [];
       if (picks.length > 0) {
-        html += `<div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px;line-height:1.5">`;
+        s += `<div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px;line-height:1.5">`;
         picks.forEach(p => {
           const match = MATCHES.find(m => m.id === p.match_id);
           if (!match) return;
-          const t1 = TEAMS[match.team1];
-          const t2 = TEAMS[match.team2];
           const isOu = p.type === 'ou';
           let pickLabel = '';
           if (isOu) {
@@ -124,21 +118,45 @@ async function renderBetting() {
             pickLabel = `${picked?.flag || ''} ${picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick} ${ahLabel}`;
           }
           const badge = getPickResultBadge(p, match);
-          html += `<div>· ${pickLabel} <span class="odds-tag">@${p.odds}</span> ${badge}</div>`;
+          s += `<div>· ${pickLabel} <span class="odds-tag">@${p.odds}</span> ${badge}</div>`;
         });
-        html += `</div>`;
+        s += `</div>`;
       }
 
-      // Row 3: bet × odds → payout + approve btn
-      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid var(--border)">`;
-      html += `<span style="font-size:0.82rem;color:var(--text-muted)">${slip.bet}฿ × ${slip.combined_odds || '-'} → <b style="color:var(--accent)">${slip.payout}฿</b></span>`;
+      s += `<div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid var(--border)">`;
+      s += `<span style="font-size:0.82rem;color:var(--text-muted)">${slip.bet}฿ × ${slip.combined_odds || '-'} → <b style="color:var(--accent)">${slip.payout}฿</b></span>`;
       if (needsApprove) {
-        html += `<button class="slip-approve-btn" data-ts="${slip.timestamp}" style="background:var(--accent);color:#000;border:none;padding:4px 12px;border-radius:4px;font-size:0.78rem;font-weight:700;cursor:pointer">${lang === 'th' ? '✓ ยืนยัน' : '✓ Approve'}</button>`;
+        s += `<button class="slip-approve-btn" data-ts="${slip.timestamp}" style="background:var(--accent);color:#000;border:none;padding:4px 12px;border-radius:4px;font-size:0.78rem;font-weight:700;cursor:pointer">${lang === 'th' ? '✓ ยืนยัน' : '✓ Approve'}</button>`;
       }
-      html += `</div>`;
+      s += `</div></div>`;
+      return s;
+    };
 
-      html += `</div>`;
+    const pendingApprove = otherSlips.filter(s => {
+      const resolved = typeof resolveSlip === 'function' ? resolveSlip(s) : { status: s.status };
+      const st = resolved.status;
+      return state.isAdmin && (st === 'won' || st === 'lost') && s.status !== 'approved';
     });
+    const pendingResult = otherSlips.filter(s => {
+      const resolved = typeof resolveSlip === 'function' ? resolveSlip(s) : { status: s.status };
+      return resolved.status === 'pending';
+    });
+    const settled = otherSlips.filter(s => s.status === 'approved');
+
+    if (pendingApprove.length > 0) {
+      html += `<h3 style="font-size:0.95rem;color:var(--accent);margin:20px 0 8px">${lang === 'th' ? 'รอ Approve' : 'Pending Approval'} (${pendingApprove.length})</h3>`;
+      pendingApprove.forEach(s => { html += renderFriendSlip(s); });
+    }
+
+    if (pendingResult.length > 0) {
+      html += `<h3 style="font-size:0.95rem;color:var(--text-muted);margin:20px 0 8px">${lang === 'th' ? 'รอผลบอล' : 'Awaiting Result'} (${pendingResult.length})</h3>`;
+      pendingResult.forEach(s => { html += renderFriendSlip(s); });
+    }
+
+    if (settled.length > 0) {
+      html += `<h3 style="font-size:0.95rem;color:var(--secondary);margin:20px 0 8px">${lang === 'th' ? 'ยืนยันแล้ว' : 'Settled'} (${settled.length})</h3>`;
+      settled.forEach(s => { html += renderFriendSlip(s); });
+    }
   }
   html += `</div>`; // slip-list
   html += `</div>`; // bet-tab-open
