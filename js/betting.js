@@ -143,20 +143,33 @@ async function renderBetting() {
     });
     const settled = otherSlips.filter(s => s.status === 'approved');
 
-    if (pendingApprove.length > 0) {
-      html += `<h3 style="font-size:0.95rem;color:var(--accent);margin:20px 0 8px">${lang === 'th' ? 'รอ Approve' : 'Pending Approval'} (${pendingApprove.length})</h3>`;
-      pendingApprove.forEach(s => { html += renderFriendSlip(s); });
-    }
+    html += `<h3 style="font-size:0.95rem;color:var(--text-muted);margin:20px 0 8px">${lang === 'th' ? 'สลิปเพื่อน' : "Friends' Slips"}</h3>`;
 
-    if (pendingResult.length > 0) {
-      html += `<h3 style="font-size:0.95rem;color:var(--text-muted);margin:20px 0 8px">${lang === 'th' ? 'รอผลบอล' : 'Awaiting Result'} (${pendingResult.length})</h3>`;
-      pendingResult.forEach(s => { html += renderFriendSlip(s); });
-    }
+    const friendTabOn  = 'padding:6px 12px;font-size:0.8rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
+    const friendTabOff = 'padding:6px 12px;font-size:0.8rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
 
-    if (settled.length > 0) {
-      html += `<h3 style="font-size:0.95rem;color:var(--secondary);margin:20px 0 8px">${lang === 'th' ? 'ยืนยันแล้ว' : 'Settled'} (${settled.length})</h3>`;
-      settled.forEach(s => { html += renderFriendSlip(s); });
-    }
+    const tabs = [];
+    if (pendingApprove.length > 0) tabs.push({ key: 'approve', label: `${lang === 'th' ? 'รอ Approve' : 'Approve'} (${pendingApprove.length})`, slips: pendingApprove });
+    tabs.push({ key: 'pending', label: `${lang === 'th' ? 'รอผล' : 'Pending'} (${pendingResult.length})`, slips: pendingResult });
+    tabs.push({ key: 'settled', label: `${lang === 'th' ? 'ยืนยันแล้ว' : 'Settled'} (${settled.length})`, slips: settled });
+
+    const defaultTab = tabs[0].key;
+
+    html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">`;
+    tabs.forEach(tab => {
+      html += `<button class="friend-tab-btn" data-ftab="${tab.key}" style="${tab.key === defaultTab ? friendTabOn : friendTabOff}">${tab.label}</button>`;
+    });
+    html += `</div>`;
+
+    tabs.forEach(tab => {
+      html += `<div class="friend-tab-pane" data-ftab="${tab.key}" style="${tab.key === defaultTab ? '' : 'display:none'}">`;
+      if (tab.slips.length === 0) {
+        html += `<div style="color:var(--text-muted);font-size:0.85rem;padding:16px 0;text-align:center">${lang === 'th' ? 'ไม่มีสลิป' : 'No slips'}</div>`;
+      } else {
+        tab.slips.forEach(s => { html += renderFriendSlip(s); });
+      }
+      html += `</div>`;
+    });
   }
   html += `</div>`; // slip-list
   html += `</div>`; // bet-tab-open
@@ -181,6 +194,17 @@ async function renderBetting() {
       });
       container.querySelector('#bet-tab-open').style.display = tab === 'open' ? '' : 'none';
       container.querySelector('#bet-tab-past').style.display = tab === 'past' ? '' : 'none';
+    });
+  });
+
+  // Friend subtab switching
+  const friendTabOn  = 'padding:6px 12px;font-size:0.8rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
+  const friendTabOff = 'padding:6px 12px;font-size:0.8rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
+  container.querySelectorAll('.friend-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.ftab;
+      container.querySelectorAll('.friend-tab-btn').forEach(b => { b.style.cssText = b.dataset.ftab === key ? friendTabOn : friendTabOff; });
+      container.querySelectorAll('.friend-tab-pane').forEach(p => { p.style.display = p.dataset.ftab === key ? '' : 'none'; });
     });
   });
 
