@@ -63,7 +63,12 @@ function navigate(view) {
   state.currentView = view;
   document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
   const el = document.getElementById('view-' + view);
-  if (el) el.classList.remove('hidden');
+  if (el) {
+    el.classList.remove('hidden');
+    el.classList.remove('view-enter');
+    void el.offsetWidth;
+    el.classList.add('view-enter');
+  }
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   const activeTab = document.querySelector(`.nav-tab[href="#${view}"]`);
   if (activeTab) activeTab.classList.add('active');

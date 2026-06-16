@@ -64,15 +64,34 @@ function showScheduleGroup(groupKey) {
 
   let html = '';
 
-  // Group table
+  // Group standings — calculated from real scores
+  const st = {};
+  teams.forEach(c => { st[c] = { mp:0, w:0, d:0, l:0, gf:0, ga:0, pts:0 }; });
+  matches.forEach(m => {
+    const r = state.matches[m.id];
+    if (!r || typeof r.team1_score !== 'number' || typeof r.team2_score !== 'number') return;
+    const s1 = r.team1_score, s2 = r.team2_score;
+    const a = st[m.team1], b = st[m.team2];
+    if (!a || !b) return;
+    a.mp++; a.gf += s1; a.ga += s2;
+    b.mp++; b.gf += s2; b.ga += s1;
+    if (s1 > s2)      { a.w++; a.pts += 3; b.l++; }
+    else if (s1 < s2) { b.w++; b.pts += 3; a.l++; }
+    else              { a.d++; a.pts++;     b.d++; b.pts++; }
+  });
+  const sorted = teams
+    .map(c => ({ c, ...st[c], gd: st[c].gf - st[c].ga }))
+    .sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+
   html += '<table class="group-table"><thead><tr>';
   html += '<th></th><th>' + (lang === 'th' ? 'ทีม' : 'Team') + '</th>';
   html += '<th>MP</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th>';
   html += '</tr></thead><tbody>';
-  teams.forEach(code => {
-    const team = TEAMS[code];
+  sorted.forEach(({ c, mp, w, d, l, gd, pts }) => {
+    const team = TEAMS[c];
+    const gdStr = gd > 0 ? '+' + gd : String(gd);
     html += `<tr><td>${team.flag}</td><td>${lang === 'th' ? team.nameTh : team.name}</td>`;
-    html += '<td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td class="pts">0</td></tr>';
+    html += `<td>${mp}</td><td>${w}</td><td>${d}</td><td>${l}</td><td>${gdStr}</td><td class="pts">${pts}</td></tr>`;
   });
   html += '</tbody></table>';
 
