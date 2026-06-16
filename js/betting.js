@@ -149,7 +149,9 @@ async function renderBetting() {
       const resolved = typeof resolveSlip === 'function' ? resolveSlip(s) : { status: s.status };
       return resolved.status === 'pending';
     });
-    const settled = otherSlips.filter(s => s.status === 'approved');
+    const settled     = otherSlips.filter(s => s.status === 'approved');
+    const settledWon  = settled.filter(s => { const r = typeof resolveSlip === 'function' ? resolveSlip(s) : { profit: 0 }; return (r.profit || 0) > 0; });
+    const settledLost = settled.filter(s => { const r = typeof resolveSlip === 'function' ? resolveSlip(s) : { profit: 0 }; return (r.profit || 0) <= 0; });
 
     html += `<h3 style="font-size:0.95rem;color:var(--text-muted);margin:20px 0 8px">${lang === 'th' ? 'สลิปเพื่อน' : "Friends' Slips"}</h3>`;
 
@@ -157,9 +159,10 @@ async function renderBetting() {
     const friendTabOff = 'padding:6px 12px;font-size:0.8rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
 
     const tabs = [];
-    if (pendingApprove.length > 0) tabs.push({ key: 'approve', label: `${lang === 'th' ? 'รอ Approve' : 'Approve'} (${pendingApprove.length})`, slips: pendingApprove });
-    tabs.push({ key: 'pending', label: `${lang === 'th' ? 'รอผล' : 'Pending'} (${pendingResult.length})`, slips: pendingResult });
-    tabs.push({ key: 'settled', label: `${lang === 'th' ? 'ยืนยันแล้ว' : 'Settled'} (${settled.length})`, slips: settled });
+    if (pendingApprove.length > 0) tabs.push({ key: 'approve',      label: `${lang === 'th' ? 'รอ Approve' : 'Approve'} (${pendingApprove.length})`, slips: pendingApprove });
+    tabs.push({ key: 'pending',      label: `${lang === 'th' ? 'รอผล' : 'Pending'} (${pendingResult.length})`,   slips: pendingResult });
+    tabs.push({ key: 'settled-won',  label: `${lang === 'th' ? 'ถูก' : 'Won'} (${settledWon.length})`,           slips: settledWon });
+    tabs.push({ key: 'settled-lost', label: `${lang === 'th' ? 'ผิด' : 'Lost'} (${settledLost.length})`,         slips: settledLost });
 
     const defaultTab = tabs[0].key;
 
