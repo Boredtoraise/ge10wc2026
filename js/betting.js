@@ -412,6 +412,33 @@ function renderBettingCardLocked(m) {
     html += `</div>`;
   }
 
+  // My picks for this match
+  if (state.currentPlayer) {
+    const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
+    const myPicksHere = [];
+    allSlips.filter(s => s.player === state.currentPlayer && s.status !== 'cancelled').forEach(slip => {
+      (slip.picks || []).filter(p => p.match_id === m.id).forEach(p => myPicksHere.push({ p, slip }));
+    });
+    if (myPicksHere.length > 0) {
+      html += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:0.78rem;display:flex;flex-wrap:wrap;gap:6px;align-items:center">`;
+      html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'ของฉัน:' : 'My picks:'}</span>`;
+      myPicksHere.forEach(({ p }) => {
+        const isOu = p.type === 'ou';
+        let label = '';
+        if (isOu) {
+          label = `${p.pick === 'over' ? (lang === 'th' ? 'สูง' : 'O') : (lang === 'th' ? 'ต่ำ' : 'U')} ${p.line || ''}`;
+        } else {
+          const picked = TEAMS[p.pick];
+          const isHome = p.pick === m.team1;
+          label = `${picked?.flag || ''} ${picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick} ${p.line ? formatAhFav(p.line, isHome) : ''}`;
+        }
+        const badge = getPickResultBadge(p, m);
+        html += `<span style="background:var(--bg-input);padding:2px 7px;border-radius:4px">${label} <span class="odds-tag">@${p.odds}</span> ${badge}</span>`;
+      });
+      html += `</div>`;
+    }
+  }
+
   html += `</div>`;
   return html;
 }

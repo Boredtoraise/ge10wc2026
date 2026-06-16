@@ -222,6 +222,11 @@ body {
 }
 .toast-out { animation: toastOut 0.25s var(--ease) forwards; }
 
+/* Skeleton loading */
+.skeleton-card { background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:10px; }
+.skeleton-line { border-radius:4px;margin-bottom:8px;background:linear-gradient(90deg,var(--bg-card) 25%,var(--bg-card-hover) 50%,var(--bg-card) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
 /* View transition */
 @keyframes viewFadeSlide {
   from { opacity: 0; transform: translateY(8px); }

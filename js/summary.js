@@ -61,28 +61,22 @@ function renderSummaryTab() {
   html += `<div class="lb-section-body">`;
 
   const moneySorted = [...summary].sort((a, b) => b.totalBalance - a.totalBalance);
-  html += '<table class="lb-table"><thead><tr>';
-  html += `<th class="rank">#</th><th>${lang === 'th' ? 'ผู้เล่น' : 'Player'}</th>`;
-  html += `<th class="pts-cell">${lang === 'th' ? 'ลงไป' : 'Bet'}</th>`;
-  html += `<th class="pts-cell">${lang === 'th' ? 'ถูก' : 'Won'}</th>`;
-  html += `<th class="pts-cell">${lang === 'th' ? 'ผิด' : 'Lost'}</th>`;
-  html += `<th class="pts-cell">${lang === 'th' ? 'กำไร/ขาดทุน' : 'P/L'}</th>`;
-  html += '</tr></thead><tbody>';
-
+  const rankIcon = ['🏆', '🥈', '🥉'];
   moneySorted.forEach((s, i) => {
     const isMe = s.player === state.currentPlayer;
     const c = s.totalBalance >= 0 ? 'var(--accent)' : 'var(--wrong)';
     const sign = s.totalBalance >= 0 ? '+' : '';
-    html += `<tr class="${isMe ? 'me' : ''}">`;
-    html += `<td class="rank">${i + 1}</td>`;
-    html += `<td class="player-name">${s.player}</td>`;
-    html += `<td class="pts-cell">${s.money.totalBet}฿</td>`;
-    html += `<td class="pts-cell" style="color:var(--accent)">${s.money.wins}</td>`;
-    html += `<td class="pts-cell" style="color:var(--wrong)">${s.money.losses}</td>`;
-    html += `<td class="pts-cell" style="color:${c};font-size:0.95rem;font-weight:700">${sign}${s.totalBalance}฿</td>`;
-    html += '</tr>';
+    const icon = rankIcon[i] || `${i + 1}.`;
+    const border = i === 0 ? 'border:2px solid var(--accent);' : isMe ? 'border:1px solid var(--secondary);' : '';
+    html += `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:8px;background:var(--bg-card);border-radius:var(--radius-lg);${border}">`;
+    html += `<span style="font-size:1.4rem;min-width:28px;text-align:center">${icon}</span>`;
+    html += `<div style="flex:1;min-width:0">`;
+    html += `<div style="font-weight:700;font-size:0.95rem">${s.player}${isMe ? ' <span style="color:var(--secondary);font-size:0.75rem">★ ฉัน</span>' : ''}</div>`;
+    html += `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">${lang === 'th' ? 'ลง' : 'Bet'} ${s.money.totalBet}฿ · ${lang === 'th' ? 'ถูก' : 'W'} ${s.money.wins} · ${lang === 'th' ? 'ผิด' : 'L'} ${s.money.losses}</div>`;
+    html += `</div>`;
+    html += `<span style="font-size:1.15rem;font-weight:800;color:${c};white-space:nowrap">${sign}${s.totalBalance}฿</span>`;
+    html += `</div>`;
   });
-  html += '</tbody></table>';
   html += `</div></div>`;
 
   // Rules

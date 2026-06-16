@@ -91,8 +91,12 @@ async function renderCurrentView() {
 
 async function renderSummaryLazy() {
   const container = document.getElementById('view-summary');
-  container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">' + (currentLang === 'th' ? 'กำลังโหลด...' : 'Loading...') + '</div>';
   if (!state.allSlips.length && API_BASE_URL) {
+    let sk = '';
+    for (let i = 0; i < 4; i++) {
+      sk += `<div class="skeleton-card"><div class="skeleton-line" style="height:18px;width:${40 + i * 10}%"></div><div class="skeleton-line" style="height:12px;width:60%"></div><div class="skeleton-line" style="height:12px;width:80%"></div></div>`;
+    }
+    container.innerHTML = sk;
     const allSlips = await fetchAPI('allslips');
     if (allSlips) state.allSlips = allSlips;
   }
