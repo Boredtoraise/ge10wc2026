@@ -67,7 +67,7 @@ async function renderBetting() {
     html += `<div style="height:20px"></div>`;
   }
 
-  // My slips — full cards (tab 1)
+  // My slips — subtabs: รอผล / ประวัติ
   html += `<div id="slip-list">`;
   html += `<h3 style="font-size:0.95rem;color:var(--primary);margin:20px 0 8px">${lang === 'th' ? 'สลิปของฉัน' : 'My Slips'}</h3>`;
   if (mySlips.length === 0) {
@@ -84,7 +84,33 @@ async function renderBetting() {
     html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'ถูก' : 'Won'} <b style="color:var(--accent)">${nWon}</b> · ${lang === 'th' ? 'ผิด' : 'Lost'} <b style="color:var(--wrong)">${nLost}</b> · ${lang === 'th' ? 'รอ' : 'Pend'} <b>${nPend}</b></span>`;
     if (pendPayout > 0) html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'รอรับ' : 'Pend payout'} <b style="color:var(--accent)">${pendPayout}฿</b></span>`;
     html += `</div>`;
-    mySlips.forEach((slip, idx) => { html += renderSlip(slip, idx); });
+
+    const myTabOn  = 'padding:6px 12px;font-size:0.8rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
+    const myTabOff = 'padding:6px 12px;font-size:0.8rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
+    const myPending = mySlips.filter((s, i) => myResolved[i].st.status === 'pending');
+    const myHistory = mySlips.filter((s, i) => myResolved[i].st.status !== 'pending');
+    const myDefaultTab = myPending.length > 0 ? 'mypend' : 'myhist';
+
+    html += `<div style="display:flex;gap:6px;margin-bottom:12px">`;
+    html += `<button class="my-tab-btn" data-mytab="mypend" style="${myDefaultTab === 'mypend' ? myTabOn : myTabOff}">${lang === 'th' ? 'รอผล' : 'Pending'} (${myPending.length})</button>`;
+    html += `<button class="my-tab-btn" data-mytab="myhist" style="${myDefaultTab === 'myhist' ? myTabOn : myTabOff}">${lang === 'th' ? 'ประวัติ' : 'History'} (${myHistory.length})</button>`;
+    html += `</div>`;
+
+    html += `<div class="my-tab-pane" data-mytab="mypend" style="${myDefaultTab === 'mypend' ? '' : 'display:none'}">`;
+    if (myPending.length === 0) {
+      html += `<div style="color:var(--text-muted);font-size:0.85rem;padding:8px 0">${lang === 'th' ? 'ไม่มีสลิปรอผล' : 'No pending slips'}</div>`;
+    } else {
+      myPending.forEach((slip, idx) => { html += renderSlip(slip, idx); });
+    }
+    html += `</div>`;
+
+    html += `<div class="my-tab-pane" data-mytab="myhist" style="${myDefaultTab === 'myhist' ? '' : 'display:none'}">`;
+    if (myHistory.length === 0) {
+      html += `<div style="color:var(--text-muted);font-size:0.85rem;padding:8px 0">${lang === 'th' ? 'ยังไม่มีประวัติ' : 'No history yet'}</div>`;
+    } else {
+      myHistory.forEach((slip, idx) => { html += renderSlip(slip, myPending.length + idx); });
+    }
+    html += `</div>`;
   }
 
   html += `</div>`; // slip-list
@@ -211,6 +237,17 @@ async function renderBetting() {
       });
       container.querySelector('#bet-tab-open').style.display = tab === 'open' ? '' : 'none';
       container.querySelector('#bet-tab-past').style.display = tab === 'past' ? '' : 'none';
+    });
+  });
+
+  // My slips subtab switching
+  const myTabOnEvt  = 'padding:6px 12px;font-size:0.8rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
+  const myTabOffEvt = 'padding:6px 12px;font-size:0.8rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
+  container.querySelectorAll('.my-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.mytab;
+      container.querySelectorAll('.my-tab-btn').forEach(b => { b.style.cssText = b.dataset.mytab === key ? myTabOnEvt : myTabOffEvt; });
+      container.querySelectorAll('.my-tab-pane').forEach(p => { p.style.display = p.dataset.mytab === key ? '' : 'none'; });
     });
   });
 
