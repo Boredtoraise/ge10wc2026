@@ -39,7 +39,7 @@ async function renderBetting() {
 
   // Sub-tabs
   html += `<div style="display:flex;gap:8px;margin-bottom:16px">`;
-  html += `<button class="bet-tab-btn" data-tab="open" style="${tabStyleOn}">${lang === 'th' ? 'เปิดรับแทง' : 'Open'}</button>`;
+  html += `<button class="bet-tab-btn" data-tab="open" style="${tabStyleOn}">${lang === 'th' ? 'การแทงของฉัน' : 'My Bets'}</button>`;
   html += `<button class="bet-tab-btn" data-tab="past" style="${tabStyleOff}">${lang === 'th' ? 'สลิปเพื่อน' : 'Friends'}${otherSlips.length ? ` (${otherSlips.length})` : ''}</button>`;
   html += `</div>`;
 
