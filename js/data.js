@@ -223,21 +223,21 @@ function etToUtc(etDateStr) {
 
 // Convert ET time to Thai time (UTC+7)
 function etToThai(etDateStr) {
-  const d = new Date(etDateStr.replace('T', ' '));
-  d.setHours(d.getHours() + 11);
-  return d;
+  // Parse explicitly as EDT (UTC-4, used during WC2026 June-July)
+  // Returns a UTC Date — safe to compare with new Date() regardless of viewer's timezone
+  return new Date(etDateStr + ':00-04:00');
 }
 
-// Get display-friendly date
+// Get display-friendly date (always in Thai time UTC+7)
 function formatMatchDate(match, lang) {
-  const d = etToThai(match.date);
-  const day = d.getDate();
+  const utc = etToThai(match.date);
   const monthNames = lang === 'th'
     ? ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
     : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const h = d.getHours().toString().padStart(2, '0');
-  const m = d.getMinutes().toString().padStart(2, '0');
-  return `${d.getDate()} ${monthNames[d.getMonth()]} ${h}:${m} น.`;
+  const thai = new Date(utc.getTime() + 7 * 3600 * 1000);
+  const h = thai.getUTCHours().toString().padStart(2, '0');
+  const m = thai.getUTCMinutes().toString().padStart(2, '0');
+  return `${thai.getUTCDate()} ${monthNames[thai.getUTCMonth()]} ${h}:${m} น.`;
 }
 
 // Stage labels
