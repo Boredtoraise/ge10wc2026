@@ -189,20 +189,6 @@ function init() {
     console.error('refreshData error:', e);
   });
 
-  // Swipe left/right to change tab
-  (function initSwipe() {
-    let startX = 0;
-    const tabOrder = ['schedule', 'bet', 'summary'];
-    const app = document.getElementById('app');
-    app.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
-    app.addEventListener('touchend', e => {
-      const dx = e.changedTouches[0].clientX - startX;
-      if (Math.abs(dx) < 60) return;
-      const idx = tabOrder.indexOf(state.currentView);
-      if (dx < 0 && idx < tabOrder.length - 1) navigate(tabOrder[idx + 1]);
-      if (dx > 0 && idx > 0) navigate(tabOrder[idx - 1]);
-    }, { passive: true });
-  })();
 }
 
 async function refreshData() {
