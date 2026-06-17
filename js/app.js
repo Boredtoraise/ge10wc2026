@@ -17,6 +17,11 @@ const state = {
   ouOddsU: {},
 };
 
+function parsePicks(s) {
+  if (s.picks && Array.isArray(s.picks)) return s;
+  try { return { ...s, picks: JSON.parse(s.picks_json || '[]') }; } catch (e) { return { ...s, picks: [] }; }
+}
+
 // Check if match is locked (kickoff passed OR has score)
 function isMatchLocked(match) {
   const thaiTime = etToThai(match.date);
@@ -224,10 +229,10 @@ async function refreshData() {
       localStorage.setItem('wc2026_predictions', JSON.stringify(state.predictions));
     }
     if (data.slips) {
-      state.slips = data.slips;
+      state.slips = data.slips.map(parsePicks);
     }
     if (data.allSlips) {
-      state.allSlips = data.allSlips;
+      state.allSlips = data.allSlips.map(parsePicks);
     }
   } catch (e) {
     console.warn('API unavailable, using cached data', e);
