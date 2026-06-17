@@ -431,6 +431,7 @@ function renderHouseDashboard() {
 
   // Today's round exposure
   const todayMatches = getTodayMatches();
+  let todayRoundPendingCount = 0;
   if (todayMatches.length > 0) {
     const todayIds = new Set(todayMatches.map(m => m.id));
     const allSlipsForToday = allSlips.filter(s => s.status !== 'cancelled' && (s.picks || []).some(p => todayIds.has(p.match_id)));
@@ -442,6 +443,7 @@ function renderHouseDashboard() {
       else if (r.status === 'lost') { todayLostCount++; todayLostKept += Math.abs(r.profit); }
       else                          { todayPending.push(s); }
     });
+    todayRoundPendingCount = todayPending.length;
     const todayNet = todayLostKept - todayWonPaid;
     const todayWorstPay = todayPending.reduce((sum, s) => sum + Math.max(0, (s.payout || 0) - (s.bet || 0)), 0);
     const todayBestKeep = todayPending.reduce((sum, s) => sum + (s.bet || 0), 0);
@@ -611,7 +613,7 @@ function renderHouseDashboard() {
   }
 
   // Pending exposure (only show if there are pending slips from rounds OTHER than today)
-  if (pendingCount > todayPending.length) {
+  if (pendingCount > todayRoundPendingCount) {
     html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px">`;
     html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:10px">${lang === 'th' ? `ความเสี่ยง (${pendingCount} สลิปรอ)` : `Risk (${pendingCount} pending)`}</div>`;
     html += `<div style="display:flex;gap:8px">`;
