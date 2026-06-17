@@ -135,7 +135,7 @@ function renderUserDashboard(player) {
     return resolved.status === 'pending';
   });
   if (todayPending.length > 0) {
-    const todayRoiBplus  = todayPending.reduce((sum, s) => sum + (s.payout || 0), 0);
+    const todayRoiBplus  = todayPending.reduce((sum, s) => sum + ((s.payout || 0) - (s.bet || 0)), 0);
     const todayRoiMinus  = todayPending.reduce((sum, s) => sum + (s.bet || 0), 0);
     html += `<div style="margin-bottom:12px;padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">`;
     html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:8px">${lang === 'th' ? 'วันนี้' : 'Today'} (${todayPending.length} ${lang === 'th' ? 'สลิปรอผล' : 'pending'})</div>`;
