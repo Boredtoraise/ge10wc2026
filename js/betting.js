@@ -142,7 +142,7 @@ async function renderBetting() {
     html += `</div>`;
     friendPlayers.forEach(p => {
       html += `<div class="fplayer-pane" data-fp="${p}" style="display:none">`;
-      pendingFriendSlips.filter(s => s.player === p).forEach(s => { html += renderSlipCard(s, { showCopy: true }); });
+      pendingFriendSlips.filter(s => s.player === p).forEach(s => { html += renderSlipCard(s, { showPlayer: true, showCopy: true }); });
       html += `</div>`;
     });
   }
