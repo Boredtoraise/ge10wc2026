@@ -7,10 +7,14 @@ function renderSummary() {
 
   let html = '';
 
-  // Tab bar: summary + per-user
+  // Tab bar: summary + per-user (admin excluded — house dashboard in betting tab)
+  const tabPlayers = state.isAdmin
+    ? players.filter(p => p !== state.currentPlayer)
+    : players;
+
   html += `<div class="lb-tabs">`;
   html += `<button class="lb-tab active" data-lb-tab="summary">${lang === 'th' ? 'สรุป' : 'Summary'}</button>`;
-  players.forEach(p => {
+  tabPlayers.forEach(p => {
     const isMe = p === state.currentPlayer;
     html += `<button class="lb-tab${isMe ? ' me' : ''}" data-lb-tab="${p}">${p}${isMe ? ' ★' : ''}</button>`;
   });
@@ -22,7 +26,7 @@ function renderSummary() {
   html += `</div>`;
 
   // Per-user tabs
-  players.forEach(p => {
+  tabPlayers.forEach(p => {
     html += `<div class="lb-tab-content" data-lb-content="${p}">`;
     html += renderUserDashboard(p);
     html += `</div>`;

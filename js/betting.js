@@ -44,10 +44,13 @@ async function renderBetting() {
   html += `<button class="logout-btn" id="bet-logout">${t('logout')}</button>`;
   html += `</div>`;
 
-  // Top tabs: แทงบอล | สลิปเพื่อน (N)
+  // Top tabs: แทงบอล | สลิปเพื่อน (N) | ภาพรวม (admin only)
   html += `<div style="display:flex;gap:8px;margin-bottom:16px">`;
   html += `<button class="bet-main-tab" data-main="bet" style="${tabOn}">${lang === 'th' ? 'แทงบอล' : 'Betting'}</button>`;
   html += `<button class="bet-main-tab" data-main="friends" style="${tabOff}">${lang === 'th' ? 'สลิปเพื่อน' : 'Friends'}${pendingFriendSlips.length ? ` (${pendingFriendSlips.length})` : ''}</button>`;
+  if (state.isAdmin) {
+    html += `<button class="bet-main-tab" data-main="overview" style="${tabOff}">${lang === 'th' ? 'ภาพรวม' : 'Overview'}</button>`;
+  }
   html += `</div>`;
 
   // ── Tab: แทงบอล ──────────────────────────────────────────────────
@@ -147,6 +150,13 @@ async function renderBetting() {
     });
   }
   html += `</div>`; // bet-main-friends
+
+  // ── Tab: ภาพรวม (admin only) ──────────────────────────────────────
+  if (state.isAdmin) {
+    html += `<div id="bet-main-overview" style="display:none">`;
+    html += typeof renderHouseDashboard === 'function' ? renderHouseDashboard() : '';
+    html += `</div>`;
+  }
 
   container.innerHTML = html;
 
@@ -260,13 +270,15 @@ async function renderBetting() {
     });
   });
 
-  // Top tab switching (แทงบอล / สลิปเพื่อน)
+  // Top tab switching (แทงบอล / สลิปเพื่อน / ภาพรวม)
   container.querySelectorAll('.bet-main-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       const key = btn.dataset.main;
       container.querySelectorAll('.bet-main-tab').forEach(b => { b.style.cssText = b.dataset.main === key ? tabOn : tabOff; });
-      container.querySelector('#bet-main-bet').style.display     = key === 'bet'     ? '' : 'none';
-      container.querySelector('#bet-main-friends').style.display = key === 'friends' ? '' : 'none';
+      container.querySelector('#bet-main-bet').style.display      = key === 'bet'      ? '' : 'none';
+      container.querySelector('#bet-main-friends').style.display  = key === 'friends'  ? '' : 'none';
+      const ov = container.querySelector('#bet-main-overview');
+      if (ov) ov.style.display = key === 'overview' ? '' : 'none';
     });
   });
 
