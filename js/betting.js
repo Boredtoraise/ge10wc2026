@@ -49,7 +49,21 @@ async function renderBetting() {
     if (!pendingFriendSlips.length) {
       html += `<div style="color:var(--text-muted);text-align:center;padding:30px">${lang === 'th' ? 'ไม่มีสลิปรอ' : 'No pending slips'}</div>`;
     } else {
+      html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">`;
+      html += `<button class="fplayer-tab" data-fp="all" style="${SUBTAB_ON}">${lang === 'th' ? 'ทั้งหมด' : 'All'} (${pendingFriendSlips.length})</button>`;
+      friendPlayers.forEach(p => {
+        const n = pendingFriendSlips.filter(s => s.player === p).length;
+        html += `<button class="fplayer-tab" data-fp="${p}" style="${SUBTAB_OFF}">${p} (${n})</button>`;
+      });
+      html += `</div>`;
+      html += `<div class="fplayer-pane" data-fp="all">`;
       pendingFriendSlips.forEach(s => { html += renderSlipCard(s, { showPlayer: true }); });
+      html += `</div>`;
+      friendPlayers.forEach(p => {
+        html += `<div class="fplayer-pane" data-fp="${p}" style="display:none">`;
+        pendingFriendSlips.filter(s => s.player === p).forEach(s => { html += renderSlipCard(s, { showPlayer: true }); });
+        html += `</div>`;
+      });
     }
     container.innerHTML = html;
     container.querySelector('#bet-logout')?.addEventListener('click', () => {
@@ -57,6 +71,13 @@ async function renderBetting() {
       sessionStorage.removeItem('wc2026_player');
       sessionStorage.removeItem('wc2026_pin');
       renderBetting();
+    });
+    container.querySelectorAll('.fplayer-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.fp;
+        container.querySelectorAll('.fplayer-tab').forEach(b => { b.style.cssText = b.dataset.fp === key ? SUBTAB_ON : SUBTAB_OFF; });
+        container.querySelectorAll('.fplayer-pane').forEach(p => { p.style.display = p.dataset.fp === key ? '' : 'none'; });
+      });
     });
     container.querySelectorAll('.slip-approve-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
