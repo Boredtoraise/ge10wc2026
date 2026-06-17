@@ -594,11 +594,14 @@ function renderHouseDashboard() {
         ahHomeBet: 0, ahAwayBet: 0, overBet: 0, underBet: 0,
         ahHomePay: 0, ahAwayPay: 0, overPay: 0, underPay: 0,
       };
-      allSlips.filter(s => {
-        if (s.status === 'cancelled') return false;
-        if (resolveSlip(s).status !== 'pending') return false;
-        return (s.picks || []).some(p => p.match_id === m.id);
-      }).forEach(s => {
+      const mResult = state.matches[m.id];
+      const hasScore = !!(mResult && typeof mResult.team1_score === 'number' && typeof mResult.team2_score === 'number');
+      const matchSlipsAll = allSlips.filter(s => s.status !== 'cancelled' && (s.picks || []).some(p => p.match_id === m.id));
+      const hasPending = matchSlipsAll.some(s => resolveSlip(s).status === 'pending');
+      // mid-match live score: some slips still alive → show only pending
+      // match truly done (no pending left) or no score yet → show all
+      const matchSlips = (hasScore && hasPending) ? matchSlipsAll.filter(s => resolveSlip(s).status === 'pending') : matchSlipsAll;
+      matchSlips.forEach(s => {
         const w = (s.payout || s.bet || 0) / Math.max(1, (s.picks || []).length);
         const matchObj = state.matchById ? state.matchById[m.id] : null;
         let cntH = false, cntA = false, cntO = false, cntU = false;
