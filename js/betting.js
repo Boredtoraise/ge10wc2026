@@ -164,18 +164,18 @@ async function renderBetting() {
       const picks = slip.picks || [];
       if (picks.length > 0) {
         s += `<div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px;line-height:1.5">`;
-        picks.forEach(p => {
+        picks.forEach((p, pi) => {
           const match = MATCHES.find(m => m.id === p.match_id);
           if (!match) return;
           const isOu = p.type === 'ou';
           let pickLabel = '';
           if (isOu) {
-            pickLabel = `${p.pick === 'over' ? (lang === 'th' ? 'สูง' : 'Over') : (lang === 'th' ? 'ต่ำ' : 'Under')} ${p.line || ''}`;
+            pickLabel = `${match.team1}-${match.team2} ${p.pick === 'over' ? (lang === 'th' ? 'สูง' : 'Over') : (lang === 'th' ? 'ต่ำ' : 'Under')} ${p.line || ''}`;
           } else {
             const picked = TEAMS[p.pick];
             const isHome = p.pick === match.team1;
             const ahLabel = p.line ? formatAhFav(p.line, isHome) : '';
-            pickLabel = `${picked?.flag || ''} ${picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick} ${ahLabel}`;
+            pickLabel = `${picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick} ${ahLabel}`;
           }
           const badge = getPickResultBadge(p, match);
           s += `<div>· ${pickLabel} <span class="odds-tag">@${p.odds}</span> ${badge}</div>`;
@@ -634,7 +634,7 @@ function renderSlip(slip, idx) {
   html += `<span style="font-size:0.8rem;font-weight:700;color:${statusColors[displayStatus]}">${statusLabels[displayStatus]}</span>`;
   html += `</div></div>`;
 
-  picks.forEach(p => {
+  picks.forEach((p, pi) => {
     const match = MATCHES.find(m => m.id === p.match_id);
     if (!match) return;
     const t1 = TEAMS[match.team1];
@@ -647,14 +647,14 @@ function renderSlip(slip, idx) {
 
     if (isOu) {
       const lineLabel = p.line || state.ouLines[match.id] || '';
-      pickLabel = `${p.pick === 'over' ? (lang === 'th' ? 'สูง' : 'Over') : (lang === 'th' ? 'ต่ำ' : 'Under')} ${lineLabel}`;
+      pickLabel = `${match.team1}-${match.team2} ${p.pick === 'over' ? (lang === 'th' ? 'สูง' : 'Over') : (lang === 'th' ? 'ต่ำ' : 'Under')} ${lineLabel}`;
       resultBadge = getPickResultBadge(p, match);
     } else {
       const picked = TEAMS[p.pick];
       const lineLabel = p.line || state.ahLines[match.id] || '';
       const isHome = match && p.pick === match.team1;
       const ahSideLabel = lineLabel ? formatAhFav(lineLabel, isHome) : '';
-      pickLabel = `${picked?.flag || ''} ${picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick} ${ahSideLabel}`;
+      pickLabel = `${picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick} ${ahSideLabel}`;
       resultBadge = getPickResultBadge(p, match);
     }
 
