@@ -330,7 +330,7 @@ function renderRulesInline() {
 function getTodayMatches() {
   // Match dates are stored as ET strings — compare by ET date (UTC-4)
   const todayET = new Date(Date.now() - 4 * 3600000).toISOString().slice(0, 10);
-  return MATCHES.filter(m => m.date.slice(0, 10) === todayET);
+  return MATCHES.filter(m => m.date.slice(0, 10) === todayET && (state.ahLines[m.id] || state.ouLines[m.id]));
 }
 
 // --- Admin: House (Pok) risk dashboard ---
