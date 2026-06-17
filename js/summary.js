@@ -574,8 +574,10 @@ function renderHouseDashboard() {
           html += `</div>`;
           html += `<span style="width:24px;${ahWinner==='team2'?winBox:`font-weight:${!h1big?'700':'400'};color:${!h1big?'var(--text-primary)':'var(--text-muted)'}`}">${d.ahAway}</span>`;
           html += `</div>`;
-          html += `<div style="text-align:center;font-size:0.66rem;color:var(--text-muted);margin-bottom:6px">`;
-          html += `AH ${ahLine} · ${t1Name}${lineH?' '+lineH:''} ${ahOddsH?'@'+ahOddsH:''} / ${ahOddsA?'@'+ahOddsA:''} ${t2Name}${lineA?' '+lineA:''}`;
+          html += `<div style="display:flex;justify-content:space-between;font-size:0.66rem;color:var(--text-muted);margin-bottom:6px">`;
+          html += `<span>${t1Name}${lineH?' '+lineH:''} ${ahOddsH?'@'+ahOddsH:''}</span>`;
+          html += `<span>AH ${ahLine}</span>`;
+          html += `<span style="text-align:right">${ahOddsA?'@'+ahOddsA:''} ${t2Name}${lineA?' '+lineA:''}</span>`;
           html += `</div>`;
         }
 
@@ -595,8 +597,10 @@ function renderHouseDashboard() {
           html += `</div>`;
           html += `<span style="width:24px;${ouWinner==='under'?winBox:`font-weight:${!oBig?'700':'400'};color:${!oBig?'var(--text-primary)':'var(--text-muted)'}`}">${d.under}</span>`;
           html += `</div>`;
-          html += `<div style="text-align:center;font-size:0.66rem;color:var(--text-muted);margin-bottom:2px">`;
-          html += `O/U ${ouLine} · ${lang === 'th' ? 'สูง' : 'Over'} ${ouOddsO?'@'+ouOddsO:''} / ${ouOddsU?'@'+ouOddsU:''} ${lang === 'th' ? 'ต่ำ' : 'Under'}`;
+          html += `<div style="display:flex;justify-content:space-between;font-size:0.66rem;color:var(--text-muted);margin-bottom:2px">`;
+          html += `<span>${lang === 'th' ? 'สูง' : 'Over'} ${ouOddsO?'@'+ouOddsO:''}</span>`;
+          html += `<span>O/U ${ouLine}</span>`;
+          html += `<span style="text-align:right">${ouOddsU?'@'+ouOddsU:''} ${lang === 'th' ? 'ต่ำ' : 'Under'}</span>`;
           html += `</div>`;
         }
 
