@@ -184,10 +184,6 @@ async function renderBetting() {
       container.querySelector('#bet-main-bet').style.display     = '';
       container.querySelector('#bet-main-friends').style.display = 'none';
 
-      // Fill bet amount
-      const amountInput = container.querySelector('#bet-amount');
-      if (amountInput && slip.bet) amountInput.value = slip.bet;
-
       // Click matching bet-pick buttons to select them
       validPicks.forEach(p => {
         const isOu = p.type === 'ou';
@@ -198,7 +194,7 @@ async function renderBetting() {
         if (pickBtn && !pickBtn.classList.contains('selected')) pickBtn.click();
       });
 
-      showToast(currentLang === 'th' ? `Copy ${validPicks.length} picks + ${slip.bet}฿ แล้ว` : `Copied ${validPicks.length} picks + ${slip.bet}฿`);
+      showToast(currentLang === 'th' ? `Copy ${validPicks.length} picks แล้ว` : `Copied ${validPicks.length} picks`);
       container.querySelector('#bet-main-bet')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
