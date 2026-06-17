@@ -130,11 +130,12 @@ async function renderBetting() {
       const needsApprove = state.isAdmin && (st === 'won' || st === 'lost') && slip.status !== 'approved' && slip.status !== 'cancelled';
 
       let borderStyle = 'border:1px solid var(--border)';
-      if (needsApprove) borderStyle = 'border:2px solid var(--accent)';
-      else if (slip.status === 'approved') borderStyle = 'border:1px solid var(--secondary)';
-      else if (st === 'lost') borderStyle = 'border:1px dashed var(--border)';
+      let bgStyle = 'background:var(--bg-card)';
+      if (needsApprove || st === 'won') { borderStyle = 'border:2px solid var(--accent)'; bgStyle = 'background:rgba(212,160,23,0.07)'; }
+      else if (slip.status === 'approved') { borderStyle = 'border:2px solid var(--accent)'; bgStyle = 'background:rgba(212,160,23,0.05)'; }
+      else if (st === 'lost') { borderStyle = 'border:2px dashed var(--secondary)'; bgStyle = 'background:rgba(46,134,171,0.05)'; }
 
-      let s = `<div style="padding:10px 12px;margin-bottom:8px;border-radius:var(--radius-lg);background:var(--bg-card);${borderStyle}">`;
+      let s = `<div style="padding:10px 12px;margin-bottom:8px;border-radius:var(--radius-lg);${bgStyle};${borderStyle}">`;
       s += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">`;
       s += `<div style="display:flex;align-items:center;gap:8px">`;
       s += `<span style="font-size:0.9rem;font-weight:700;color:var(--primary)">${slip.player}</span>`;
@@ -170,7 +171,7 @@ async function renderBetting() {
       if (st === 'won' || st === 'approved') {
         s += ` → <b style="color:var(--accent)">+${resolved.profit}฿</b>`;
       } else if (st === 'lost') {
-        s += ` → <b style="color:var(--wrong)">-${slip.bet}฿</b>`;
+        s += ` → <b style="color:var(--secondary)">-${slip.bet}฿</b>`;
       } else {
         s += ` → <b style="color:var(--accent)">${lang === 'th' ? 'จ่าย' : 'Payout'} ${slip.payout}฿</b>`;
       }

@@ -81,7 +81,7 @@ function navigate(view) {
 
 async function renderCurrentView() {
   switch (state.currentView) {
-    case 'schedule': renderSchedule(); break;
+    case 'schedule': await renderSchedule(); scheduleApproveHandlers(); break;
     // case 'predict': renderPredictions(); break;
     case 'bet': renderBetting(); break;
     case 'admin': renderAdmin(); break;
@@ -130,6 +130,28 @@ function updateTabBadges() {
   document.querySelectorAll('.bet-badge').forEach(b => {
     if (count > 0) { b.textContent = count; b.classList.remove('hidden'); }
     else b.classList.add('hidden');
+  });
+}
+
+// --- Approve handlers for schedule tab ---
+function scheduleApproveHandlers() {
+  const container = document.getElementById('view-schedule');
+  if (!container) return;
+  container.querySelectorAll('.slip-approve-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const ts = btn.dataset.ts;
+      const result = await approveSlip(ts);
+      if (result && result.success) {
+        const slip = state.allSlips.find(s => String(s.timestamp) === String(ts));
+        if (slip) slip.status = 'approved';
+        updateTabBadges();
+        showToast(currentLang === 'th' ? 'ยืนยันแล้ว' : 'Approved');
+        await renderSchedule();
+        scheduleApproveHandlers();
+      } else {
+        showToast(result?.error || 'Error');
+      }
+    });
   });
 }
 

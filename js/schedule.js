@@ -1,13 +1,37 @@
 // Schedule — main tab (was overlay)
 
-function renderSchedule() {
+async function renderSchedule() {
   const container = document.getElementById('view-schedule');
   if (!container) return;
   const lang = currentLang;
 
+  if (!state.allSlips.length && typeof API_BASE_URL !== 'undefined' && API_BASE_URL) {
+    const allSlips = await fetchAPI('allslips');
+    if (allSlips) state.allSlips = allSlips;
+  }
+
   const groups = Object.keys(GROUPS);
 
-  let html = '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">';
+  let html = '';
+
+  // ── Pending friend slips section ────────────────────────────────
+  const pendingFriendSlips = state.allSlips.filter(s =>
+    s.player !== state.currentPlayer &&
+    s.status !== 'approved' &&
+    s.status !== 'cancelled'
+  ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  if (pendingFriendSlips.length > 0) {
+    html += `<div style="margin-bottom:16px">`;
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">`;
+    html += `<span style="font-size:0.85rem;font-weight:700;color:var(--primary)">${lang === 'th' ? 'สลิปเพื่อน' : "Friends' Slips"}</span>`;
+    html += `<span style="font-size:0.78rem;color:var(--text-muted);background:var(--bg-input);padding:2px 8px;border-radius:4px">${pendingFriendSlips.length}</span>`;
+    html += `</div>`;
+    pendingFriendSlips.forEach(slip => { html += renderPendingSlipCard(slip, lang); });
+    html += `</div>`;
+  }
+
+  html += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">';
   html += `<button class="sch-group-btn btn active" data-group="ALL" style="padding:6px 12px;font-size:0.8rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700">${currentLang === 'th' ? 'ทั้งหมด' : 'All'}</button>`;
   groups.forEach(g => {
     html += `<button class="sch-group-btn btn" data-group="${g}" style="padding:6px 12px;font-size:0.8rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700">${g}</button>`;
@@ -180,4 +204,87 @@ function renderScheduleMatchCard(match) {
   html += `<div class="match-venue">${match.venue}</div>`;
   html += `</div>`;
   return html;
+}
+
+function renderPendingSlipCard(slip, lang) {
+  const resolved = typeof resolveSlip === 'function' ? resolveSlip(slip) : { status: slip.status, profit: 0 };
+  const st = resolved.status;
+  const isStep = (slip.picks || []).length >= 3;
+  const needsApprove = state.isAdmin && (st === 'won' || st === 'lost') && slip.status !== 'approved';
+
+  let borderStyle, bgStyle;
+  if (st === 'won' || st === 'approved') {
+    borderStyle = 'border:2px solid var(--accent)';
+    bgStyle = 'background:rgba(212,160,23,0.07)';
+  } else if (st === 'lost') {
+    borderStyle = 'border:2px dashed var(--secondary)';
+    bgStyle = 'background:rgba(46,134,171,0.05)';
+  } else {
+    borderStyle = 'border:1px solid var(--border)';
+    bgStyle = 'background:var(--bg-card)';
+  }
+
+  const statusLabels = {
+    pending: lang === 'th' ? 'รอผล' : 'Pending',
+    won:     lang === 'th' ? 'ถูก'  : 'Won',
+    lost:    lang === 'th' ? 'ผิด'  : 'Lost',
+    approved: lang === 'th' ? 'ยืนยันแล้ว' : 'Approved',
+  };
+  const statusColors = {
+    pending:  'var(--text-muted)',
+    won:      'var(--accent)',
+    lost:     'var(--secondary)',
+    approved: 'var(--accent)',
+  };
+
+  let s = `<div style="padding:10px 12px;margin-bottom:8px;border-radius:var(--radius-lg);${borderStyle};${bgStyle}">`;
+
+  // Header row
+  s += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">`;
+  s += `<div style="display:flex;align-items:center;gap:8px">`;
+  s += `<span style="font-size:0.9rem;font-weight:700;color:var(--primary)">${slip.player}</span>`;
+  s += `<span style="font-size:0.72rem;color:var(--text-muted);background:var(--bg-input);padding:2px 7px;border-radius:4px">${isStep ? 'STEP' : 'SINGLE'}</span>`;
+  s += `</div>`;
+  s += `<span style="font-size:0.8rem;font-weight:700;color:${statusColors[st]}">${statusLabels[st] || st}</span>`;
+  s += `</div>`;
+
+  // Picks
+  const picks = slip.picks || [];
+  if (picks.length > 0) {
+    s += `<div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px;line-height:1.6">`;
+    picks.forEach(p => {
+      const match = MATCHES.find(m => m.id === p.match_id);
+      if (!match) return;
+      const isOu = p.type === 'ou';
+      let pickLabel = '';
+      if (isOu) {
+        pickLabel = `${p.pick === 'over' ? (lang === 'th' ? 'สูง' : 'Over') : (lang === 'th' ? 'ต่ำ' : 'Under')} ${p.line || ''}`;
+      } else {
+        const picked = TEAMS[p.pick];
+        const isHome = p.pick === match.team1;
+        const ahLabel = p.line ? formatAhFav(p.line, isHome) : '';
+        pickLabel = `${picked?.flag || ''} ${picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick} ${ahLabel}`;
+      }
+      const badge = typeof getPickResultBadge === 'function' ? getPickResultBadge(p, match) : '';
+      s += `<div>· ${pickLabel} <span class="odds-tag">@${p.odds}</span> ${badge}</div>`;
+    });
+    s += `</div>`;
+  }
+
+  // Footer: bet × odds → payout/result + approve button
+  s += `<div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid var(--border)">`;
+  s += `<span style="font-size:0.82rem;color:var(--text-muted)">${slip.bet}฿ × ${slip.combined_odds || '-'}`;
+  if (st === 'won' || st === 'approved') {
+    s += ` → <b style="color:var(--accent)">+${resolved.profit}฿</b>`;
+  } else if (st === 'lost') {
+    s += ` → <b style="color:var(--secondary)">-${slip.bet}฿</b>`;
+  } else {
+    s += ` → <b style="color:var(--accent)">${lang === 'th' ? 'จ่าย' : 'Payout'} ${slip.payout}฿</b>`;
+  }
+  s += `</span>`;
+  if (needsApprove) {
+    s += `<button class="slip-approve-btn" data-ts="${slip.timestamp}" style="background:var(--accent);color:#000;border:none;padding:4px 12px;border-radius:4px;font-size:0.78rem;font-weight:700;cursor:pointer">${lang === 'th' ? '✓ ยืนยัน' : '✓ Approve'}</button>`;
+  }
+  s += `</div></div>`;
+  return s;
 }
