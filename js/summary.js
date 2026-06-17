@@ -433,13 +433,18 @@ function renderHouseDashboard() {
   const todayMatches = getTodayMatches();
   if (todayMatches.length > 0) {
     const todayIds = new Set(todayMatches.map(m => m.id));
-    const allSlipsForToday = allSlips.filter(s => s.status !== 'cancelled');
-    const todayPending = allSlipsForToday.filter(s => {
+    const allSlipsForToday = allSlips.filter(s => s.status !== 'cancelled' && (s.picks || []).some(p => todayIds.has(p.match_id)));
+    let todayWonCount = 0, todayLostCount = 0, todayWonPaid = 0, todayLostKept = 0;
+    const todayPending = [];
+    allSlipsForToday.forEach(s => {
       const r = resolveSlip(s);
-      return r.status === 'pending' && (s.picks || []).some(p => todayIds.has(p.match_id));
+      if (r.status === 'won')       { todayWonCount++;  todayWonPaid  += r.profit; }
+      else if (r.status === 'lost') { todayLostCount++; todayLostKept += Math.abs(r.profit); }
+      else                          { todayPending.push(s); }
     });
-    const todayWorstPay  = todayPending.reduce((sum, s) => sum + Math.max(0, (s.payout || 0) - (s.bet || 0)), 0);
-    const todayBestKeep  = todayPending.reduce((sum, s) => sum + (s.bet || 0), 0);
+    const todayNet = todayLostKept - todayWonPaid;
+    const todayWorstPay = todayPending.reduce((sum, s) => sum + Math.max(0, (s.payout || 0) - (s.bet || 0)), 0);
+    const todayBestKeep = todayPending.reduce((sum, s) => sum + (s.bet || 0), 0);
 
     const thaiDateLabel = todayMatches[0]
       ? new Date(etToThai(todayMatches[0].date).getTime() + 7 * 3600000)
@@ -447,9 +452,34 @@ function renderHouseDashboard() {
       : '';
 
     html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px">`;
-    html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:10px">`;
-    html += `${lang === 'th' ? 'วันนี้' : 'Today'} · ${thaiDateLabel} · ${todayMatches.length} ${lang === 'th' ? 'คู่' : 'matches'} · ${lang === 'th' ? 'สลิปรอ' : 'pending'} ${todayPending.length} ${lang === 'th' ? 'ใบ' : ''}`;
+    html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:10px">${lang === 'th' ? 'วันนี้' : 'Today'} · ${thaiDateLabel} · ${todayMatches.length} ${lang === 'th' ? 'คู่' : 'matches'}</div>`;
+
+    // Slip count row
+    html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">`;
+    const todayItems = [
+      { label: lang === 'th' ? 'ทั้งหมด' : 'Total',   val: allSlipsForToday.length, color: 'var(--text-primary)' },
+      { label: lang === 'th' ? 'ถูกแล้ว' : 'Won',     val: todayWonCount,            color: 'var(--accent)'       },
+      { label: lang === 'th' ? 'ผิดแล้ว' : 'Lost',    val: todayLostCount,           color: 'var(--secondary)'    },
+      { label: lang === 'th' ? 'รอผล'   : 'Pending',  val: todayPending.length,      color: 'var(--text-muted)'   },
+    ];
+    todayItems.forEach(({ label, val, color }) => {
+      html += `<div style="text-align:center;padding:7px 4px;background:var(--bg-input);border-radius:var(--radius)">`;
+      html += `<div style="font-size:0.65rem;color:var(--text-muted);margin-bottom:2px">${label}</div>`;
+      html += `<div style="font-size:1rem;font-weight:700;color:${color}">${val}</div>`;
+      html += `</div>`;
+    });
     html += `</div>`;
+
+    // Net today
+    if (todayWonCount + todayLostCount > 0) {
+      const netColor = todayNet >= 0 ? 'var(--accent)' : 'var(--secondary)';
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--border);border-bottom:${todayPending.length ? '1px solid var(--border)' : 'none'};margin-bottom:${todayPending.length ? '10px' : '0'}">`;
+      html += `<span style="font-size:0.82rem;color:var(--text-muted)">${lang === 'th' ? 'ยอดสุทธิวันนี้ (เจ้ามือ)' : 'Net today (house)'}</span>`;
+      html += `<span style="font-size:1rem;font-weight:700;color:${netColor}">${todayNet >= 0 ? '+' : ''}${todayNet}฿</span>`;
+      html += `</div>`;
+    }
+
+    // Exposure boxes (only if there are pending slips)
     if (todayPending.length > 0) {
       html += `<div style="display:flex;gap:8px">`;
       html += `<div style="flex:1;text-align:center;padding:8px;border:1px solid var(--border);border-radius:var(--radius)">`;
@@ -463,8 +493,6 @@ function renderHouseDashboard() {
       html += `<div style="font-size:1.05rem;font-weight:700;color:var(--accent)">+${todayBestKeep}฿</div>`;
       html += `</div>`;
       html += `</div>`;
-    } else {
-      html += `<div style="font-size:0.82rem;color:var(--text-muted);text-align:center">${lang === 'th' ? 'ไม่มีสลิปรอสำหรับวันนี้' : 'No pending slips for today'}</div>`;
     }
     html += `</div>`;
   }
