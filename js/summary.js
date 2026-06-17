@@ -207,33 +207,9 @@ function getPlayers() {
   const slips = getAllSlips();
   return state.players.length
     ? state.players.filter(p => String(p.is_admin).toLowerCase() !== 'true').map(p => p.player_id)
-    : [...new Set([
-        ...Object.values(state.predictions).map(p => p.player || p.player_id),
-        ...slips.map(s => s.player),
-      ].filter(Boolean))].sort();
+    : [...new Set(slips.map(s => s.player).filter(Boolean))].sort();
 }
 
-function hasScore(result) {
-  if (!result) return false;
-  return typeof result.team1_score === 'number' && typeof result.team2_score === 'number';
-}
-
-function calculatePlayerScores(player) {
-  let resultPts = 0, exactCount = 0, correctCount = 0;
-  MATCHES.forEach(m => {
-    if (m.stage !== 'epl') return;
-    const result = state.matches[m.id];
-    if (!hasScore(result)) return;
-    const key = m.id + ':' + player;
-    const pred = state.predictions[key];
-    if (!pred) return;
-    const pts = calcResultPoints(Number(pred.team1_pred), Number(pred.team2_pred), Number(result.team1_score), Number(result.team2_score));
-    resultPts += pts;
-    if (pts === 3) exactCount++;
-    else if (pts === 1) correctCount++;
-  });
-  return { resultPts, exactCount, correctCount };
-}
 
 function calculatePlayerMoney(player) {
   let profit = 0, wins = 0, losses = 0, totalBet = 0;
@@ -613,11 +589,3 @@ function getOUOutcome(line, totalGoals) {
   return { over: 'loss', under: 'full' };
 }
 
-function calcResultPoints(pred1, pred2, actual1, actual2) {
-  if (pred1 === undefined || pred2 === undefined) return 0;
-  if (pred1 === actual1 && pred2 === actual2) return 3;
-  const predDiff = pred1 - pred2;
-  const actualDiff = actual1 - actual2;
-  if ((predDiff > 0 && actualDiff > 0) || (predDiff < 0 && actualDiff < 0) || (predDiff === 0 && actualDiff === 0)) return 1;
-  return 0;
-}

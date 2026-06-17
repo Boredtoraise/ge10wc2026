@@ -40,41 +40,6 @@ async function loginPlayer(playerId, pin) {
   }
 }
 
-async function submitPredictions(data) {
-  if (!API_BASE_URL) {
-    data.forEach(d => {
-      const key = d.match_id + ':' + state.currentPlayer;
-      state.predictions[key] = d;
-    });
-    localStorage.setItem('wc2026_predictions', JSON.stringify(state.predictions));
-    return { success: true };
-  }
-  try {
-    const res = await fetch(API_BASE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'submit',
-        player: state.currentPlayer,
-        pin: sessionStorage.getItem('wc2026_pin'),
-        predictions: data,
-      }),
-    });
-    if (!res.ok) throw new Error('Submit error: ' + res.status);
-    const result = await res.json();
-    if (result.success) {
-      data.forEach(d => {
-        const key = d.match_id + ':' + state.currentPlayer;
-        state.predictions[key] = d;
-      });
-      localStorage.setItem('wc2026_predictions', JSON.stringify(state.predictions));
-    }
-    return result;
-  } catch (e) {
-    console.error('submitPredictions error:', e);
-    return { success: false, error: e.message };
-  }
-}
 
 async function submitSlip(slip) {
   if (!API_BASE_URL) {

@@ -3,7 +3,6 @@ const state = {
   currentPlayer: null,
   isAdmin: false,
   currentView: 'schedule',
-  predictions: {},
   matches: {},
   players: [],
   slips: [],
@@ -110,7 +109,6 @@ function navigate(view) {
 async function renderCurrentView() {
   switch (state.currentView) {
     case 'schedule': renderSchedule(); break;
-    // case 'predict': renderPredictions(); break;
     case 'bet': renderBetting(); break;
     case 'summary': await renderSummaryLazy(); break;
   }
@@ -174,24 +172,6 @@ function init() {
   if (savedPlayer) state.currentPlayer = savedPlayer;
   if (sessionStorage.getItem('wc2026_admin') === 'true') state.isAdmin = true;
 
-  const cached = localStorage.getItem('wc2026_predictions');
-  if (cached) {
-    try {
-      const parsed = JSON.parse(cached);
-      // Migrate old format (keyed by match_id) to new format (keyed by match_id:player)
-      if (parsed && typeof parsed === 'object') {
-        const needsMigration = Object.keys(parsed).some(k => !k.includes(':'));
-        if (needsMigration) {
-          // Clear old cache — will reload from API
-          state.predictions = {};
-          localStorage.removeItem('wc2026_predictions');
-        } else {
-          state.predictions = parsed;
-        }
-      }
-    } catch(e) {}
-  }
-
   window.addEventListener('hashchange', () => {
     const hash = location.hash.slice(1) || 'schedule';
     navigate(hash);
@@ -228,7 +208,6 @@ async function refreshData() {
       allSlips: fetchAPI('allslips'),
     };
     if (state.currentPlayer) {
-      calls.preds = fetchAPI('allpredictions');
       calls.slips = fetchAPI('slips&player=' + state.currentPlayer);
     }
 
@@ -242,14 +221,6 @@ async function refreshData() {
     }
     if (data.players) {
       state.players = data.players;
-    }
-    if (data.preds) {
-      state.predictions = {};
-      data.preds.forEach(p => {
-        const key = p.match_id + ':' + (p.player_id || p.player);
-        state.predictions[key] = p;
-      });
-      localStorage.setItem('wc2026_predictions', JSON.stringify(state.predictions));
     }
     if (data.slips) {
       state.slips = data.slips.map(parsePicks);
