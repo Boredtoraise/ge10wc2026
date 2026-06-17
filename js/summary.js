@@ -61,6 +61,10 @@ function renderSummaryTab() {
   const lang = currentLang;
   let html = '';
 
+  if (state.isAdmin) {
+    html += renderAdminSummary();
+  }
+
   // Overall ranking by money
   const allPlayers = getPlayers();
   const summary = [];
@@ -363,7 +367,120 @@ function getTodayMatches() {
   return byDate[dates[dates.length - 1]] || [];
 }
 
-// --- Admin: House (Pok) risk dashboard ---
+// --- Admin: Summary card (สรุป tab) — totals + P&L chart ---
+function renderAdminSummary() {
+  const lang = currentLang;
+  const allSlips = getAllSlips();
+  const slips = allSlips.filter(s => s.status !== 'cancelled');
+
+  let wonCount = 0, lostCount = 0, pendingCount = 0;
+  let pokPaidOut = 0, pokCollected = 0;
+  slips.forEach(s => {
+    const r = resolveSlip(s);
+    if (r.status === 'won')       { wonCount++;    pokPaidOut   += r.profit; }
+    else if (r.status === 'lost') { lostCount++;   pokCollected += Math.abs(r.profit); }
+    else                          { pendingCount++; }
+  });
+  const pokNet   = pokCollected - pokPaidOut;
+  const netColor = pokNet >= 0 ? 'var(--accent)' : 'var(--secondary)';
+  const netSign  = pokNet >= 0 ? '+' : '';
+
+  let html = '';
+
+  // Slip count row
+  html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">`;
+  [
+    { label: lang === 'th' ? 'ทั้งหมด' : 'Total',   val: slips.length,   color: 'var(--text-primary)' },
+    { label: lang === 'th' ? 'ถูกแล้ว' : 'Won',     val: wonCount,       color: 'var(--accent)'       },
+    { label: lang === 'th' ? 'ผิดแล้ว' : 'Lost',    val: lostCount,      color: 'var(--secondary)'    },
+    { label: lang === 'th' ? 'รอผล'   : 'Pending',  val: pendingCount,   color: 'var(--text-muted)'   },
+  ].forEach(({ label, val, color }) => {
+    html += `<div style="text-align:center;padding:8px 4px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">`;
+    html += `<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:3px">${label}</div>`;
+    html += `<div style="font-size:1.1rem;font-weight:700;color:${color}">${val}</div>`;
+    html += `</div>`;
+  });
+  html += `</div>`;
+
+  // House position card
+  html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px">`;
+  html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:10px">${lang === 'th' ? 'สถานะเงิน (มุมมองเจ้ามือ)' : 'House Position'}</div>`;
+  html += `<div style="display:flex;justify-content:space-between;margin-bottom:6px">`;
+  html += `<span style="font-size:0.82rem;color:var(--text-muted)">${lang === 'th' ? 'เก็บจากที่ผิด' : 'Collected (losses)'}</span>`;
+  html += `<span style="font-size:0.88rem;font-weight:700;color:var(--accent)">+${pokCollected}฿</span>`;
+  html += `</div>`;
+  html += `<div style="display:flex;justify-content:space-between;margin-bottom:10px">`;
+  html += `<span style="font-size:0.82rem;color:var(--text-muted)">${lang === 'th' ? 'จ่ายให้ที่ถูก' : 'Paid out (wins)'}</span>`;
+  html += `<span style="font-size:0.88rem;font-weight:700;color:var(--secondary)">-${pokPaidOut}฿</span>`;
+  html += `</div>`;
+  html += `<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)">`;
+  html += `<span style="font-size:0.9rem;font-weight:700">${lang === 'th' ? 'กำไรตอนนี้' : 'Net so far'}</span>`;
+  html += `<span style="font-size:1.1rem;font-weight:800;color:${netColor}">${netSign}${pokNet}฿</span>`;
+  html += `</div>`;
+  html += `</div>`;
+
+  // P&L chart by round (14:00 Thai boundary)
+  function getRoundKey(s) {
+    const picks = s.picks || [];
+    if (!picks.length) return null;
+    const match = (state.matchById || {})[picks[0].match_id]
+                || MATCHES.find(m => m.id === picks[0].match_id);
+    if (!match) return null;
+    const thaiMs = etToThai(match.date).getTime() + 7 * 3600 * 1000;
+    const d = new Date(thaiMs);
+    if (d.getUTCHours() < 14) d.setUTCDate(d.getUTCDate() - 1);
+    return d.toISOString().slice(0, 10);
+  }
+
+  const byRound = {};
+  slips.forEach(s => {
+    const key = getRoundKey(s);
+    if (!key) return;
+    if (!byRound[key]) byRound[key] = { net: 0 };
+    const r = resolveSlip(s);
+    if (r.status === 'won')       byRound[key].net -= r.profit;
+    else if (r.status === 'lost') byRound[key].net += Math.abs(r.profit);
+  });
+  const rounds = Object.keys(byRound).filter(k => byRound[k].net !== 0).sort();
+
+  if (rounds.length > 0) {
+    const maxAbs = Math.max(...rounds.map(k => Math.abs(byRound[k].net)));
+    const BAR_MAX = 120;
+    let cumulative = 0;
+    html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px">`;
+    html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:10px">${lang === 'th' ? 'กำไร/ขาดทุน · รายรอบ' : 'P&L · By Round'}</div>`;
+    rounds.forEach(key => {
+      const net = byRound[key].net;
+      cumulative += net;
+      const barW = Math.round(Math.abs(net) / maxAbs * BAR_MAX);
+      const isPos = net >= 0;
+      const barColor = isPos ? 'var(--accent)' : 'var(--secondary)';
+      const amtColor = isPos ? 'var(--accent)' : 'var(--secondary)';
+      const amtStr  = (isPos ? '+' : '') + net + '฿';
+      const [yr, mo, dy] = key.split('-').map(Number);
+      const dateLabel = new Date(Date.UTC(yr, mo - 1, dy))
+        .toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+      html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">`;
+      html += `<span style="font-size:0.72rem;color:var(--text-muted);width:52px;flex-shrink:0">${dateLabel}</span>`;
+      html += `<div style="flex:1;height:14px;background:var(--bg-input);border-radius:3px;overflow:hidden">`;
+      html += `<div style="width:${barW}px;max-width:100%;height:100%;background:${barColor};border-radius:3px"></div>`;
+      html += `</div>`;
+      html += `<span style="font-size:0.78rem;font-weight:700;color:${amtColor};width:52px;text-align:right;flex-shrink:0">${amtStr}</span>`;
+      html += `</div>`;
+    });
+    const cumColor = cumulative >= 0 ? 'var(--accent)' : 'var(--secondary)';
+    const cumStr   = (cumulative >= 0 ? '+' : '') + cumulative + '฿';
+    html += `<div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:8px;margin-top:2px">`;
+    html += `<span style="font-size:0.82rem;font-weight:700;color:var(--text-muted)">${lang === 'th' ? 'สะสม' : 'Total'}</span>`;
+    html += `<span style="font-size:1rem;font-weight:800;color:${cumColor}">${cumStr}</span>`;
+    html += `</div>`;
+    html += `</div>`;
+  }
+
+  return html;
+}
+
+// --- Admin: House (Pok) today dashboard (แทงบอล tab) ---
 function renderHouseDashboard() {
   const lang = currentLang;
   const allSlips = getAllSlips();
@@ -395,39 +512,6 @@ function renderHouseDashboard() {
   const netSign  = pokNet >= 0 ? '+' : '';
 
   let html = '';
-
-  // Slip count row
-  html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">`;
-  const countItems = [
-    { label: lang === 'th' ? 'ทั้งหมด' : 'Total',   val: slips.length,   color: 'var(--text-primary)' },
-    { label: lang === 'th' ? 'ถูกแล้ว' : 'Won',     val: wonCount,       color: 'var(--accent)'       },
-    { label: lang === 'th' ? 'ผิดแล้ว' : 'Lost',    val: lostCount,      color: 'var(--secondary)'    },
-    { label: lang === 'th' ? 'รอผล'   : 'Pending',  val: pendingCount,   color: 'var(--text-muted)'   },
-  ];
-  countItems.forEach(({ label, val, color }) => {
-    html += `<div style="text-align:center;padding:8px 4px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">`;
-    html += `<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:3px">${label}</div>`;
-    html += `<div style="font-size:1.1rem;font-weight:700;color:${color}">${val}</div>`;
-    html += `</div>`;
-  });
-  html += `</div>`;
-
-  // Money position
-  html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px">`;
-  html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:10px">${lang === 'th' ? 'สถานะเงิน (มุมมองเจ้ามือ)' : 'House Position'}</div>`;
-  html += `<div style="display:flex;justify-content:space-between;margin-bottom:6px">`;
-  html += `<span style="font-size:0.82rem;color:var(--text-muted)">${lang === 'th' ? 'เก็บจากที่ผิด' : 'Collected (losses)'}</span>`;
-  html += `<span style="font-size:0.88rem;font-weight:700;color:var(--accent)">+${pokCollected}฿</span>`;
-  html += `</div>`;
-  html += `<div style="display:flex;justify-content:space-between;margin-bottom:10px">`;
-  html += `<span style="font-size:0.82rem;color:var(--text-muted)">${lang === 'th' ? 'จ่ายให้ที่ถูก' : 'Paid out (wins)'}</span>`;
-  html += `<span style="font-size:0.88rem;font-weight:700;color:var(--secondary)">-${pokPaidOut}฿</span>`;
-  html += `</div>`;
-  html += `<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)">`;
-  html += `<span style="font-size:0.9rem;font-weight:700">${lang === 'th' ? 'กำไรตอนนี้' : 'Net so far'}</span>`;
-  html += `<span style="font-size:1.1rem;font-weight:800;color:${netColor}">${netSign}${pokNet}฿</span>`;
-  html += `</div>`;
-  html += `</div>`;
 
   // Today's round exposure
   const todayMatches = getTodayMatches();
