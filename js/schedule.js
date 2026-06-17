@@ -49,10 +49,46 @@ function showScheduleGroup(groupKey) {
   });
 
   if (groupKey === 'ALL') {
-    const sorted = [...MATCHES].sort((a, b) => new Date(a.date) - new Date(b.date));
-    let html = '';
-    sorted.forEach(m => { html += renderScheduleMatchCard(m); });
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const hasOdds = m => !!(state.ahLines[m.id] || state.ouLines[m.id]);
+
+    const allSorted = [...MATCHES].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const upcoming = allSorted.filter(m => etToThai(m.date) >= todayStart);
+    const past = allSorted.filter(m => etToThai(m.date) < todayStart).reverse();
+
+    upcoming.sort((a, b) => {
+      if (hasOdds(a) && !hasOdds(b)) return -1;
+      if (!hasOdds(a) && hasOdds(b)) return 1;
+      return new Date(a.date) - new Date(b.date);
+    });
+
+    const tabOn  = 'padding:6px 14px;font-size:0.82rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
+    const tabOff = 'padding:6px 14px;font-size:0.82rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
+
+    let html = `<div style="display:flex;gap:8px;margin-bottom:12px">`;
+    html += `<button class="sch-time-btn" data-time="upcoming" style="${tabOn}">${lang === 'th' ? 'วันนี้เป็นต้นไป' : 'Upcoming'} (${upcoming.length})</button>`;
+    html += `<button class="sch-time-btn" data-time="past" style="${tabOff}">${lang === 'th' ? 'ผลบอล' : 'Results'} (${past.length})</button>`;
+    html += `</div>`;
+
+    html += `<div id="sch-upcoming">`;
+    upcoming.forEach(m => { html += renderScheduleMatchCard(m); });
+    html += `</div>`;
+
+    html += `<div id="sch-past" style="display:none">`;
+    past.forEach(m => { html += renderScheduleMatchCard(m); });
+    html += `</div>`;
+
     content.innerHTML = html;
+
+    content.querySelectorAll('.sch-time-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const time = btn.dataset.time;
+        content.querySelectorAll('.sch-time-btn').forEach(b => { b.style.cssText = b.dataset.time === time ? tabOn : tabOff; });
+        content.querySelector('#sch-upcoming').style.display = time === 'upcoming' ? '' : 'none';
+        content.querySelector('#sch-past').style.display   = time === 'past'     ? '' : 'none';
+      });
+    });
     return;
   }
 
