@@ -44,14 +44,19 @@ async function renderBetting() {
   html += `<button class="logout-btn" id="bet-logout">${t('logout')}</button>`;
   html += `</div>`;
 
-  // Main tabs
-  const friendLabel = lang === 'th' ? 'สลิปเพื่อน' : "Friends";
-  html += `<div style="display:flex;gap:8px;margin-bottom:16px">`;
+  // Flat tabs: แทงบอล | ทั้งหมด | Alice | Bob | ...
+  html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">`;
   html += `<button class="bet-main-tab" data-main="bet" style="${tabOn}">${lang === 'th' ? 'แทงบอล' : 'Betting'}</button>`;
-  html += `<button class="bet-main-tab" data-main="friends" style="${tabOff}">${friendLabel}${pendingFriendSlips.length ? ` (${pendingFriendSlips.length})` : ''}</button>`;
+  if (pendingFriendSlips.length) {
+    html += `<button class="bet-main-tab" data-main="all" style="${tabOff}">${lang === 'th' ? 'ทั้งหมด' : 'All'} (${pendingFriendSlips.length})</button>`;
+    friendPlayers.forEach(p => {
+      const n = pendingFriendSlips.filter(s => s.player === p).length;
+      html += `<button class="bet-main-tab" data-main="fp:${p}" style="${tabOff}">${p} (${n})</button>`;
+    });
+  }
   html += `</div>`;
 
-  // ── Main tab: แทงบอล ─────────────────────────────────────────────
+  // ── Tab: แทงบอล ──────────────────────────────────────────────────
   html += `<div id="bet-main-bet">`;
   html += `<h2 style="font-size:1.1rem;margin-bottom:12px">${lang === 'th' ? 'แทงบอล' : 'Place Bets'}</h2>`;
 
@@ -124,54 +129,30 @@ async function renderBetting() {
   html += `</div>`; // slip-list
   html += `</div>`; // bet-main-bet
 
-  // ── Main tab: สลิปเพื่อน ─────────────────────────────────────────
-  html += `<div id="bet-main-friends" style="display:none">`;
-  if (!pendingFriendSlips.length) {
-    html += `<div style="color:var(--text-muted);text-align:center;padding:40px">${lang === 'th' ? 'ยังไม่มีสลิปเพื่อน' : "No friends' slips yet"}</div>`;
-  } else {
-    const ftabOn  = 'padding:6px 12px;font-size:0.8rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
-    const ftabOff = 'padding:6px 12px;font-size:0.8rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
-
-    html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">`;
-    html += `<button class="fplayer-tab" data-fp="all" style="${ftabOn}">${lang === 'th' ? 'ทั้งหมด' : 'All'} (${pendingFriendSlips.length})</button>`;
-    friendPlayers.forEach(p => {
-      const n = pendingFriendSlips.filter(s => s.player === p).length;
-      html += `<button class="fplayer-tab" data-fp="${p}" style="${ftabOff}">${p} (${n})</button>`;
-    });
-    html += `</div>`;
-
-    html += `<div class="fplayer-pane" data-fp="all">`;
+  // ── Tabs: ทั้งหมด / per-player ───────────────────────────────────
+  if (pendingFriendSlips.length) {
+    html += `<div id="bet-main-all" style="display:none">`;
     pendingFriendSlips.forEach(s => { html += renderSlipCard(s, { showPlayer: true }); });
     html += `</div>`;
 
     friendPlayers.forEach(p => {
-      html += `<div class="fplayer-pane" data-fp="${p}" style="display:none">`;
+      html += `<div id="bet-main-fp:${p}" style="display:none">`;
       pendingFriendSlips.filter(s => s.player === p).forEach(s => { html += renderSlipCard(s, {}); });
       html += `</div>`;
     });
   }
-  html += `</div>`; // bet-main-friends
 
   container.innerHTML = html;
 
-  // Main tab switching (แทงบอล / สลิปเพื่อน)
+  // Flat tab switching
   container.querySelectorAll('.bet-main-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       const key = btn.dataset.main;
       container.querySelectorAll('.bet-main-tab').forEach(b => { b.style.cssText = b.dataset.main === key ? tabOn : tabOff; });
-      container.querySelector('#bet-main-bet').style.display     = key === 'bet'     ? '' : 'none';
-      container.querySelector('#bet-main-friends').style.display = key === 'friends' ? '' : 'none';
-    });
-  });
-
-  // Friend player sub-tabs
-  container.querySelectorAll('.fplayer-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const key = btn.dataset.fp;
-      const ftabOn  = 'padding:6px 12px;font-size:0.8rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
-      const ftabOff = 'padding:6px 12px;font-size:0.8rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
-      container.querySelectorAll('.fplayer-tab').forEach(b => { b.style.cssText = b.dataset.fp === key ? ftabOn : ftabOff; });
-      container.querySelectorAll('.fplayer-pane').forEach(p => { p.style.display = p.dataset.fp === key ? '' : 'none'; });
+      container.querySelector('#bet-main-bet').style.display = key === 'bet' ? '' : 'none';
+      container.querySelectorAll('[id^="bet-main-"]').forEach(el => {
+        if (el.id !== 'bet-main-bet') el.style.display = el.id === `bet-main-${key}` ? '' : 'none';
+      });
     });
   });
 
