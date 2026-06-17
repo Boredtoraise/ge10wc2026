@@ -439,7 +439,7 @@ function renderBettingCardLocked(m) {
   let html = `<div class="card" style="padding:10px;margin-bottom:6px;position:relative;opacity:0.7">`;
   html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">`;
   html += `<span style="font-size:0.75rem;color:var(--text-muted)">${formatMatchDate(m, lang)}</span>`;
-  html += `<span style="font-size:0.75rem">${t1.flag} ${t1Name} vs ${t2Name} ${t2.flag}</span>`;
+  html += `<span style="font-size:0.75rem">${t1Name} vs ${t2Name}</span>`;
   html += `<span style="font-size:0.8rem;font-weight:700;color:var(--text-muted)">${scoreLabel}</span>`;
   html += `</div>`;
 
@@ -448,8 +448,8 @@ function renderBettingCardLocked(m) {
     const ahA = formatAhFav(ahLine, false);
     html += `<div style="display:flex;align-items:center;gap:4px;margin-bottom:6px">`;
     html += `<span style="background:var(--secondary);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;white-space:nowrap">AH</span>`;
-    html += `<button ${btnStyle(ahWinSide === 'team1')} class="ah-btn">${t1.flag} ${t1Name} <span style="font-weight:700">${ahH}</span> <span class="odds-tag">@${ahOddsH}</span></button>`;
-    html += `<button ${btnStyle(ahWinSide === 'team2')} class="ah-btn">${t2.flag} ${t2Name} <span style="font-weight:700">${ahA}</span> <span class="odds-tag">@${ahOddsA}</span></button>`;
+    html += `<button ${btnStyle(ahWinSide === 'team1')} class="ah-btn">${t1Name} <span style="font-weight:700">${ahH}</span> <span class="odds-tag">@${ahOddsH}</span></button>`;
+    html += `<button ${btnStyle(ahWinSide === 'team2')} class="ah-btn">${t2Name} <span style="font-weight:700">${ahA}</span> <span class="odds-tag">@${ahOddsA}</span></button>`;
     html += `</div>`;
   }
 
@@ -479,7 +479,7 @@ function renderBettingCardLocked(m) {
         } else {
           const picked = TEAMS[p.pick];
           const isHome = p.pick === m.team1;
-          label = `${picked?.flag || ''} ${picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick} ${p.line ? formatAhFav(p.line, isHome) : ''}`;
+          label = `${picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick} ${p.line ? formatAhFav(p.line, isHome) : ''}`;
         }
         const badge = getPickResultBadge(p, m);
         html += `<span style="background:var(--bg-input);padding:2px 7px;border-radius:4px">${label} <span class="odds-tag">@${p.odds}</span> ${badge}</span>`;
@@ -510,7 +510,7 @@ function renderBettingCard(m) {
   let html = `<div class="card" style="padding:10px;margin-bottom:6px">`;
   html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">`;
   html += `<span style="font-size:0.75rem;color:var(--text-muted)">${formatMatchDate(m, lang)}</span>`;
-  html += `<span style="font-size:0.75rem">${t1.flag} ${t1Name} vs ${t2Name} ${t2.flag}</span>`;
+  html += `<span style="font-size:0.75rem">${t1Name} vs ${t2Name}</span>`;
   html += `</div>`;
 
   // AH — colored badge + 2 buttons in one row
@@ -519,8 +519,8 @@ function renderBettingCard(m) {
     const ahA = formatAhFav(ahLine, false);
     html += `<div style="display:flex;align-items:center;gap:4px;margin-bottom:6px">`;
     html += `<span style="background:var(--secondary);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;white-space:nowrap">AH</span>`;
-    html += `<button class="ah-btn bet-pick" data-match="${m.id}" data-pick="${m.team1}" data-odds="${ahOddsH}" style="flex:1;font-size:0.8rem">${t1.flag} ${t1Name} <span style="font-weight:700">${ahH}</span> <span class="odds-tag">@${ahOddsH}</span></button>`;
-    html += `<button class="ah-btn bet-pick" data-match="${m.id}" data-pick="${m.team2}" data-odds="${ahOddsA}" style="flex:1;font-size:0.8rem">${t2.flag} ${t2Name} <span style="font-weight:700">${ahA}</span> <span class="odds-tag">@${ahOddsA}</span></button>`;
+    html += `<button class="ah-btn bet-pick" data-match="${m.id}" data-pick="${m.team1}" data-odds="${ahOddsH}" style="flex:1;font-size:0.8rem">${t1Name} <span style="font-weight:700">${ahH}</span> <span class="odds-tag">@${ahOddsH}</span></button>`;
+    html += `<button class="ah-btn bet-pick" data-match="${m.id}" data-pick="${m.team2}" data-odds="${ahOddsA}" style="flex:1;font-size:0.8rem">${t2Name} <span style="font-weight:700">${ahA}</span> <span class="odds-tag">@${ahOddsA}</span></button>`;
     html += `</div>`;
   }
 
@@ -672,7 +672,7 @@ function renderSlip(slip, idx) {
 
     html += `<div style="font-size:0.8rem;display:flex;justify-content:space-between;align-items:center;${pickBg}">`;
     html += `<span>${pickLabel} ${p.odds ? '<span class="odds-tag">@' + p.odds + '</span>' : ''} ${resultBadge}</span>`;
-    html += `<span style="color:var(--text-muted)">${t1?.flag || ''} ${t1Name} vs ${t2?.flag || ''} ${t2Name}${scoreStr}</span>`;
+    html += `<span style="color:var(--text-muted)">${t1Name} vs ${t2Name}${scoreStr}</span>`;
     html += `</div>`;
   });
 

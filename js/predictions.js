@@ -108,8 +108,8 @@ function renderScoreCard(match) {
   const p1 = pred.team1_pred !== undefined ? pred.team1_pred : '';
   const p2 = pred.team2_pred !== undefined ? pred.team2_pred : '';
 
-  const t1Label = t1 ? `${t1.flag} ${lang === 'th' ? t1.nameTh : t1.name}` : getTeamLabel(match.team1, lang);
-  const t2Label = t2 ? `${t2.flag} ${lang === 'th' ? t2.nameTh : t2.name}` : getTeamLabel(match.team2, lang);
+  const t1Label = t1 ? `${lang === 'th' ? t1.nameTh : t1.name}` : getTeamLabel(match.team1, lang);
+  const t2Label = t2 ? `${lang === 'th' ? t2.nameTh : t2.name}` : getTeamLabel(match.team2, lang);
 
   let html = `<div class="card match-card" data-match-id="${match.id}">`;
 
@@ -142,8 +142,8 @@ function renderLockedCard(match) {
   const pred = state.predictions[match.id + ':' + state.currentPlayer] || {};
   const result = state.matches[match.id];
 
-  const t1Label = t1 ? `${t1.flag}` : '';
-  const t2Label = t2 ? `${t2.flag}` : '';
+  const t1Label = t1 ? (lang === 'th' ? t1.nameTh : t1.name) : '';
+  const t2Label = t2 ? (lang === 'th' ? t2.nameTh : t2.name) : '';
   const t1Name = t1 ? (lang === 'th' ? t1.nameTh : t1.name) : getTeamLabel(match.team1, lang);
   const t2Name = t2 ? (lang === 'th' ? t2.nameTh : t2.name) : getTeamLabel(match.team2, lang);
 

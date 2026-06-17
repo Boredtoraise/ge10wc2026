@@ -248,7 +248,7 @@ const STAGE_LABELS = {
 
 // Resolve team slot labels (e.g., "1A" → "แชมป์กลุ่ม A", "W73" → "ผู้ชนะ นัด 73")
 function getTeamLabel(slot, lang) {
-  if (TEAMS[slot]) return TEAMS[slot].flag + ' ' + (lang === 'th' ? TEAMS[slot].nameTh : TEAMS[slot].name);
+  if (TEAMS[slot]) return lang === 'th' ? TEAMS[slot].nameTh : TEAMS[slot].name;
   const th = lang === 'th';
   if (slot.startsWith('W')) return `W${slot.slice(1)}`;
   if (slot.startsWith('L')) return `L${slot.slice(1)}`;

@@ -124,7 +124,7 @@ function renderAdminLinesCard(m) {
   let html = `<div class="card" style="padding:10px;margin-bottom:6px" data-admin-match="${m.id}">`;
   html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">`;
   html += `<span style="font-size:0.75rem;color:var(--text-muted)">${m.id} · ${formatMatchDate(m, lang)}</span>`;
-  html += `<span style="font-size:0.8rem">${t1.flag} ${t1Name} vs ${t2Name} ${t2.flag}</span>`;
+  html += `<span style="font-size:0.8rem">${t1Name} vs ${t2Name}</span>`;
   html += `</div>`;
 
   // AH row
@@ -162,15 +162,15 @@ function renderAdminScoreCard(m) {
   let html = `<div class="card" style="padding:10px;margin-bottom:6px" data-admin-score="${m.id}">`;
   html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">`;
   html += `<span style="font-size:0.75rem;color:var(--text-muted)">${m.id} · ${formatMatchDate(m, lang)}</span>`;
-  html += `<span style="font-size:0.8rem">${t1.flag} ${t1Name} vs ${t2Name} ${t2.flag}</span>`;
+  html += `<span style="font-size:0.8rem">${t1Name} vs ${t2Name}</span>`;
   html += `</div>`;
 
   html += `<div style="display:flex;align-items:center;gap:8px;justify-content:center">`;
-  html += `<span style="font-size:0.85rem">${t1.flag}</span>`;
+  html += `<span style="font-size:0.85rem;color:var(--text-muted)">${t1Name}</span>`;
   html += `<input type="number" class="admin-s1" value="${hasScore ? s1 : ''}" placeholder="?" min="0" style="width:52px;padding:6px 8px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:1.1rem;text-align:center">`;
   html += `<span style="color:var(--text-muted)">-</span>`;
   html += `<input type="number" class="admin-s2" value="${hasScore ? s2 : ''}" placeholder="?" min="0" style="width:52px;padding:6px 8px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:1.1rem;text-align:center">`;
-  html += `<span style="font-size:0.85rem">${t2.flag}</span>`;
+  html += `<span style="font-size:0.85rem;color:var(--text-muted)">${t2Name}</span>`;
   if (hasScore) html += `<span style="font-size:0.7rem;color:var(--accent);margin-left:4px">${lang === 'th' ? 'มีผลแล้ว' : 'saved'}</span>`;
   html += `</div>`;
 

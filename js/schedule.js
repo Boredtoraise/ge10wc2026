@@ -128,7 +128,7 @@ function showScheduleGroup(groupKey) {
   sorted.forEach(({ c, mp, w, d, l, gd, pts }) => {
     const team = TEAMS[c];
     const gdStr = gd > 0 ? '+' + gd : String(gd);
-    html += `<tr><td>${team.flag}</td><td>${lang === 'th' ? team.nameTh : team.name}</td>`;
+    html += `<tr><td>${lang === 'th' ? team.nameTh : team.name}</td>`;
     html += `<td>${mp}</td><td>${w}</td><td>${d}</td><td>${l}</td><td>${gdStr}</td><td class="pts">${pts}</td></tr>`;
   });
   html += '</tbody></table>';
@@ -164,8 +164,8 @@ function renderScheduleMatchCard(match) {
   const lang = currentLang;
   const t1 = TEAMS[match.team1];
   const t2 = TEAMS[match.team2];
-  const t1Label = t1 ? `${t1.flag} <span class="team-name">${lang === 'th' ? t1.nameTh : t1.name}</span>` : getTeamLabel(match.team1, lang);
-  const t2Label = t2 ? `${t2.flag} <span class="team-name">${lang === 'th' ? t2.nameTh : t2.name}</span>` : getTeamLabel(match.team2, lang);
+  const t1Label = t1 ? `<span class="team-name">${lang === 'th' ? t1.nameTh : t1.name}</span>` : getTeamLabel(match.team1, lang);
+  const t2Label = t2 ? `<span class="team-name">${lang === 'th' ? t2.nameTh : t2.name}</span>` : getTeamLabel(match.team2, lang);
 
   const result = state.matches[match.id];
   const score1 = result ? result.team1_score : '';
@@ -277,7 +277,7 @@ function renderPendingSlipCard(slip, lang) {
         const picked = TEAMS[p.pick];
         const isHome = p.pick === match.team1;
         const ahLabel = p.line ? formatAhFav(p.line, isHome) : '';
-        pickLabel = `${picked?.flag || ''} ${picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick} ${ahLabel}`;
+        pickLabel = `${picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick} ${ahLabel}`;
       }
       const badge = typeof getPickResultBadge === 'function' ? getPickResultBadge(p, match) : '';
       s += `<div>· ${pickLabel} <span class="odds-tag">@${p.odds}</span> ${badge}</div>`;

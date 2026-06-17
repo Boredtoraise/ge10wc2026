@@ -266,7 +266,7 @@ function calculatePlayerSlipsDetailed(player) {
         }
       } else {
         const picked = TEAMS[p.pick];
-        label = `${picked?.flag || ''} ${picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick}`;
+        label = `${picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick}`;
         const ahLine = state.ahLines[p.match_id];
         if (ahLine && match) {
           const isHome = p.pick === match.team1;
@@ -397,14 +397,14 @@ function renderAdminApprove() {
         const lineLabel = p.line || state.ahLines[match.id] || '';
         const isHome = p.pick === match.team1;
         const ahSide = lineLabel ? formatAhFav(lineLabel, isHome) : '';
-        pickLabel = `${picked?.flag || ''} ${picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick} ${ahSide}`;
+        pickLabel = `${picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick} ${ahSide}`;
       }
 
       const resultBadge = getPickResultBadge(p, match);
 
       html += `<div style="font-size:0.75rem;display:flex;justify-content:space-between;padding:1px 0">`;
       html += `<span>${pickLabel} <span class="odds-tag">@${p.odds}</span> ${resultBadge}</span>`;
-      html += `<span style="color:var(--text-muted)">${t1?.flag || ''} ${t1Name} vs ${t2?.flag || ''} ${t2Name}</span>`;
+      html += `<span style="color:var(--text-muted)">${t1Name} vs ${t2Name}</span>`;
       html += `</div>`;
     });
 
