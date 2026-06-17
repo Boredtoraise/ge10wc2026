@@ -57,7 +57,7 @@ async function renderBetting() {
   if (available.length === 0) {
     html += `<div style="color:var(--text-muted);text-align:center;padding:20px">${lang === 'th' ? 'ยังไม่มีคู่ที่เปิดรับแทง' : 'No open matches with lines'}</div>`;
   } else {
-    html += `<p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px">${lang === 'th' ? 'กดเลือก กดอีกที=ยกเลิก<br>1 pick = single<br>2 คู่ = 4 picks (AH+O/U ทั้งคู่)<br>3 คู่+ = step (pick ละคู่ก็ได้)' : 'Tap to select, tap again to deselect<br>1 pick = single<br>2 matches = 4 picks (AH+O/U both)<br>3+ matches = step (1 pick/match ok)'}</p>`;
+    html += `<div style="margin-bottom:12px"><button id="bet-rules-toggle" style="font-size:0.8rem;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline">${lang === 'th' ? 'กติกา ▸' : 'Rules ▸'}</button><p id="bet-rules-text" style="display:none;font-size:0.85rem;color:var(--text-muted);margin:6px 0 0">${lang === 'th' ? 'กดเลือก กดอีกที=ยกเลิก<br>1 pick = single<br>2 คู่ = 4 picks (AH+O/U ทั้งคู่)<br>3 คู่+ = step (pick ละคู่ก็ได้)' : 'Tap to select, tap again to deselect<br>1 pick = single<br>2 matches = 4 picks (AH+O/U both)<br>3+ matches = step (1 pick/match ok)'}</p></div>`;
     available.forEach(m => { html += renderBettingCard(m); });
 
     html += `<div style="margin-top:12px;padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg)">`;
@@ -149,6 +149,15 @@ async function renderBetting() {
   html += `</div>`; // bet-main-friends
 
   container.innerHTML = html;
+
+  // Rules toggle
+  container.querySelector('#bet-rules-toggle')?.addEventListener('click', () => {
+    const txt = container.querySelector('#bet-rules-text');
+    const btn = container.querySelector('#bet-rules-toggle');
+    const open = txt.style.display === 'none';
+    txt.style.display = open ? '' : 'none';
+    btn.textContent = open ? (currentLang === 'th' ? 'กติกา ▾' : 'Rules ▾') : (currentLang === 'th' ? 'กติกา ▸' : 'Rules ▸');
+  });
 
   // Copy friend slip → pre-fill bet picks
   container.querySelectorAll('.slip-copy-btn').forEach(btn => {
