@@ -34,7 +34,12 @@ async function renderBetting() {
     s.player !== state.currentPlayer &&
     s.status !== 'approved' &&
     s.status !== 'cancelled'
-  ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  ).sort((a, b) => {
+    const aResolved = typeof resolveSlip === 'function' && resolveSlip(a).status !== 'pending';
+    const bResolved = typeof resolveSlip === 'function' && resolveSlip(b).status !== 'pending';
+    if (aResolved !== bResolved) return aResolved ? -1 : 1;
+    return new Date(b.timestamp) - new Date(a.timestamp);
+  });
 
   const friendPlayers = [...new Set(pendingFriendSlips.map(s => s.player))];
 
@@ -44,6 +49,7 @@ async function renderBetting() {
   if (state.isAdmin) {
     let html = '';
     html += `<div class="user-bar"><span class="user-name">${state.currentPlayer}</span><button class="logout-btn" id="bet-logout">${t('logout')}</button></div>`;
+    html += renderHouseDashboard();
 
     // ── Slips section ──
     html += `<div style="margin:16px 0 8px;font-size:0.85rem;color:var(--text-muted);font-weight:700">${lang === 'th' ? 'สลิปเพื่อน' : "Friends' Slips"} (${pendingFriendSlips.length})</div>`;
@@ -66,7 +72,6 @@ async function renderBetting() {
         html += `</div>`;
       });
     }
-    html += renderHouseDashboard();
 
     container.innerHTML = html;
     container.querySelector('#bet-logout')?.addEventListener('click', () => {
