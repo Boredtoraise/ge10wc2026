@@ -126,6 +126,32 @@ function renderUserDashboard(player) {
   }
   html += `</div>`;
 
+  // Today's pending slips
+  const todayStr = new Date().toDateString();
+  const allSlipsForToday = (state.allSlips.length ? state.allSlips : (state.slips || []))
+    .filter(s => s.player === player && s.status !== 'cancelled' && new Date(s.timestamp).toDateString() === todayStr);
+  const todayPending = allSlipsForToday.filter(s => {
+    const resolved = resolveSlip(s);
+    return resolved.status === 'pending';
+  });
+  if (todayPending.length > 0) {
+    const todayRoiBplus  = todayPending.reduce((sum, s) => sum + (s.payout || 0), 0);
+    const todayRoiMinus  = todayPending.reduce((sum, s) => sum + (s.bet || 0), 0);
+    html += `<div style="margin-bottom:12px;padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">`;
+    html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:8px">${lang === 'th' ? 'วันนี้' : 'Today'} (${todayPending.length} ${lang === 'th' ? 'สลิปรอผล' : 'pending'})</div>`;
+    html += `<div style="display:flex;gap:12px">`;
+    html += `<div style="flex:1;text-align:center">`;
+    html += `<div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'รอบวก' : 'Max Win'}</div>`;
+    html += `<div style="font-size:1.05rem;font-weight:700;color:var(--accent)">+${todayRoiBplus}฿</div>`;
+    html += `</div>`;
+    html += `<div style="width:1px;background:var(--border)"></div>`;
+    html += `<div style="flex:1;text-align:center">`;
+    html += `<div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'รอลบ' : 'Max Loss'}</div>`;
+    html += `<div style="font-size:1.05rem;font-weight:700;color:var(--secondary)">-${todayRoiMinus}฿</div>`;
+    html += `</div>`;
+    html += `</div></div>`;
+  }
+
   // Slips detail
   html += `<div class="lb-section open">`;
   html += `<div class="lb-section-header"><h3>${lang === 'th' ? 'สลิปทั้งหมด' : 'All Slips'}: <span style="color:${moneyColor(totalBalance)}">${fmtMoney(totalBalance)}</span></h3><span class="lb-section-arrow">▼</span></div>`;
