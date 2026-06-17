@@ -501,7 +501,7 @@ function renderHouseDashboard() {
   if (todayMatches.length > 0) {
     const todayIds = new Set(todayMatches.map(m => m.id));
     const dist = {};
-    allSlips.filter(s => resolveSlip(s).status === 'pending').forEach(s => {
+    allSlips.filter(s => s.status !== 'cancelled').forEach(s => {
       (s.picks || []).forEach(p => {
         if (!todayIds.has(p.match_id)) return;
         if (!dist[p.match_id]) dist[p.match_id] = { ahHome: 0, ahAway: 0, over: 0, under: 0 };
@@ -526,14 +526,40 @@ function renderHouseDashboard() {
         const t1 = TEAMS[m.team1], t2 = TEAMS[m.team2];
         const t1Name = t1 ? (lang === 'th' ? t1.nameTh : t1.name) : m.team1;
         const t2Name = t2 ? (lang === 'th' ? t2.nameTh : t2.name) : m.team2;
+        // Score + winner detection
+        const result  = state.matches[m.id];
+        const scored  = result && typeof result.team1_score === 'number' && typeof result.team2_score === 'number';
+        const sc1     = scored ? result.team1_score : null;
+        const sc2     = scored ? result.team2_score : null;
+        const ahLine  = state.ahLines[m.id]  || '';
+        const ouLine  = state.ouLines[m.id]  || '';
+
+        let ahWinner = null; // 'team1' | 'team2' | 'push'
+        if (scored && ahLine) {
+          const o = getAHOutcome(parseFloat(ahLine), sc1, sc2);
+          if (o.team1 === 'full' || o.team1 === 'half') ahWinner = 'team1';
+          else if (o.team2 === 'full' || o.team2 === 'half') ahWinner = 'team2';
+          else ahWinner = 'push';
+        }
+        let ouWinner = null; // 'over' | 'under' | 'push'
+        if (scored && ouLine) {
+          const o = getOUOutcome(parseFloat(ouLine), sc1 + sc2);
+          if (o.over === 'full' || o.over === 'half') ouWinner = 'over';
+          else if (o.under === 'full' || o.under === 'half') ouWinner = 'under';
+          else ouWinner = 'push';
+        }
+
+        const winBox = 'border:1px solid var(--accent);border-radius:3px;padding:0 3px;color:var(--accent);font-weight:700';
+
         html += `<div style="margin-bottom:10px">`;
-        html += `<div style="font-size:0.78rem;font-weight:700;margin-bottom:5px">${t1Name} vs ${t2Name}</div>`;
+        html += `<div style="font-size:0.78rem;font-weight:700;margin-bottom:5px">${t1Name} vs ${t2Name}`;
+        if (scored) html += ` <span style="color:var(--text-muted);font-weight:400">${sc1} - ${sc2}</span>`;
+        html += `</div>`;
 
         // AH row
         if (d.ahHome + d.ahAway > 0) {
-          const ahLine  = state.ahLines[m.id]  || '';
-          const ahOddsH = state.ahOddsH[m.id]  || '';
-          const ahOddsA = state.ahOddsA[m.id]  || '';
+          const ahOddsH = state.ahOddsH[m.id] || '';
+          const ahOddsA = state.ahOddsA[m.id] || '';
           const lineH   = ahLine ? formatAhFav(ahLine, true)  : '';
           const lineA   = ahLine ? formatAhFav(ahLine, false) : '';
           const ahTotal = d.ahHome + d.ahAway;
@@ -542,12 +568,12 @@ function renderHouseDashboard() {
           const h1big   = d.ahHome >= d.ahAway;
           html += `<div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;margin-bottom:3px">`;
           html += `<span style="width:52px;text-align:right;color:var(--text-muted)">AH ${ahLine}</span>`;
-          html += `<span style="width:22px;text-align:right;font-weight:${h1big?'700':'400'};color:${h1big?'var(--text-primary)':'var(--text-muted)'}">${d.ahHome}</span>`;
+          html += `<span style="width:22px;text-align:right;${ahWinner==='team1'?winBox:`font-weight:${h1big?'700':'400'};color:${h1big?'var(--text-primary)':'var(--text-muted)'}`}">${d.ahHome}</span>`;
           html += `<div style="flex:1;display:flex;height:10px;border-radius:3px;overflow:hidden;background:var(--bg-input)">`;
           html += `<div style="width:${h1pct}%;background:var(--secondary)"></div>`;
           html += `<div style="width:${h2pct}%;background:var(--accent)"></div>`;
           html += `</div>`;
-          html += `<span style="width:22px;font-weight:${!h1big?'700':'400'};color:${!h1big?'var(--text-primary)':'var(--text-muted)'}">${d.ahAway}</span>`;
+          html += `<span style="width:22px;${ahWinner==='team2'?winBox:`font-weight:${!h1big?'700':'400'};color:${!h1big?'var(--text-primary)':'var(--text-muted)'}`}">${d.ahAway}</span>`;
           html += `</div>`;
           html += `<div style="display:flex;font-size:0.66rem;color:var(--text-muted);padding:0 24px 0 76px;justify-content:space-between;margin-bottom:4px">`;
           html += `<span>${t1Name}${lineH?' '+lineH:''} ${ahOddsH?'@'+ahOddsH:''}</span>`;
@@ -557,21 +583,20 @@ function renderHouseDashboard() {
 
         // O/U row
         if (d.over + d.under > 0) {
-          const ouLine  = state.ouLines[m.id]  || '';
-          const ouOddsO = state.ouOddsO[m.id]  || '';
-          const ouOddsU = state.ouOddsU[m.id]  || '';
+          const ouOddsO = state.ouOddsO[m.id] || '';
+          const ouOddsU = state.ouOddsU[m.id] || '';
           const ouTotal = d.over + d.under;
           const oPct    = Math.round(d.over / ouTotal * 100);
           const uPct    = 100 - oPct;
           const oBig    = d.over >= d.under;
           html += `<div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;margin-bottom:3px">`;
           html += `<span style="width:52px;text-align:right;color:var(--text-muted)">O/U ${ouLine}</span>`;
-          html += `<span style="width:22px;text-align:right;font-weight:${oBig?'700':'400'};color:${oBig?'var(--text-primary)':'var(--text-muted)'}">${d.over}</span>`;
+          html += `<span style="width:22px;text-align:right;${ouWinner==='over'?winBox:`font-weight:${oBig?'700':'400'};color:${oBig?'var(--text-primary)':'var(--text-muted)'}`}">${d.over}</span>`;
           html += `<div style="flex:1;display:flex;height:10px;border-radius:3px;overflow:hidden;background:var(--bg-input)">`;
           html += `<div style="width:${oPct}%;background:var(--secondary)"></div>`;
           html += `<div style="width:${uPct}%;background:var(--accent)"></div>`;
           html += `</div>`;
-          html += `<span style="width:22px;font-weight:${!oBig?'700':'400'};color:${!oBig?'var(--text-primary)':'var(--text-muted)'}">${d.under}</span>`;
+          html += `<span style="width:22px;${ouWinner==='under'?winBox:`font-weight:${!oBig?'700':'400'};color:${!oBig?'var(--text-primary)':'var(--text-muted)'}`}">${d.under}</span>`;
           html += `</div>`;
           html += `<div style="display:flex;font-size:0.66rem;color:var(--text-muted);padding:0 24px 0 76px;justify-content:space-between">`;
           html += `<span>${lang === 'th' ? 'สูง' : 'Over'} ${ouOddsO?'@'+ouOddsO:''}</span>`;
