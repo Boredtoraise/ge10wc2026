@@ -104,9 +104,12 @@ async function submitSlip(slip) {
     if (!res.ok) throw new Error('Submit slip error: ' + res.status);
     const result = await res.json();
     if (result.success) {
-      // Refresh slips from server
-      const slips = await fetchAPI('slips&player=' + state.currentPlayer);
-      if (slips) state.slips = slips;
+      // Optimistic update: add slip locally instead of re-fetching
+      const newSlip = typeof parsePicks === 'function'
+        ? parsePicks({ timestamp: result.timestamp || Date.now(), player: state.currentPlayer, bet: slip.bet, combined_odds: slip.combined_odds, payout: slip.payout, picks_json: JSON.stringify(slip.picks), picks: slip.picks, status: 'pending' })
+        : { timestamp: result.timestamp || Date.now(), player: state.currentPlayer, bet: slip.bet, combined_odds: slip.combined_odds, payout: slip.payout, picks: slip.picks, status: 'pending' };
+      state.slips.unshift(newSlip);
+      if (state.allSlips.length) state.allSlips.unshift(newSlip);
     }
     return result;
   } catch (e) {
