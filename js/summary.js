@@ -504,16 +504,17 @@ function renderHouseDashboard() {
     const todayIds = new Set(todayMatches.map(m => m.id));
     const dist = {};
     allSlips.filter(s => s.status !== 'cancelled').forEach(s => {
+      const w = (s.payout || s.bet || 0) / Math.max(1, (s.picks || []).length);
       (s.picks || []).forEach(p => {
         if (!todayIds.has(p.match_id)) return;
         if (!dist[p.match_id]) dist[p.match_id] = { ahHome: 0, ahAway: 0, over: 0, under: 0 };
         const match = state.matchById ? state.matchById[p.match_id] : null;
         if (p.type === 'ou') {
-          if (p.pick === 'over') dist[p.match_id].over++;
-          else dist[p.match_id].under++;
+          if (p.pick === 'over') dist[p.match_id].over += w;
+          else dist[p.match_id].under += w;
         } else {
-          if (match && p.pick === match.team1) dist[p.match_id].ahHome++;
-          else dist[p.match_id].ahAway++;
+          if (match && p.pick === match.team1) dist[p.match_id].ahHome += w;
+          else dist[p.match_id].ahAway += w;
         }
       });
     });
@@ -569,12 +570,12 @@ function renderHouseDashboard() {
           const h2pct   = 100 - h1pct;
           const h1big   = d.ahHome >= d.ahAway;
           html += `<div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;margin-bottom:2px">`;
-          html += `<span style="width:24px;text-align:right;${ahWinner==='team1'?winBox:`font-weight:${h1big?'700':'400'};color:${h1big?'var(--text-primary)':'var(--text-muted)'}`}">${d.ahHome}</span>`;
+          html += `<span style="width:36px;text-align:right;${ahWinner==='team1'?winBox:`font-weight:${h1big?'700':'400'};color:${h1big?'var(--text-primary)':'var(--text-muted)'}`}">${Math.round(d.ahHome)}฿</span>`;
           html += `<div style="flex:1;display:flex;height:10px;border-radius:3px;overflow:hidden;background:var(--bg-input)">`;
           html += `<div style="width:${h1pct}%;background:var(--secondary)"></div>`;
           html += `<div style="width:${h2pct}%;background:var(--accent)"></div>`;
           html += `</div>`;
-          html += `<span style="width:24px;${ahWinner==='team2'?winBox:`font-weight:${!h1big?'700':'400'};color:${!h1big?'var(--text-primary)':'var(--text-muted)'}`}">${d.ahAway}</span>`;
+          html += `<span style="width:36px;${ahWinner==='team2'?winBox:`font-weight:${!h1big?'700':'400'};color:${!h1big?'var(--text-primary)':'var(--text-muted)'}`}">${Math.round(d.ahAway)}฿</span>`;
           html += `</div>`;
           html += `<div style="display:flex;justify-content:space-between;font-size:0.66rem;color:var(--text-muted);margin-bottom:6px">`;
           html += `<span>${t1Name}${lineH?' '+lineH:''} ${ahOddsH?'@'+ahOddsH:''}</span>`;
@@ -592,12 +593,12 @@ function renderHouseDashboard() {
           const uPct    = 100 - oPct;
           const oBig    = d.over >= d.under;
           html += `<div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;margin-bottom:2px">`;
-          html += `<span style="width:24px;text-align:right;${ouWinner==='over'?winBox:`font-weight:${oBig?'700':'400'};color:${oBig?'var(--text-primary)':'var(--text-muted)'}`}">${d.over}</span>`;
+          html += `<span style="width:36px;text-align:right;${ouWinner==='over'?winBox:`font-weight:${oBig?'700':'400'};color:${oBig?'var(--text-primary)':'var(--text-muted)'}`}">${Math.round(d.over)}฿</span>`;
           html += `<div style="flex:1;display:flex;height:10px;border-radius:3px;overflow:hidden;background:var(--bg-input)">`;
           html += `<div style="width:${oPct}%;background:var(--secondary)"></div>`;
           html += `<div style="width:${uPct}%;background:var(--accent)"></div>`;
           html += `</div>`;
-          html += `<span style="width:24px;${ouWinner==='under'?winBox:`font-weight:${!oBig?'700':'400'};color:${!oBig?'var(--text-primary)':'var(--text-muted)'}`}">${d.under}</span>`;
+          html += `<span style="width:36px;${ouWinner==='under'?winBox:`font-weight:${!oBig?'700':'400'};color:${!oBig?'var(--text-primary)':'var(--text-muted)'}`}">${Math.round(d.under)}฿</span>`;
           html += `</div>`;
           html += `<div style="display:flex;justify-content:space-between;font-size:0.66rem;color:var(--text-muted);margin-bottom:2px">`;
           html += `<span>${lang === 'th' ? 'สูง' : 'Over'} ${ouOddsO?'@'+ouOddsO:''}</span>`;
