@@ -212,6 +212,7 @@ function init() {
     renderCurrentView();
   }).catch(e => {
     console.error('refreshData error:', e);
+    showToast(currentLang === 'th' ? 'โหลดข้อมูลไม่ได้ — ใช้ข้อมูลเก่า' : 'Offline — showing cached data', 5000);
   });
 
 }
@@ -261,10 +262,11 @@ async function manualRefresh() {
   try {
     await refreshData();
     buildLinesFromMatches();
-    state.allSlips = [];
     await renderCurrentView();
     updateTabBadges();
     showToast(currentLang === 'th' ? 'อัปเดตแล้ว' : 'Updated');
+  } catch(e) {
+    showToast(currentLang === 'th' ? 'โหลดไม่ได้ ลองใหม่อีกครั้ง' : 'Failed to load, try again', 5000);
   } finally {
     btn.disabled = false;
     btn.textContent = '↻';
