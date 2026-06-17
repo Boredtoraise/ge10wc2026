@@ -677,7 +677,7 @@ function renderSlipCard(slip, opts) {
     }
   }
   if (opts.showCopy) {
-    html += `<button class="slip-copy-btn" data-ts="${slip.timestamp}" style="background:var(--primary);border:none;color:#fff;padding:5px 12px;border-radius:6px;font-size:0.82rem;font-weight:700;cursor:pointer">Copy</button>`;
+    html += `<button class="slip-copy-btn" data-ts="${slip.timestamp}" style="background:var(--secondary);border:none;color:#fff;padding:5px 12px;border-radius:6px;font-size:0.82rem;font-weight:700;cursor:pointer">Copy</button>`;
     html += `<button class="slip-follow-btn" data-ts="${slip.timestamp}" style="background:var(--accent);border:none;color:#000;padding:5px 12px;border-radius:6px;font-size:0.82rem;font-weight:700;cursor:pointer">แทงตาม</button>`;
   }
   if (needsApprove) {
