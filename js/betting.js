@@ -1,6 +1,11 @@
 // Betting — unified single + step (AH + O/U)
 // 1 pick = single, 3+ picks = step/parlay
 
+const TAB_ON    = 'padding:8px 14px;font-size:0.85rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
+const TAB_OFF   = 'padding:8px 14px;font-size:0.85rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
+const SUBTAB_ON  = 'padding:6px 12px;font-size:0.8rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
+const SUBTAB_OFF = 'padding:6px 12px;font-size:0.8rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
+
 async function renderBetting() {
   const container = document.getElementById('view-bet');
   const lang = currentLang;
@@ -20,7 +25,7 @@ async function renderBetting() {
   const available = MATCHES.filter(m => (state.ahLines[m.id] || state.ouLines[m.id]) && !isMatchLocked(m)).sort(byKickoff);
   const locked    = MATCHES.filter(m => (state.ahLines[m.id] || state.ouLines[m.id]) && isMatchLocked(m)).sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  const slipSource  = state.allSlips.length ? state.allSlips : (state.slips || []);
+  const slipSource  = getAllSlips();
   const allFiltered = slipSource.filter(s => s.status !== 'cancelled').sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   const mySlips     = allFiltered.filter(s => s.player === state.currentPlayer);
 
@@ -33,8 +38,7 @@ async function renderBetting() {
 
   const friendPlayers = [...new Set(pendingFriendSlips.map(s => s.player))];
 
-  const tabOn  = 'padding:8px 14px;font-size:0.85rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
-  const tabOff = 'padding:8px 14px;font-size:0.85rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
+  const tabOn = TAB_ON, tabOff = TAB_OFF;
 
   // ── Admin view: house dashboard + all friend slips (no tab UI) ───────
   if (state.isAdmin) {
@@ -59,7 +63,7 @@ async function renderBetting() {
         const ts = btn.dataset.ts;
         const result = await approveSlip(ts);
         if (result && result.success) {
-          const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
+          const allSlips = getAllSlips();
           const slip = allSlips.find(s => String(s.timestamp) === String(ts));
           if (slip) slip.status = 'approved';
           updateTabBadges();
@@ -129,8 +133,7 @@ async function renderBetting() {
     if (pendPayout > 0) html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'รอรับ' : 'Pend payout'} <b style="color:var(--accent)">${pendPayout}฿</b></span>`;
     html += `</div>`;
 
-    const myTabOn  = 'padding:6px 12px;font-size:0.8rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
-    const myTabOff = 'padding:6px 12px;font-size:0.8rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
+    const myTabOn = SUBTAB_ON, myTabOff = SUBTAB_OFF;
     const myPending = mySlips.filter((s, i) => myResolved[i].st.status === 'pending');
     const myHistory = mySlips.filter((s, i) => myResolved[i].st.status !== 'pending');
     const myDefaultTab = myPending.length > 0 ? 'mypend' : 'myhist';
@@ -165,8 +168,7 @@ async function renderBetting() {
   if (!pendingFriendSlips.length) {
     html += `<div style="color:var(--text-muted);text-align:center;padding:40px">${lang === 'th' ? 'ยังไม่มีสลิปเพื่อน' : "No friends' slips yet"}</div>`;
   } else {
-    const stOn  = 'padding:6px 12px;font-size:0.8rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
-    const stOff = 'padding:6px 12px;font-size:0.8rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
+    const stOn = SUBTAB_ON, stOff = SUBTAB_OFF;
     html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">`;
     html += `<button class="fplayer-tab" data-fp="all" style="${stOn}">${lang === 'th' ? 'ทั้งหมด' : 'All'} (${pendingFriendSlips.length})</button>`;
     friendPlayers.forEach(p => {
@@ -200,12 +202,12 @@ async function renderBetting() {
   container.querySelectorAll('.slip-copy-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const ts = btn.dataset.ts;
-      const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
+      const allSlips = getAllSlips();
       const slip = allSlips.find(s => String(s.timestamp) === String(ts));
       if (!slip) return;
 
       const validPicks = (slip.picks || []).filter(p => {
-        const m = MATCHES.find(x => x.id === p.match_id);
+        const m = (state.matchById && state.matchById[p.match_id]) || MATCHES.find(x => x.id === p.match_id);
         return m && !isMatchLocked(m);
       });
 
@@ -240,12 +242,12 @@ async function renderBetting() {
   container.querySelectorAll('.slip-follow-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const ts = btn.dataset.ts;
-      const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
+      const allSlips = getAllSlips();
       const slip = allSlips.find(s => String(s.timestamp) === String(ts));
       if (!slip) return;
 
       const validPicks = (slip.picks || []).filter(p => {
-        const m = MATCHES.find(x => x.id === p.match_id);
+        const m = (state.matchById && state.matchById[p.match_id]) || MATCHES.find(x => x.id === p.match_id);
         return m && !isMatchLocked(m);
       });
 
@@ -255,7 +257,7 @@ async function renderBetting() {
       }
 
       const pickSummary = validPicks.map(p => {
-        const m = MATCHES.find(x => x.id === p.match_id);
+        const m = (state.matchById && state.matchById[p.match_id]) || MATCHES.find(x => x.id === p.match_id);
         const t1 = TEAMS[m?.team1], t2 = TEAMS[m?.team2];
         const name1 = t1 ? (currentLang === 'th' ? t1.nameTh : t1.name) : m?.team1;
         const name2 = t2 ? (currentLang === 'th' ? t2.nameTh : t2.name) : m?.team2;
@@ -311,20 +313,16 @@ async function renderBetting() {
   container.querySelectorAll('.fplayer-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       const key = btn.dataset.fp;
-      const stOn  = 'padding:6px 12px;font-size:0.8rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
-      const stOff = 'padding:6px 12px;font-size:0.8rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
-      container.querySelectorAll('.fplayer-tab').forEach(b => { b.style.cssText = b.dataset.fp === key ? stOn : stOff; });
+      container.querySelectorAll('.fplayer-tab').forEach(b => { b.style.cssText = b.dataset.fp === key ? SUBTAB_ON : SUBTAB_OFF; });
       container.querySelectorAll('.fplayer-pane').forEach(p => { p.style.display = p.dataset.fp === key ? '' : 'none'; });
     });
   });
 
   // My slips subtab switching
-  const myTabOnEvt  = 'padding:6px 12px;font-size:0.8rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
-  const myTabOffEvt = 'padding:6px 12px;font-size:0.8rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
   container.querySelectorAll('.my-tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const key = btn.dataset.mytab;
-      container.querySelectorAll('.my-tab-btn').forEach(b => { b.style.cssText = b.dataset.mytab === key ? myTabOnEvt : myTabOffEvt; });
+      container.querySelectorAll('.my-tab-btn').forEach(b => { b.style.cssText = b.dataset.mytab === key ? SUBTAB_ON : SUBTAB_OFF; });
       container.querySelectorAll('.my-tab-pane').forEach(p => { p.style.display = p.dataset.mytab === key ? '' : 'none'; });
     });
   });
@@ -427,7 +425,7 @@ async function renderBetting() {
       const ts = btn.dataset.ts;
       const result = await approveSlip(ts);
       if (result && result.success) {
-        const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
+        const allSlips = getAllSlips();
         const slip = allSlips.find(s => String(s.timestamp) === String(ts));
         if (slip) slip.status = 'approved';
         updateTabBadges();
@@ -513,7 +511,7 @@ function renderBettingCardLocked(m) {
 
   // My picks for this match
   if (state.currentPlayer) {
-    const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
+    const allSlips = getAllSlips();
     const myPicksHere = [];
     allSlips.filter(s => s.player === state.currentPlayer && s.status !== 'cancelled').forEach(slip => {
       (slip.picks || []).filter(p => p.match_id === m.id).forEach(p => myPicksHere.push({ p, slip }));
@@ -708,7 +706,7 @@ function renderSlipCard(slip, opts) {
   html += `<div style="display:flex;align-items:center;gap:8px">`;
   if (showDelete) {
     const ownPending = slip.player === state.currentPlayer && slip.status === 'pending';
-    const noLocked   = !picks.some(p => { const m = MATCHES.find(x => x.id === p.match_id); return m && isMatchLocked(m); });
+    const noLocked   = !picks.some(p => { const m = (state.matchById && state.matchById[p.match_id]) || MATCHES.find(x => x.id === p.match_id); return m && isMatchLocked(m); });
     if (ownPending && (state.isAdmin || noLocked)) {
       html += `<button class="slip-delete-btn" data-ts="${slip.timestamp}" style="background:var(--wrong);border:none;color:#fff;padding:5px 14px;border-radius:6px;font-size:0.85rem;font-weight:700;cursor:pointer">🗑 ${lang === 'th' ? 'ลบสลิป' : 'Delete'}</button>`;
     }

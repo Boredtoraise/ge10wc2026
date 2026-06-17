@@ -39,6 +39,28 @@ function formatAhFav(line, isHome) {
   return isHome ? '+' + num : '-' + num;
 }
 
+function getAllSlips() {
+  return state.allSlips.length ? state.allSlips : (state.slips || []);
+}
+
+const STATUS_CONFIG = {
+  pending:   { color: 'var(--secondary)', th: 'รอผล',   en: 'Pending'  },
+  approved:  { color: 'var(--accent)',    th: 'อนุมัติ', en: 'Approved' },
+  won:       { color: 'var(--accent)',    th: 'ชนะ',    en: 'Won'      },
+  lost:      { color: 'var(--secondary)', th: 'แพ้',    en: 'Lost'     },
+  cancelled: { color: 'var(--text-muted)',th: 'ยกเลิก', en: 'Cancelled'},
+};
+
+function formatPickLabel(p, lang) {
+  if (p.type === 'ou') return `${p.pick === 'over' ? 'สูง' : 'ต่ำ'} ${p.line || ''}`.trim();
+  const m = state.matchById ? state.matchById[p.match_id] : MATCHES.find(x => x.id === p.match_id);
+  const isHome = m ? p.pick === m.team1 : false;
+  const picked = TEAMS[p.pick];
+  const name = picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick;
+  const line = p.line ? formatAhFav(p.line, isHome) : '';
+  return `${name}${line ? ' ' + line : ''}`;
+}
+
 // Build lines + odds from matches data (loaded from Sheet)
 function buildLinesFromMatches() {
   state.ahLines = {};
@@ -47,6 +69,8 @@ function buildLinesFromMatches() {
   state.ahOddsA = {};
   state.ouOddsO = {};
   state.ouOddsU = {};
+  state.matchById = {};
+  MATCHES.forEach(m => { state.matchById[m.id] = m; });
 
   Object.values(state.matches).forEach(m => {
     if (m.ah_line) {

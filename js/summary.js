@@ -50,7 +50,7 @@ function renderSummary() {
       const ts = btn.dataset.ts;
       const result = await approveSlip(ts);
       if (result && result.success) {
-        const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
+        const allSlips = getAllSlips();
         const slip = allSlips.find(s => String(s.timestamp) === String(ts));
         if (slip) slip.status = 'approved';
         renderSummary();
@@ -113,7 +113,7 @@ function renderUserDashboard(player) {
 
   // Admin's own tab = house dashboard + approve queue
   if (state.isAdmin && player === state.currentPlayer) {
-    const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
+    const allSlips = getAllSlips();
     const toApprove = allSlips
       .filter(s => s.status !== 'cancelled' && s.status !== 'approved')
       .sort((a, b) => {
@@ -167,7 +167,7 @@ function renderUserDashboard(player) {
   html += `</div>`;
 
   // All pending slips (not yet settled in sheet)
-  const allSlipsAll = state.allSlips.length ? state.allSlips : (state.slips || []);
+  const allSlipsAll = getAllSlips();
   const todayPending = allSlipsAll.filter(s => s.player === player && s.status === 'pending');
   if (todayPending.length > 0) {
     const todayRoiBplus  = todayPending.reduce((sum, s) => sum + ((s.payout || 0) - (s.bet || 0)), 0);
@@ -188,7 +188,7 @@ function renderUserDashboard(player) {
   }
 
   // Slips detail — unified renderSlipCard
-  const playerSlips = (state.allSlips.length ? state.allSlips : (state.slips || []))
+  const playerSlips = (getAllSlips())
     .filter(s => s.player === player && s.status !== 'cancelled')
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
@@ -207,7 +207,7 @@ function renderUserDashboard(player) {
 
 // --- Calculation helpers ---
 function getPlayers() {
-  const slips = state.allSlips.length ? state.allSlips : (state.slips || []);
+  const slips = getAllSlips();
   return state.players.length
     ? state.players.map(p => p.player_id)
     : [...new Set([
@@ -240,7 +240,7 @@ function calculatePlayerScores(player) {
 
 function calculatePlayerMoney(player) {
   let profit = 0, wins = 0, losses = 0, totalBet = 0;
-  const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
+  const allSlips = getAllSlips();
   const playerSlips = allSlips.filter(s => s.player === player && s.status !== 'cancelled' && s.status === 'approved');
 
   playerSlips.forEach(slip => {
@@ -262,7 +262,7 @@ function calculatePlayerSlipsDetailed(player) {
   const lang = currentLang;
   let total = { profit: 0, totalBet: 0, totalWon: 0, totalLost: 0, pendingBet: 0, pendingPayout: 0 };
   const tickets = [];
-  const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
+  const allSlips = getAllSlips();
 
   allSlips.filter(s => s.player === player && s.status !== 'cancelled').forEach(slip => {
     const resolved = resolveSlip(slip);
@@ -273,7 +273,7 @@ function calculatePlayerSlipsDetailed(player) {
     else if (resolved.status === 'pending') { total.pendingBet += slip.bet; total.pendingPayout += slip.payout || 0; }
 
     const picks = (slip.picks || []).map(p => {
-      const match = MATCHES.find(m => m.id === p.match_id);
+      const match = (state.matchById && state.matchById[p.match_id]) || MATCHES.find(m => m.id === p.match_id);
       const result = state.matches[p.match_id];
       let label = '', resultBadge = '';
 
@@ -363,7 +363,7 @@ function getTodayMatches() {
 // --- Admin: House (Pok) risk dashboard ---
 function renderHouseDashboard() {
   const lang = currentLang;
-  const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
+  const allSlips = getAllSlips();
   const slips = allSlips.filter(s => s.status !== 'cancelled');
 
   let wonCount = 0, lostCount = 0, pendingCount = 0;
@@ -490,100 +490,6 @@ function renderHouseDashboard() {
   return html;
 }
 
-// --- Admin: Approve slips (Pok only) ---
-function renderAdminApprove() {
-  const lang = currentLang;
-  const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
-
-  // Show all slips NOT yet approved (pending, won, lost — anything without 'approved')
-  const unapproved = allSlips.filter(s => s.status !== 'cancelled' && s.status !== 'approved');
-
-  let html = '';
-
-  if (unapproved.length === 0) {
-    html += `<div style="text-align:center;padding:30px;color:var(--text-muted)">${lang === 'th' ? 'ไม่มีสลิปรอตรวจ' : 'No slips to review'}</div>`;
-    return html;
-  }
-
-  html += `<div style="margin-bottom:12px;font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'สลิปที่ยังไม่ยืนยัน' : 'Unapproved slips'}: ${unapproved.length}</div>`;
-
-  // Sort: resolved (won/lost) first, then pending
-  unapproved.sort((a, b) => {
-    const aResolved = resolveSlip(a);
-    const bResolved = resolveSlip(b);
-    const aDone = aResolved.status === 'won' || aResolved.status === 'lost' ? 0 : 1;
-    const bDone = bResolved.status === 'won' || bResolved.status === 'lost' ? 0 : 1;
-    if (aDone !== bDone) return aDone - bDone;
-    return b.timestamp - a.timestamp;
-  });
-
-  unapproved.forEach(slip => {
-    const resolved = resolveSlip(slip);
-    const picks = slip.picks || [];
-    const isStep = picks.length >= 3;
-
-    const statusColor = { pending: 'var(--secondary)', won: 'var(--accent)', lost: 'var(--wrong)' };
-    const statusLabel = { pending: lang === 'th' ? 'รอผล' : 'Pending', won: lang === 'th' ? 'ถูก' : 'Won', lost: lang === 'th' ? 'ผิด' : 'Lost' };
-    const displayStatus = resolved.status;
-
-    html += `<div class="card" style="padding:10px;margin-bottom:8px">`;
-
-    // Header: player + status + approve button
-    html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">`;
-    html += `<div>`;
-    html += `<span style="font-size:0.85rem;font-weight:700">${slip.player}</span>`;
-    html += `<span style="font-size:0.75rem;color:var(--text-muted);margin-left:8px">#${isStep ? 'STEP' : 'SINGLE'} · ${new Date(slip.timestamp).toLocaleDateString('th-TH')}</span>`;
-    html += `</div>`;
-    html += `<div style="display:flex;align-items:center;gap:8px">`;
-    html += `<span style="font-size:0.8rem;font-weight:700;color:${statusColor[displayStatus]}">${statusLabel[displayStatus]}</span>`;
-    html += `<button class="admin-approve-btn" data-ts="${slip.timestamp}" style="background:var(--accent);color:#000;border:none;padding:4px 12px;border-radius:4px;font-size:0.75rem;font-weight:700;cursor:pointer">${lang === 'th' ? '✓ ยืนยัน' : '✓ Approve'}</button>`;
-    html += `</div></div>`;
-
-    // Picks detail
-    picks.forEach(p => {
-      const match = MATCHES.find(m => m.id === p.match_id);
-      if (!match) return;
-      const t1 = TEAMS[match.team1];
-      const t2 = TEAMS[match.team2];
-      const isOu = p.type === 'ou';
-      const t1Name = t1 ? (lang === 'th' ? t1.nameTh : t1.name) : match.team1;
-      const t2Name = t2 ? (lang === 'th' ? t2.nameTh : t2.name) : match.team2;
-
-      let pickLabel = '';
-      if (isOu) {
-        const lineLabel = p.line || state.ouLines[match.id] || '';
-        pickLabel = `${p.pick === 'over' ? (lang === 'th' ? 'สูง' : 'O') : (lang === 'th' ? 'ต่ำ' : 'U')} ${lineLabel}`;
-      } else {
-        const picked = TEAMS[p.pick];
-        const lineLabel = p.line || state.ahLines[match.id] || '';
-        const isHome = p.pick === match.team1;
-        const ahSide = lineLabel ? formatAhFav(lineLabel, isHome) : '';
-        pickLabel = `${picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick} ${ahSide}`;
-      }
-
-      const resultBadge = getPickResultBadge(p, match);
-
-      html += `<div style="font-size:0.75rem;display:flex;justify-content:space-between;padding:1px 0">`;
-      html += `<span>${pickLabel} <span class="odds-tag">@${p.odds}</span> ${resultBadge}</span>`;
-      html += `<span style="color:var(--text-muted)">${t1Name} vs ${t2Name}</span>`;
-      html += `</div>`;
-    });
-
-    // Footer
-    html += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.85rem">`;
-    html += `<span>${slip.bet}฿ × ${slip.combined_odds || slip.odds}</span>`;
-    if (displayStatus === 'won') {
-      html += `<span style="color:var(--accent);font-weight:700">+${resolved.profit}฿</span>`;
-    } else if (displayStatus === 'lost') {
-      html += `<span style="color:var(--wrong);font-weight:700">${resolved.profit}฿</span>`;
-    } else {
-      html += `<span style="color:var(--accent)">${lang === 'th' ? 'จ่าย' : 'Payout'}: ${slip.payout}฿</span>`;
-    }
-    html += `</div></div>`;
-  });
-
-  return html;
-}
 
 // --- Auto-resolve slip from match results ---
 function resolveSlip(slip) {
