@@ -328,9 +328,25 @@ function renderRulesInline() {
 }
 
 function getTodayMatches() {
-  // Match dates are stored as ET strings — compare by ET date (UTC-4)
-  const todayET = new Date(Date.now() - 4 * 3600000).toISOString().slice(0, 10);
-  return MATCHES.filter(m => m.date.slice(0, 10) === todayET && (state.ahLines[m.id] || state.ouLines[m.id]));
+  // "Current round" = earliest date group with lines that still has unscored matches
+  // Stays locked on current group until all matches have scores, then advances to next
+  const withLines = MATCHES.filter(m => state.ahLines[m.id] || state.ouLines[m.id]);
+  const byDate = {};
+  withLines.forEach(m => {
+    const d = m.date.slice(0, 10);
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(m);
+  });
+  const dates = Object.keys(byDate).sort();
+  for (const d of dates) {
+    const group = byDate[d];
+    const allScored = group.every(m => {
+      const r = state.matches[m.id];
+      return r && typeof r.team1_score === 'number' && typeof r.team2_score === 'number';
+    });
+    if (!allScored) return group;
+  }
+  return byDate[dates[dates.length - 1]] || [];
 }
 
 // --- Admin: House (Pok) risk dashboard ---
