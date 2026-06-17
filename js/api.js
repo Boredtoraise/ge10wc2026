@@ -1,5 +1,5 @@
 // Google Apps Script API wrapper
-const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbxO52Wn1vC5VUOcyBMWEE8y4bRx-5LWeFpVYFKM77eJfsbeb_AWn8K1Mp-8zvDvpUYSnw/exec';
+const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbypN7DNZoHY2q2WNjHviVqn67LHjJ9a7GYcpBwg6l9ez83hN8Z1B5BUtkXIoopJXH_Udg/exec';
 
 async function fetchAPI(params) {
   if (!API_BASE_URL) return null;
