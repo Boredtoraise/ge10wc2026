@@ -37,6 +37,23 @@ async function renderBetting() {
   html += `<button class="logout-btn" id="bet-logout">${t('logout')}</button>`;
   html += `</div>`;
 
+  // ── Pending friend slips (admin + all users) ──────────────────────
+  const pendingFriendSlips = slipSource.filter(s =>
+    s.player !== state.currentPlayer &&
+    s.status !== 'approved' &&
+    s.status !== 'cancelled'
+  ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  if (pendingFriendSlips.length > 0) {
+    html += `<div style="margin-bottom:16px">`;
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">`;
+    html += `<span style="font-size:0.85rem;font-weight:700;color:var(--primary)">${lang === 'th' ? 'สลิปเพื่อน' : "Friends' Slips"}</span>`;
+    html += `<span style="font-size:0.78rem;color:var(--text-muted);background:var(--bg-input);padding:2px 8px;border-radius:4px">${pendingFriendSlips.length}</span>`;
+    html += `</div>`;
+    pendingFriendSlips.forEach(slip => { html += renderPendingSlipCard(slip, lang); });
+    html += `</div>`;
+  }
+
   // Sub-tabs
   html += `<div style="display:flex;gap:8px;margin-bottom:16px">`;
   html += `<button class="bet-tab-btn" data-tab="open" style="${tabStyleOn}">${lang === 'th' ? 'การแทงของฉัน' : 'My Bets'}</button>`;

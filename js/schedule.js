@@ -1,35 +1,13 @@
 // Schedule — main tab (was overlay)
 
-async function renderSchedule() {
+function renderSchedule() {
   const container = document.getElementById('view-schedule');
   if (!container) return;
   const lang = currentLang;
 
-  if (!state.allSlips.length && typeof API_BASE_URL !== 'undefined' && API_BASE_URL) {
-    const allSlips = await fetchAPI('allslips');
-    if (allSlips) state.allSlips = allSlips;
-  }
-
   const groups = Object.keys(GROUPS);
 
   let html = '';
-
-  // ── Pending friend slips section ────────────────────────────────
-  const pendingFriendSlips = state.allSlips.filter(s =>
-    s.player !== state.currentPlayer &&
-    s.status !== 'approved' &&
-    s.status !== 'cancelled'
-  ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-  if (pendingFriendSlips.length > 0) {
-    html += `<div style="margin-bottom:16px">`;
-    html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">`;
-    html += `<span style="font-size:0.85rem;font-weight:700;color:var(--primary)">${lang === 'th' ? 'สลิปเพื่อน' : "Friends' Slips"}</span>`;
-    html += `<span style="font-size:0.78rem;color:var(--text-muted);background:var(--bg-input);padding:2px 8px;border-radius:4px">${pendingFriendSlips.length}</span>`;
-    html += `</div>`;
-    pendingFriendSlips.forEach(slip => { html += renderPendingSlipCard(slip, lang); });
-    html += `</div>`;
-  }
 
   html += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">';
   html += `<button class="sch-group-btn btn active" data-group="ALL" style="padding:6px 12px;font-size:0.8rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700">${currentLang === 'th' ? 'ทั้งหมด' : 'All'}</button>`;
