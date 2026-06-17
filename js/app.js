@@ -220,11 +220,11 @@ async function refreshData() {
     const calls = {
       matches: fetchAPI('matches'),
       players: fetchAPI('players'),
+      allSlips: fetchAPI('allslips'),
     };
     if (state.currentPlayer) {
       calls.preds = fetchAPI('allpredictions');
       calls.slips = fetchAPI('slips&player=' + state.currentPlayer);
-      calls.allSlips = fetchAPI('allslips');
     }
 
     const results = await Promise.all(Object.values(calls));
