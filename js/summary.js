@@ -610,8 +610,8 @@ function renderHouseDashboard() {
     }
   }
 
-  // Pending exposure (only show if there are pending slips)
-  if (pendingCount > 0) {
+  // Pending exposure (only show if there are pending slips from rounds OTHER than today)
+  if (pendingCount > todayPending.length) {
     html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px">`;
     html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:10px">${lang === 'th' ? `ความเสี่ยง (${pendingCount} สลิปรอ)` : `Risk (${pendingCount} pending)`}</div>`;
     html += `<div style="display:flex;gap:8px">`;
