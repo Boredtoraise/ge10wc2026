@@ -473,7 +473,7 @@ function renderHouseDashboard() {
   if (todayMatches.length > 0) {
     const todayIds = new Set(todayMatches.map(m => m.id));
     const dist = {};
-    allSlips.filter(s => s.status !== 'cancelled').forEach(s => {
+    allSlips.filter(s => resolveSlip(s).status === 'pending').forEach(s => {
       (s.picks || []).forEach(p => {
         if (!todayIds.has(p.match_id)) return;
         if (!dist[p.match_id]) dist[p.match_id] = { ahHome: 0, ahAway: 0, over: 0, under: 0 };
