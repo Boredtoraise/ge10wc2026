@@ -15,11 +15,7 @@ async function renderBetting() {
     if (allSlips) state.allSlips = allSlips;
   }
 
-  const tabStyleOn  = 'padding:8px 16px;font-size:0.85rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700';
-  const tabStyleOff = 'padding:8px 16px;font-size:0.85rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700';
-
-  const byKickoff  = (a, b) => new Date(a.date) - new Date(b.date);
-  const byNewest   = (a, b) => new Date(b.date) - new Date(a.date);
+  const byKickoff = (a, b) => new Date(a.date) - new Date(b.date);
 
   const available = MATCHES.filter(m => (state.ahLines[m.id] || state.ouLines[m.id]) && !isMatchLocked(m)).sort(byKickoff);
   const locked    = MATCHES.filter(m => (state.ahLines[m.id] || state.ouLines[m.id]) && isMatchLocked(m)).sort(byNewest);
@@ -27,7 +23,6 @@ async function renderBetting() {
   const slipSource  = state.allSlips.length ? state.allSlips : (state.slips || []);
   const allFiltered = slipSource.filter(s => s.status !== 'cancelled').sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   const mySlips     = allFiltered.filter(s => s.player === state.currentPlayer);
-  const otherSlips  = allFiltered.filter(s => s.player !== state.currentPlayer);
 
   let html = '';
 
@@ -54,14 +49,7 @@ async function renderBetting() {
     html += `</div>`;
   }
 
-  // Sub-tabs
-  html += `<div style="display:flex;gap:8px;margin-bottom:16px">`;
-  html += `<button class="bet-tab-btn" data-tab="open" style="${tabStyleOn}">${lang === 'th' ? 'การแทงของฉัน' : 'My Bets'}</button>`;
-  html += `<button class="bet-tab-btn" data-tab="past" style="${tabStyleOff}">${lang === 'th' ? 'สลิปเพื่อน' : 'Friends'}${otherSlips.length ? ` (${otherSlips.length})` : ''}</button>`;
-  html += `</div>`;
 
-  // ── Tab: เปิดรับแทง ──────────────────────────────
-  html += `<div id="bet-tab-open">`;
   html += `<h2 style="font-size:1.1rem;margin-bottom:12px">${lang === 'th' ? 'แทงบอล' : 'Place Bets'}</h2>`;
 
   if (available.length === 0) {
@@ -131,74 +119,8 @@ async function renderBetting() {
   }
 
   html += `</div>`; // slip-list
-  html += `</div>`; // bet-tab-open
-
-  // ── Tab: สลิปเพื่อน ──────────────────────────────
-  html += `<div id="bet-tab-past" style="display:none">`;
-
-  if (otherSlips.length > 0) {
-    const statusColors = { pending: 'var(--text-muted)', won: 'var(--accent)', lost: 'var(--wrong)', approved: 'var(--secondary)' };
-    const statusLabels = { pending: lang === 'th' ? 'รอผล' : 'Pending', won: lang === 'th' ? 'ถูก' : 'Won', lost: lang === 'th' ? 'ผิด' : 'Lost', approved: lang === 'th' ? 'ยืนยันแล้ว' : 'Approved' };
-
-    const renderFriendSlip = (slip) => renderSlipCard(slip, { showPlayer: true });
-
-    const pendingApprove = otherSlips.filter(s => {
-      const resolved = typeof resolveSlip === 'function' ? resolveSlip(s) : { status: s.status };
-      const st = resolved.status;
-      return state.isAdmin && (st === 'won' || st === 'lost') && s.status !== 'approved';
-    });
-    const pendingResult = otherSlips.filter(s => {
-      const resolved = typeof resolveSlip === 'function' ? resolveSlip(s) : { status: s.status };
-      return resolved.status === 'pending';
-    });
-    const history = otherSlips.filter(s => s.status === 'approved');
-
-    html += `<h3 style="font-size:0.95rem;color:var(--text-muted);margin:20px 0 8px">${lang === 'th' ? 'สลิปเพื่อน' : "Friends' Slips"}</h3>`;
-
-    const friendTabOn  = 'padding:6px 12px;font-size:0.8rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
-    const friendTabOff = 'padding:6px 12px;font-size:0.8rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
-
-    const tabs = [];
-    if (pendingApprove.length > 0) tabs.push({ key: 'approve', label: `${lang === 'th' ? 'รอ Approve' : 'Approve'} (${pendingApprove.length})`, slips: pendingApprove });
-    tabs.push({ key: 'pending', label: `${lang === 'th' ? 'รอผล' : 'Pending'} (${pendingResult.length})`, slips: pendingResult });
-    tabs.push({ key: 'history', label: `${lang === 'th' ? 'ประวัติ' : 'History'} (${history.length})`,   slips: history });
-
-    const defaultTab = tabs[0].key;
-
-    html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">`;
-    tabs.forEach(tab => {
-      html += `<button class="friend-tab-btn" data-ftab="${tab.key}" style="${tab.key === defaultTab ? friendTabOn : friendTabOff}">${tab.label}</button>`;
-    });
-    html += `</div>`;
-
-    tabs.forEach(tab => {
-      html += `<div class="friend-tab-pane" data-ftab="${tab.key}" style="${tab.key === defaultTab ? '' : 'display:none'}">`;
-      if (tab.slips.length === 0) {
-        html += `<div style="color:var(--text-muted);font-size:0.85rem;padding:16px 0;text-align:center">${lang === 'th' ? 'ไม่มีสลิป' : 'No slips'}</div>`;
-      } else {
-        tab.slips.forEach(s => { html += renderFriendSlip(s); });
-      }
-      html += `</div>`;
-    });
-  }
-  if (otherSlips.length === 0) {
-    html += `<div style="color:var(--text-muted);text-align:center;padding:40px">${lang === 'th' ? 'ยังไม่มีสลิปเพื่อน' : "No friends' slips yet"}</div>`;
-  }
-  html += `</div>`; // bet-tab-past
 
   container.innerHTML = html;
-
-  // Tab switching
-  container.querySelectorAll('.bet-tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tab = btn.dataset.tab;
-      container.querySelectorAll('.bet-tab-btn').forEach(b => {
-        b.style.cssText = b.dataset.tab === tab ? tabStyleOn : tabStyleOff;
-      });
-      container.querySelector('#bet-tab-open').style.display = tab === 'open' ? '' : 'none';
-      container.querySelector('#bet-tab-past').style.display = tab === 'past' ? '' : 'none';
-    });
-  });
 
   // My slips subtab switching
   const myTabOnEvt  = 'padding:6px 12px;font-size:0.8rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
@@ -211,16 +133,6 @@ async function renderBetting() {
     });
   });
 
-  // Friend subtab switching
-  const friendTabOn  = 'padding:6px 12px;font-size:0.8rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
-  const friendTabOff = 'padding:6px 12px;font-size:0.8rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
-  container.querySelectorAll('.friend-tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const key = btn.dataset.ftab;
-      container.querySelectorAll('.friend-tab-btn').forEach(b => { b.style.cssText = b.dataset.ftab === key ? friendTabOn : friendTabOff; });
-      container.querySelectorAll('.friend-tab-pane').forEach(p => { p.style.display = p.dataset.ftab === key ? '' : 'none'; });
-    });
-  });
 
   // Pick state: key = "matchId_ah" or "matchId_ou"
   let betPicks = {};
