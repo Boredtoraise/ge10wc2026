@@ -602,22 +602,23 @@ function renderHouseDashboard() {
       }).forEach(s => {
         const w = (s.payout || s.bet || 0) / Math.max(1, (s.picks || []).length);
         const matchObj = state.matchById ? state.matchById[m.id] : null;
+        let cntH = false, cntA = false, cntO = false, cntU = false;
         (s.picks || []).filter(p => p.match_id === m.id).forEach(pick => {
           if (pick.type === 'ou') {
             if (pick.pick === 'over') {
-              dist[m.id].over += w; dist[m.id].overC++;
-              dist[m.id].overBet += s.bet || 0; dist[m.id].overPay += s.payout || 0;
+              dist[m.id].over += w;
+              if (!cntO) { cntO = true; dist[m.id].overC++; dist[m.id].overBet += s.bet || 0; dist[m.id].overPay += s.payout || 0; }
             } else {
-              dist[m.id].under += w; dist[m.id].underC++;
-              dist[m.id].underBet += s.bet || 0; dist[m.id].underPay += s.payout || 0;
+              dist[m.id].under += w;
+              if (!cntU) { cntU = true; dist[m.id].underC++; dist[m.id].underBet += s.bet || 0; dist[m.id].underPay += s.payout || 0; }
             }
           } else {
             if (matchObj && pick.pick === matchObj.team1) {
-              dist[m.id].ahHome += w; dist[m.id].ahHomeC++;
-              dist[m.id].ahHomeBet += s.bet || 0; dist[m.id].ahHomePay += s.payout || 0;
+              dist[m.id].ahHome += w;
+              if (!cntH) { cntH = true; dist[m.id].ahHomeC++; dist[m.id].ahHomeBet += s.bet || 0; dist[m.id].ahHomePay += s.payout || 0; }
             } else {
-              dist[m.id].ahAway += w; dist[m.id].ahAwayC++;
-              dist[m.id].ahAwayBet += s.bet || 0; dist[m.id].ahAwayPay += s.payout || 0;
+              dist[m.id].ahAway += w;
+              if (!cntA) { cntA = true; dist[m.id].ahAwayC++; dist[m.id].ahAwayBet += s.bet || 0; dist[m.id].ahAwayPay += s.payout || 0; }
             }
           }
         });
