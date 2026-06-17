@@ -18,7 +18,7 @@ async function renderBetting() {
   const byKickoff = (a, b) => new Date(a.date) - new Date(b.date);
 
   const available = MATCHES.filter(m => (state.ahLines[m.id] || state.ouLines[m.id]) && !isMatchLocked(m)).sort(byKickoff);
-  const locked    = MATCHES.filter(m => (state.ahLines[m.id] || state.ouLines[m.id]) && isMatchLocked(m)).sort(byNewest);
+  const locked    = MATCHES.filter(m => (state.ahLines[m.id] || state.ouLines[m.id]) && isMatchLocked(m)).sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const slipSource  = state.allSlips.length ? state.allSlips : (state.slips || []);
   const allFiltered = slipSource.filter(s => s.status !== 'cancelled').sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
