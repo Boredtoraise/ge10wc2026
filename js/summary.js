@@ -588,8 +588,6 @@ function renderHouseDashboard() {
     const dist = {};
     // Per-match filtering: done match = all non-cancelled; pending match = alive slips only
     todayMatches.forEach(m => {
-      const mResult = state.matches[m.id];
-      const matchDone = !!(mResult && typeof mResult.team1_score === 'number' && typeof mResult.team2_score === 'number');
       dist[m.id] = {
         ahHome: 0, ahAway: 0, over: 0, under: 0,
         ahHomeC: 0, ahAwayC: 0, overC: 0, underC: 0,
@@ -598,7 +596,7 @@ function renderHouseDashboard() {
       };
       allSlips.filter(s => {
         if (s.status === 'cancelled') return false;
-        if (!matchDone && resolveSlip(s).status !== 'pending') return false;
+        if (resolveSlip(s).status !== 'pending') return false;
         return (s.picks || []).some(p => p.match_id === m.id);
       }).forEach(s => {
         const w = (s.payout || s.bet || 0) / Math.max(1, (s.picks || []).length);
