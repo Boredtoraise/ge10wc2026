@@ -607,8 +607,8 @@ function renderSlip(slip, idx) {
   const canDelete = ownPending && (state.isAdmin || noLockedPicks);
 
   let cardStyle = '';
-  if (displayStatus === 'won') cardStyle = 'border:2px solid var(--accent);box-shadow:0 0 12px rgba(212,160,23,0.15);background:rgba(212,160,23,0.04);';
-  else if (displayStatus === 'lost') cardStyle = 'border:3px dashed var(--secondary);background:rgba(46,134,171,0.06);';
+  if (displayStatus === 'won') cardStyle = 'border:3px solid var(--accent);box-shadow:0 0 0 3px rgba(240,201,41,0.25);background:rgba(240,201,41,0.10);';
+  else if (displayStatus === 'lost') cardStyle = 'border:3px solid var(--secondary);box-shadow:0 0 0 3px rgba(46,134,171,0.20);background:rgba(46,134,171,0.10);';
 
   const isApproved = slip.status === 'approved';
   if (isApproved) cardStyle = 'border:2px solid var(--accent);';
