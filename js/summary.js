@@ -101,9 +101,29 @@ function renderUserDashboard(player) {
   let html = '';
 
   // Grand total banner
-  html += `<div style="text-align:center;padding:16px;margin-bottom:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg)">`;
+  html += `<div style="text-align:center;padding:16px;margin-bottom:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg)">`;
   html += `<div style="font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'ยอดรวมทั้งหมด' : 'Grand Total'}</div>`;
   html += `<div style="font-size:1.8rem;font-weight:700;color:${moneyColor(totalBalance)}">${fmtMoney(totalBalance)}</div>`;
+  html += `</div>`;
+
+  // Win / Loss / Pending breakdown row
+  const { totalWon, totalLost, pendingBet, pendingPayout } = slipsDetail.total;
+  html += `<div style="display:flex;gap:8px;margin-bottom:12px">`;
+  html += `<div style="flex:1;text-align:center;padding:10px 6px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">`;
+  html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'บวกรวม' : 'Total Won'}</div>`;
+  html += `<div style="font-size:1rem;font-weight:700;color:var(--accent)">+${totalWon}฿</div>`;
+  html += `</div>`;
+  html += `<div style="flex:1;text-align:center;padding:10px 6px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">`;
+  html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'ลบรวม' : 'Total Lost'}</div>`;
+  html += `<div style="font-size:1rem;font-weight:700;color:var(--secondary)">${totalLost}฿</div>`;
+  html += `</div>`;
+  if (pendingBet > 0) {
+    html += `<div style="flex:1;text-align:center;padding:10px 6px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">`;
+    html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'รอผล' : 'Pending'}</div>`;
+    html += `<div style="font-size:1rem;font-weight:700;color:var(--text-primary)">${pendingBet}฿</div>`;
+    html += `<div style="font-size:0.68rem;color:var(--text-muted)">${lang === 'th' ? 'จ่าย' : 'payout'} ${pendingPayout}฿</div>`;
+    html += `</div>`;
+  }
   html += `</div>`;
 
   // Slips detail
@@ -194,7 +214,7 @@ function calculatePlayerMoney(player) {
 
 function calculatePlayerSlipsDetailed(player) {
   const lang = currentLang;
-  let total = { profit: 0, totalBet: 0 };
+  let total = { profit: 0, totalBet: 0, totalWon: 0, totalLost: 0, pendingBet: 0, pendingPayout: 0 };
   const tickets = [];
   const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
 
@@ -202,6 +222,9 @@ function calculatePlayerSlipsDetailed(player) {
     const resolved = resolveSlip(slip);
     total.profit += resolved.profit;
     total.totalBet += slip.bet;
+    if (resolved.status === 'won') total.totalWon += resolved.profit;
+    else if (resolved.status === 'lost') total.totalLost += resolved.profit;
+    else if (resolved.status === 'pending') { total.pendingBet += slip.bet; total.pendingPayout += slip.payout || 0; }
 
     const picks = (slip.picks || []).map(p => {
       const match = MATCHES.find(m => m.id === p.match_id);
