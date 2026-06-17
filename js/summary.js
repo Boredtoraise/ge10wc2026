@@ -107,7 +107,7 @@ function renderSummaryTab() {
 function renderUserDashboard(player) {
   const lang = currentLang;
 
-  // Admin's own tab = approve queue, not player stats
+  // Admin's own tab = house dashboard + approve queue
   if (state.isAdmin && player === state.currentPlayer) {
     const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
     const toApprove = allSlips
@@ -118,9 +118,10 @@ function renderUserDashboard(player) {
         const bD = (bR.status === 'won' || bR.status === 'lost') ? 0 : 1;
         return aD - bD || new Date(b.timestamp) - new Date(a.timestamp);
       });
-    let html = `<div style="margin-bottom:8px;font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'สลิปรอยืนยัน' : 'Slips to approve'}: ${toApprove.length}</div>`;
+    let html = renderHouseDashboard();
+    html += `<div style="margin:16px 0 8px;font-size:0.85rem;color:var(--text-muted);font-weight:700">${lang === 'th' ? 'รอยืนยัน' : 'Pending approval'} (${toApprove.length})</div>`;
     if (!toApprove.length) {
-      html += `<div style="text-align:center;padding:30px;color:var(--text-muted)">${lang === 'th' ? 'ไม่มีสลิปรอตรวจ' : 'Nothing to approve'}</div>`;
+      html += `<div style="text-align:center;padding:20px;color:var(--text-muted)">${lang === 'th' ? 'ไม่มีสลิปรอตรวจ' : 'Nothing to approve'}</div>`;
     } else {
       toApprove.forEach(slip => { html += renderSlipCard(slip, { showPlayer: true }); });
     }
@@ -347,6 +348,144 @@ function renderRulesInline() {
       </div>
     </div>
   `;
+}
+
+function getTodayMatches() {
+  const todayStr = new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10);
+  return MATCHES.filter(m => {
+    const thaiDate = new Date(etToThai(m.date).getTime() + 7 * 3600000).toISOString().slice(0, 10);
+    return thaiDate === todayStr;
+  });
+}
+
+// --- Admin: House (Pok) risk dashboard ---
+function renderHouseDashboard() {
+  const lang = currentLang;
+  const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
+  const slips = allSlips.filter(s => s.status !== 'cancelled');
+
+  let wonCount = 0, lostCount = 0, pendingCount = 0;
+  let pokPaidOut = 0;      // money paid to winning players (expense)
+  let pokCollected = 0;    // money kept from losing players (revenue)
+  let pendingWorstPay = 0; // if all pending WIN: extra Pok must pay (player profit)
+  let pendingBestKeep = 0; // if all pending LOSE: extra Pok keeps (bets)
+
+  slips.forEach(s => {
+    const r = resolveSlip(s);
+    if (r.status === 'won') {
+      wonCount++;
+      pokPaidOut += r.profit; // positive = Pok paid this much to player
+    } else if (r.status === 'lost') {
+      lostCount++;
+      pokCollected += Math.abs(r.profit); // negative profit = Pok's gain
+    } else {
+      pendingCount++;
+      pendingWorstPay  += Math.max(0, (s.payout || 0) - (s.bet || 0));
+      pendingBestKeep  += (s.bet || 0);
+    }
+  });
+
+  const pokNet = pokCollected - pokPaidOut;
+  const netColor = pokNet >= 0 ? 'var(--accent)' : 'var(--secondary)';
+  const netSign  = pokNet >= 0 ? '+' : '';
+
+  let html = '';
+
+  // Slip count row
+  html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">`;
+  const countItems = [
+    { label: lang === 'th' ? 'ทั้งหมด' : 'Total',   val: slips.length,   color: 'var(--text-primary)' },
+    { label: lang === 'th' ? 'ถูกแล้ว' : 'Won',     val: wonCount,       color: 'var(--accent)'       },
+    { label: lang === 'th' ? 'ผิดแล้ว' : 'Lost',    val: lostCount,      color: 'var(--secondary)'    },
+    { label: lang === 'th' ? 'รอผล'   : 'Pending',  val: pendingCount,   color: 'var(--text-muted)'   },
+  ];
+  countItems.forEach(({ label, val, color }) => {
+    html += `<div style="text-align:center;padding:8px 4px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">`;
+    html += `<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:3px">${label}</div>`;
+    html += `<div style="font-size:1.1rem;font-weight:700;color:${color}">${val}</div>`;
+    html += `</div>`;
+  });
+  html += `</div>`;
+
+  // Money position
+  html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px">`;
+  html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:10px">${lang === 'th' ? 'สถานะเงิน (มุมมองเจ้ามือ)' : 'House Position'}</div>`;
+  html += `<div style="display:flex;justify-content:space-between;margin-bottom:6px">`;
+  html += `<span style="font-size:0.82rem;color:var(--text-muted)">${lang === 'th' ? 'เก็บจากที่ผิด' : 'Collected (losses)'}</span>`;
+  html += `<span style="font-size:0.88rem;font-weight:700;color:var(--accent)">+${pokCollected}฿</span>`;
+  html += `</div>`;
+  html += `<div style="display:flex;justify-content:space-between;margin-bottom:10px">`;
+  html += `<span style="font-size:0.82rem;color:var(--text-muted)">${lang === 'th' ? 'จ่ายให้ที่ถูก' : 'Paid out (wins)'}</span>`;
+  html += `<span style="font-size:0.88rem;font-weight:700;color:var(--secondary)">-${pokPaidOut}฿</span>`;
+  html += `</div>`;
+  html += `<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)">`;
+  html += `<span style="font-size:0.9rem;font-weight:700">${lang === 'th' ? 'กำไรตอนนี้' : 'Net so far'}</span>`;
+  html += `<span style="font-size:1.1rem;font-weight:800;color:${netColor}">${netSign}${pokNet}฿</span>`;
+  html += `</div>`;
+  html += `</div>`;
+
+  // Today's round exposure
+  const todayMatches = getTodayMatches();
+  if (todayMatches.length > 0) {
+    const todayIds = new Set(todayMatches.map(m => m.id));
+    const allSlipsForToday = allSlips.filter(s => s.status !== 'cancelled');
+    const todayPending = allSlipsForToday.filter(s => {
+      const r = resolveSlip(s);
+      return r.status === 'pending' && (s.picks || []).some(p => todayIds.has(p.match_id));
+    });
+    const todayWorstPay  = todayPending.reduce((sum, s) => sum + Math.max(0, (s.payout || 0) - (s.bet || 0)), 0);
+    const todayBestKeep  = todayPending.reduce((sum, s) => sum + (s.bet || 0), 0);
+
+    const thaiDateLabel = todayMatches[0]
+      ? new Date(etToThai(todayMatches[0].date).getTime() + 7 * 3600000)
+          .toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })
+      : '';
+
+    html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px">`;
+    html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:10px">`;
+    html += `${lang === 'th' ? 'วันนี้' : 'Today'} · ${thaiDateLabel} · ${todayMatches.length} ${lang === 'th' ? 'คู่' : 'matches'} · ${lang === 'th' ? 'สลิปรอ' : 'pending'} ${todayPending.length} ${lang === 'th' ? 'ใบ' : ''}`;
+    html += `</div>`;
+    if (todayPending.length > 0) {
+      html += `<div style="display:flex;gap:8px">`;
+      html += `<div style="flex:1;text-align:center;padding:8px;border:1px solid var(--border);border-radius:var(--radius)">`;
+      html += `<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:4px">${lang === 'th' ? 'ถ้าถูกหมด' : 'If all win'}</div>`;
+      html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'จ่ายเพิ่ม' : 'Pay extra'}</div>`;
+      html += `<div style="font-size:1.05rem;font-weight:700;color:var(--secondary)">-${todayWorstPay}฿</div>`;
+      html += `</div>`;
+      html += `<div style="flex:1;text-align:center;padding:8px;border:1px solid var(--border);border-radius:var(--radius)">`;
+      html += `<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:4px">${lang === 'th' ? 'ถ้าผิดหมด' : 'If all lose'}</div>`;
+      html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'เก็บเพิ่ม' : 'Keep extra'}</div>`;
+      html += `<div style="font-size:1.05rem;font-weight:700;color:var(--accent)">+${todayBestKeep}฿</div>`;
+      html += `</div>`;
+      html += `</div>`;
+    } else {
+      html += `<div style="font-size:0.82rem;color:var(--text-muted);text-align:center">${lang === 'th' ? 'ไม่มีสลิปรอสำหรับวันนี้' : 'No pending slips for today'}</div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Pending exposure (only show if there are pending slips)
+  if (pendingCount > 0) {
+    html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px">`;
+    html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:10px">${lang === 'th' ? `ความเสี่ยง (${pendingCount} สลิปรอ)` : `Risk (${pendingCount} pending)`}</div>`;
+    html += `<div style="display:flex;gap:8px">`;
+    html += `<div style="flex:1;text-align:center;padding:8px;border:1px solid var(--border);border-radius:var(--radius)">`;
+    html += `<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:4px">${lang === 'th' ? 'ถ้าถูกหมด' : 'If all win'}</div>`;
+    html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'จ่ายเพิ่ม' : 'Pay extra'}</div>`;
+    html += `<div style="font-size:1.05rem;font-weight:700;color:var(--secondary)">-${pendingWorstPay}฿</div>`;
+    html += `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:3px">${lang === 'th' ? 'net' : 'net'}: ${netSign}${pokNet - pendingWorstPay}฿</div>`;
+    html += `</div>`;
+    html += `<div style="flex:1;text-align:center;padding:8px;border:1px solid var(--border);border-radius:var(--radius)">`;
+    html += `<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:4px">${lang === 'th' ? 'ถ้าผิดหมด' : 'If all lose'}</div>`;
+    html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'เก็บเพิ่ม' : 'Keep extra'}</div>`;
+    html += `<div style="font-size:1.05rem;font-weight:700;color:var(--accent)">+${pendingBestKeep}฿</div>`;
+    html += `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:3px">${lang === 'th' ? 'net' : 'net'}: +${pokNet + pendingBestKeep}฿</div>`;
+    html += `</div>`;
+    html += `</div>`;
+    html += `</div>`;
+  }
+
+  return html;
 }
 
 // --- Admin: Approve slips (Pok only) ---

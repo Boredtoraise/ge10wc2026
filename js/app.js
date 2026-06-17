@@ -34,10 +34,9 @@ function isMatchLocked(match) {
 // Format AH line: only show on the favorite side (negative = ต่อ)
 function formatAhFav(line, isHome) {
   const num = parseFloat(line);
-  if (num === 0) return '';
-  if (num < 0 && isHome) return '' + num;
-  if (num > 0 && !isHome) return '-' + num;
-  return '';
+  if (isNaN(num) || num === 0) return '';
+  if (num < 0) return isHome ? '' + num : '+' + Math.abs(num);
+  return isHome ? '+' + num : '-' + num;
 }
 
 // Build lines + odds from matches data (loaded from Sheet)
