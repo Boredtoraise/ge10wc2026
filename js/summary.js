@@ -588,7 +588,8 @@ function renderHouseDashboard() {
     const dist = {};
     // Per-match filtering: done match = all non-cancelled; pending match = alive slips only
     todayMatches.forEach(m => {
-      const matchDone = isMatchLocked(m);
+      const mResult = state.matches[m.id];
+      const matchDone = !!(mResult && typeof mResult.team1_score === 'number' && typeof mResult.team2_score === 'number');
       dist[m.id] = {
         ahHome: 0, ahAway: 0, over: 0, under: 0,
         ahHomeC: 0, ahAwayC: 0, overC: 0, underC: 0,
