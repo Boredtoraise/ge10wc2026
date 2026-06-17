@@ -132,17 +132,59 @@ async function renderBetting() {
   // ── Tabs: ทั้งหมด / per-player ───────────────────────────────────
   if (pendingFriendSlips.length) {
     html += `<div id="bet-main-all" style="display:none">`;
-    pendingFriendSlips.forEach(s => { html += renderSlipCard(s, { showPlayer: true }); });
+    pendingFriendSlips.forEach(s => { html += renderSlipCard(s, { showPlayer: true, showCopy: true }); });
     html += `</div>`;
 
     friendPlayers.forEach(p => {
       html += `<div id="bet-main-fp:${p}" style="display:none">`;
-      pendingFriendSlips.filter(s => s.player === p).forEach(s => { html += renderSlipCard(s, {}); });
+      pendingFriendSlips.filter(s => s.player === p).forEach(s => { html += renderSlipCard(s, { showCopy: true }); });
       html += `</div>`;
     });
   }
 
   container.innerHTML = html;
+
+  // Copy friend slip → pre-fill bet picks
+  container.querySelectorAll('.slip-copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ts = btn.dataset.ts;
+      const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
+      const slip = allSlips.find(s => String(s.timestamp) === String(ts));
+      if (!slip) return;
+
+      const validPicks = (slip.picks || []).filter(p => {
+        const m = MATCHES.find(x => x.id === p.match_id);
+        return m && !isMatchLocked(m);
+      });
+
+      if (!validPicks.length) {
+        showToast(currentLang === 'th' ? 'ทุก match ล็อคแล้ว copy ไม่ได้' : 'All matches locked');
+        return;
+      }
+
+      // Switch to แทงบอล tab
+      container.querySelectorAll('.bet-main-tab').forEach(b => {
+        b.style.cssText = b.dataset.main === 'bet' ? tabOn : tabOff;
+      });
+      container.querySelector('#bet-main-bet').style.display = '';
+      container.querySelectorAll('[id^="bet-main-"]').forEach(el => {
+        if (el.id !== 'bet-main-bet') el.style.display = 'none';
+      });
+
+      // Click matching bet-pick buttons to select them
+      validPicks.forEach(p => {
+        const isOu = p.type === 'ou';
+        const sel = isOu
+          ? `.bet-pick.ou-btn[data-match="${p.match_id}"][data-pick="${p.pick}"]`
+          : `.bet-pick:not(.ou-btn)[data-match="${p.match_id}"][data-pick="${p.pick}"]`;
+        const pickBtn = container.querySelector(sel);
+        if (pickBtn && !pickBtn.classList.contains('selected')) pickBtn.click();
+      });
+
+      showToast(`Copy ${validPicks.length} pick${validPicks.length > 1 ? 's' : ''} แล้ว`);
+      container.querySelector('#bet-main-bet')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
 
   // Flat tab switching
   container.querySelectorAll('.bet-main-tab').forEach(btn => {
@@ -550,6 +592,9 @@ function renderSlipCard(slip, opts) {
     if (ownPending && (state.isAdmin || noLocked)) {
       html += `<button class="slip-delete-btn" data-ts="${slip.timestamp}" style="background:var(--wrong);border:none;color:#fff;padding:5px 14px;border-radius:6px;font-size:0.85rem;font-weight:700;cursor:pointer">🗑 ${lang === 'th' ? 'ลบสลิป' : 'Delete'}</button>`;
     }
+  }
+  if (opts.showCopy) {
+    html += `<button class="slip-copy-btn" data-ts="${slip.timestamp}" style="background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);padding:4px 10px;border-radius:4px;font-size:0.78rem;font-weight:700;cursor:pointer">${lang === 'th' ? 'Copy' : 'Copy'}</button>`;
   }
   if (needsApprove) {
     html += `<button class="slip-approve-btn" data-ts="${slip.timestamp}" style="background:var(--accent);color:#000;border:none;padding:4px 12px;border-radius:4px;font-size:0.78rem;font-weight:700;cursor:pointer">${lang === 'th' ? '✓ ยืนยัน' : '✓ Approve'}</button>`;
