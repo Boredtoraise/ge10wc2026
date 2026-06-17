@@ -596,16 +596,16 @@ function renderHouseDashboard() {
         return (s.picks || []).some(p => p.match_id === m.id);
       }).forEach(s => {
         const w = (s.payout || s.bet || 0) / Math.max(1, (s.picks || []).length);
-        const pick = (s.picks || []).find(p => p.match_id === m.id);
-        if (!pick) return;
         const matchObj = state.matchById ? state.matchById[m.id] : null;
-        if (pick.type === 'ou') {
-          if (pick.pick === 'over') dist[m.id].over += w;
-          else dist[m.id].under += w;
-        } else {
-          if (matchObj && pick.pick === matchObj.team1) dist[m.id].ahHome += w;
-          else dist[m.id].ahAway += w;
-        }
+        (s.picks || []).filter(p => p.match_id === m.id).forEach(pick => {
+          if (pick.type === 'ou') {
+            if (pick.pick === 'over') dist[m.id].over += w;
+            else dist[m.id].under += w;
+          } else {
+            if (matchObj && pick.pick === matchObj.team1) dist[m.id].ahHome += w;
+            else dist[m.id].ahAway += w;
+          }
+        });
       });
     });
 
