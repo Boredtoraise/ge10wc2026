@@ -469,6 +469,84 @@ function renderHouseDashboard() {
     html += `</div>`;
   }
 
+  // Pick distribution for today's matches
+  if (todayMatches.length > 0) {
+    const todayIds = new Set(todayMatches.map(m => m.id));
+    const dist = {};
+    allSlips.filter(s => s.status !== 'cancelled').forEach(s => {
+      (s.picks || []).forEach(p => {
+        if (!todayIds.has(p.match_id)) return;
+        if (!dist[p.match_id]) dist[p.match_id] = { ahHome: 0, ahAway: 0, over: 0, under: 0 };
+        const match = state.matchById ? state.matchById[p.match_id] : null;
+        if (p.type === 'ou') {
+          if (p.pick === 'over') dist[p.match_id].over++;
+          else dist[p.match_id].under++;
+        } else {
+          if (match && p.pick === match.team1) dist[p.match_id].ahHome++;
+          else dist[p.match_id].ahAway++;
+        }
+      });
+    });
+
+    const anyPicks = todayMatches.some(m => dist[m.id] && (dist[m.id].ahHome + dist[m.id].ahAway + dist[m.id].over + dist[m.id].under > 0));
+    if (anyPicks) {
+      html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px">`;
+      html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:10px">${lang === 'th' ? 'เชียร์ใคร · รอบวันนี้' : 'Pick Distribution · Today'}</div>`;
+      todayMatches.forEach(m => {
+        const d = dist[m.id];
+        if (!d || (d.ahHome + d.ahAway + d.over + d.under === 0)) return;
+        const t1 = TEAMS[m.team1], t2 = TEAMS[m.team2];
+        const t1Name = t1 ? (lang === 'th' ? t1.nameTh : t1.name) : m.team1;
+        const t2Name = t2 ? (lang === 'th' ? t2.nameTh : t2.name) : m.team2;
+        html += `<div style="margin-bottom:10px">`;
+        html += `<div style="font-size:0.78rem;font-weight:700;margin-bottom:5px">${t1Name} vs ${t2Name}</div>`;
+
+        // AH row
+        if (d.ahHome + d.ahAway > 0) {
+          const ahTotal = d.ahHome + d.ahAway;
+          const h1pct = Math.round(d.ahHome / ahTotal * 100);
+          const h2pct = 100 - h1pct;
+          const h1big = d.ahHome >= d.ahAway;
+          html += `<div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;margin-bottom:3px">`;
+          html += `<span style="width:20px;text-align:right;color:var(--text-muted)">AH</span>`;
+          html += `<span style="width:22px;text-align:right;font-weight:${h1big?'700':'400'};color:${h1big?'var(--text-primary)':'var(--text-muted)'}">${d.ahHome}</span>`;
+          html += `<div style="flex:1;display:flex;height:10px;border-radius:3px;overflow:hidden;background:var(--bg-input)">`;
+          html += `<div style="width:${h1pct}%;background:var(--secondary)"></div>`;
+          html += `<div style="width:${h2pct}%;background:var(--accent)"></div>`;
+          html += `</div>`;
+          html += `<span style="width:22px;font-weight:${!h1big?'700':'400'};color:${!h1big?'var(--text-primary)':'var(--text-muted)'}">${d.ahAway}</span>`;
+          html += `</div>`;
+          html += `<div style="display:flex;font-size:0.66rem;color:var(--text-muted);padding:0 48px;justify-content:space-between;margin-bottom:4px">`;
+          html += `<span>${t1Name}</span><span>${t2Name}</span>`;
+          html += `</div>`;
+        }
+
+        // O/U row
+        if (d.over + d.under > 0) {
+          const ouTotal = d.over + d.under;
+          const oPct = Math.round(d.over / ouTotal * 100);
+          const uPct = 100 - oPct;
+          const oBig = d.over >= d.under;
+          html += `<div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;margin-bottom:3px">`;
+          html += `<span style="width:20px;text-align:right;color:var(--text-muted)">O/U</span>`;
+          html += `<span style="width:22px;text-align:right;font-weight:${oBig?'700':'400'};color:${oBig?'var(--text-primary)':'var(--text-muted)'}">${d.over}</span>`;
+          html += `<div style="flex:1;display:flex;height:10px;border-radius:3px;overflow:hidden;background:var(--bg-input)">`;
+          html += `<div style="width:${oPct}%;background:var(--secondary)"></div>`;
+          html += `<div style="width:${uPct}%;background:var(--accent)"></div>`;
+          html += `</div>`;
+          html += `<span style="width:22px;font-weight:${!oBig?'700':'400'};color:${!oBig?'var(--text-primary)':'var(--text-muted)'}">${d.under}</span>`;
+          html += `</div>`;
+          html += `<div style="display:flex;font-size:0.66rem;color:var(--text-muted);padding:0 48px;justify-content:space-between">`;
+          html += `<span>${lang === 'th' ? 'สูง' : 'Over'}</span><span>${lang === 'th' ? 'ต่ำ' : 'Under'}</span>`;
+          html += `</div>`;
+        }
+
+        html += `</div>`;
+      });
+      html += `</div>`;
+    }
+  }
+
   // Pending exposure (only show if there are pending slips)
   if (pendingCount > 0) {
     html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px">`;
