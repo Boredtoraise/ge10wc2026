@@ -116,14 +116,19 @@ async function renderCurrentView() {
 
 async function renderSummaryLazy() {
   const container = document.getElementById('view-summary');
-  if (!state.allSlips.length && API_BASE_URL) {
+  if (!state.allSlips.length && API_BASE_URL && !state._fetchingAllSlips) {
+    state._fetchingAllSlips = true;
     let sk = '';
     for (let i = 0; i < 4; i++) {
       sk += `<div class="skeleton-card"><div class="skeleton-line" style="height:18px;width:${40 + i * 10}%"></div><div class="skeleton-line" style="height:12px;width:60%"></div><div class="skeleton-line" style="height:12px;width:80%"></div></div>`;
     }
     container.innerHTML = sk;
-    const allSlips = await fetchAPI('allslips');
-    if (allSlips) state.allSlips = allSlips;
+    try {
+      const allSlips = await fetchAPI('allslips');
+      if (allSlips) state.allSlips = allSlips;
+    } finally {
+      state._fetchingAllSlips = false;
+    }
   }
   renderSummary();
 }
@@ -183,7 +188,20 @@ function init() {
   applyTranslations();
   updateAdminUI();
 
-  // Show immediately with hardcoded data — don't wait for API
+  // Load cached matches + players for instant first render
+  try {
+    const cm = JSON.parse(localStorage.getItem('wc2026_matches') || 'null');
+    if (cm && Date.now() - cm.t < 10 * 60 * 1000) {
+      cm.d.forEach(m => { state.matches[m.match_id] = m; });
+      buildLinesFromMatches();
+    }
+    const cp = JSON.parse(localStorage.getItem('wc2026_players') || 'null');
+    if (cp && Date.now() - cp.t < 60 * 60 * 1000) {
+      state.players = cp.d;
+    }
+  } catch(e) {}
+
+  // Show immediately with hardcoded + cached data — don't wait for API
   const hash = location.hash.slice(1) || 'schedule';
   navigate(hash);
 
@@ -218,9 +236,11 @@ async function refreshData() {
 
     if (data.matches) {
       data.matches.forEach(m => { state.matches[m.match_id] = m; });
+      try { localStorage.setItem('wc2026_matches', JSON.stringify({ t: Date.now(), d: data.matches })); } catch(e) {}
     }
     if (data.players) {
       state.players = data.players;
+      try { localStorage.setItem('wc2026_players', JSON.stringify({ t: Date.now(), d: data.players })); } catch(e) {}
     }
     if (data.slips) {
       state.slips = data.slips.map(parsePicks);
