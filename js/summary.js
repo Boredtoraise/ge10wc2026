@@ -589,7 +589,12 @@ function renderHouseDashboard() {
     // Per-match filtering: done match = all non-cancelled; pending match = alive slips only
     todayMatches.forEach(m => {
       const matchDone = isMatchLocked(m);
-      dist[m.id] = { ahHome: 0, ahAway: 0, over: 0, under: 0 };
+      dist[m.id] = {
+        ahHome: 0, ahAway: 0, over: 0, under: 0,
+        ahHomeC: 0, ahAwayC: 0, overC: 0, underC: 0,
+        ahHomeBet: 0, ahAwayBet: 0, overBet: 0, underBet: 0,
+        ahHomePay: 0, ahAwayPay: 0, overPay: 0, underPay: 0,
+      };
       allSlips.filter(s => {
         if (s.status === 'cancelled') return false;
         if (!matchDone && resolveSlip(s).status !== 'pending') return false;
@@ -599,11 +604,21 @@ function renderHouseDashboard() {
         const matchObj = state.matchById ? state.matchById[m.id] : null;
         (s.picks || []).filter(p => p.match_id === m.id).forEach(pick => {
           if (pick.type === 'ou') {
-            if (pick.pick === 'over') dist[m.id].over += w;
-            else dist[m.id].under += w;
+            if (pick.pick === 'over') {
+              dist[m.id].over += w; dist[m.id].overC++;
+              dist[m.id].overBet += s.bet || 0; dist[m.id].overPay += s.payout || 0;
+            } else {
+              dist[m.id].under += w; dist[m.id].underC++;
+              dist[m.id].underBet += s.bet || 0; dist[m.id].underPay += s.payout || 0;
+            }
           } else {
-            if (matchObj && pick.pick === matchObj.team1) dist[m.id].ahHome += w;
-            else dist[m.id].ahAway += w;
+            if (matchObj && pick.pick === matchObj.team1) {
+              dist[m.id].ahHome += w; dist[m.id].ahHomeC++;
+              dist[m.id].ahHomeBet += s.bet || 0; dist[m.id].ahHomePay += s.payout || 0;
+            } else {
+              dist[m.id].ahAway += w; dist[m.id].ahAwayC++;
+              dist[m.id].ahAwayBet += s.bet || 0; dist[m.id].ahAwayPay += s.payout || 0;
+            }
           }
         });
       });
@@ -672,6 +687,10 @@ function renderHouseDashboard() {
           html += `<span>AH ${ahLine}</span>`;
           html += `<span style="text-align:right">${ahOddsA?'@'+ahOddsA:''} ${t2Name}${lineA?' '+lineA:''}</span>`;
           html += `</div>`;
+          html += `<div style="display:flex;justify-content:space-between;font-size:0.63rem;color:var(--text-muted);margin-bottom:6px">`;
+          html += `<span>${d.ahHomeC} slip · เก็บ ${d.ahHomeBet}฿ · จ่าย ${d.ahHomePay}฿</span>`;
+          html += `<span style="text-align:right">${d.ahAwayC} slip · เก็บ ${d.ahAwayBet}฿ · จ่าย ${d.ahAwayPay}฿</span>`;
+          html += `</div>`;
         }
 
         // O/U row
@@ -694,6 +713,10 @@ function renderHouseDashboard() {
           html += `<span>${lang === 'th' ? 'สูง' : 'Over'} ${ouOddsO?'@'+ouOddsO:''}</span>`;
           html += `<span>O/U ${ouLine}</span>`;
           html += `<span style="text-align:right">${ouOddsU?'@'+ouOddsU:''} ${lang === 'th' ? 'ต่ำ' : 'Under'}</span>`;
+          html += `</div>`;
+          html += `<div style="display:flex;justify-content:space-between;font-size:0.63rem;color:var(--text-muted);margin-bottom:2px">`;
+          html += `<span>${d.overC} slip · เก็บ ${d.overBet}฿ · จ่าย ${d.overPay}฿</span>`;
+          html += `<span style="text-align:right">${d.underC} slip · เก็บ ${d.underBet}฿ · จ่าย ${d.underPay}฿</span>`;
           html += `</div>`;
         }
 
