@@ -328,8 +328,9 @@ function renderRulesInline() {
 }
 
 function getTodayMatches() {
-  // "Current round" = earliest date group with lines that still has unscored matches
-  // Stays locked on current group until all matches have scores, then advances to next
+  // Start from today's ET date — ignore past dates (even if unscored)
+  // Advance to next group only when current group is fully scored
+  const todayET = new Date(Date.now() - 4 * 3600000).toISOString().slice(0, 10);
   const withLines = MATCHES.filter(m => state.ahLines[m.id] || state.ouLines[m.id]);
   const byDate = {};
   withLines.forEach(m => {
@@ -337,7 +338,7 @@ function getTodayMatches() {
     if (!byDate[d]) byDate[d] = [];
     byDate[d].push(m);
   });
-  const dates = Object.keys(byDate).sort();
+  const dates = Object.keys(byDate).sort().filter(d => d >= todayET);
   for (const d of dates) {
     const group = byDate[d];
     const allScored = group.every(m => {
