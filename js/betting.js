@@ -199,6 +199,67 @@ async function renderBetting() {
     });
   });
 
+  // Follow bet (แทงตามเลย)
+  container.querySelectorAll('.slip-follow-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const ts = btn.dataset.ts;
+      const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
+      const slip = allSlips.find(s => String(s.timestamp) === String(ts));
+      if (!slip) return;
+
+      const validPicks = (slip.picks || []).filter(p => {
+        const m = MATCHES.find(x => x.id === p.match_id);
+        return m && !isMatchLocked(m);
+      });
+
+      if (!validPicks.length) {
+        showToast(currentLang === 'th' ? 'ทุก match ล็อคแล้ว' : 'All matches locked');
+        return;
+      }
+
+      const pickSummary = validPicks.map(p => {
+        const m = MATCHES.find(x => x.id === p.match_id);
+        const t1 = TEAMS[m?.team1], t2 = TEAMS[m?.team2];
+        const name1 = t1 ? (currentLang === 'th' ? t1.nameTh : t1.name) : m?.team1;
+        const name2 = t2 ? (currentLang === 'th' ? t2.nameTh : t2.name) : m?.team2;
+        const isOu = p.type === 'ou';
+        const pickName = isOu
+          ? (p.pick === 'over' ? 'สูง' : 'ต่ำ') + ' ' + (p.line || '')
+          : (TEAMS[p.pick] ? (currentLang === 'th' ? TEAMS[p.pick].nameTh : TEAMS[p.pick].name) : p.pick);
+        return `${name1}-${name2}: ${pickName} @${p.odds}`;
+      }).join('\n');
+
+      const msg = `แทงตาม ${slip.player}\n${pickSummary}\nจำนวน: ${slip.bet}฿\n\nยืนยัน?`;
+      if (!window.confirm(msg)) return;
+
+      const combinedOdds = validPicks.reduce((a, p) => a * p.odds, 1);
+      const newSlip = {
+        bet: slip.bet,
+        combined_odds: Math.round(combinedOdds * 1000) / 1000,
+        payout: Math.round(slip.bet * combinedOdds),
+        picks: validPicks.map(p => ({
+          match_id: p.match_id,
+          pick: p.pick,
+          odds: p.odds,
+          type: p.type,
+          line: p.line,
+        })),
+      };
+
+      btn.disabled = true;
+      btn.textContent = '...';
+      const result = await submitSlip(newSlip);
+      if (result && result.success) {
+        showToast(currentLang === 'th' ? 'แทงตามแล้ว!' : 'Bet placed!');
+        renderBetting();
+      } else {
+        showToast(currentLang === 'th' ? 'เกิดข้อผิดพลาด' : 'Error');
+        btn.disabled = false;
+        btn.textContent = 'แทงตาม';
+      }
+    });
+  });
+
   // Top tab switching (แทงบอล / สลิปเพื่อน)
   container.querySelectorAll('.bet-main-tab').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -616,7 +677,8 @@ function renderSlipCard(slip, opts) {
     }
   }
   if (opts.showCopy) {
-    html += `<button class="slip-copy-btn" data-ts="${slip.timestamp}" style="background:var(--primary);border:none;color:#fff;padding:5px 14px;border-radius:6px;font-size:0.82rem;font-weight:700;cursor:pointer">+ Copy</button>`;
+    html += `<button class="slip-copy-btn" data-ts="${slip.timestamp}" style="background:var(--primary);border:none;color:#fff;padding:5px 12px;border-radius:6px;font-size:0.82rem;font-weight:700;cursor:pointer">Copy</button>`;
+    html += `<button class="slip-follow-btn" data-ts="${slip.timestamp}" style="background:var(--accent);border:none;color:#000;padding:5px 12px;border-radius:6px;font-size:0.82rem;font-weight:700;cursor:pointer">แทงตาม</button>`;
   }
   if (needsApprove) {
     html += `<button class="slip-approve-btn" data-ts="${slip.timestamp}" style="background:var(--accent);color:#000;border:none;padding:4px 12px;border-radius:4px;font-size:0.78rem;font-weight:700;cursor:pointer">${lang === 'th' ? '✓ ยืนยัน' : '✓ Approve'}</button>`;
