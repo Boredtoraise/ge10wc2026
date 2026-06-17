@@ -106,6 +106,27 @@ function renderSummaryTab() {
 // --- Per-user dashboard ---
 function renderUserDashboard(player) {
   const lang = currentLang;
+
+  // Admin's own tab = approve queue, not player stats
+  if (state.isAdmin && player === state.currentPlayer) {
+    const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
+    const toApprove = allSlips
+      .filter(s => s.status !== 'cancelled' && s.status !== 'approved')
+      .sort((a, b) => {
+        const aR = resolveSlip(a), bR = resolveSlip(b);
+        const aD = (aR.status === 'won' || aR.status === 'lost') ? 0 : 1;
+        const bD = (bR.status === 'won' || bR.status === 'lost') ? 0 : 1;
+        return aD - bD || new Date(b.timestamp) - new Date(a.timestamp);
+      });
+    let html = `<div style="margin-bottom:8px;font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'สลิปรอยืนยัน' : 'Slips to approve'}: ${toApprove.length}</div>`;
+    if (!toApprove.length) {
+      html += `<div style="text-align:center;padding:30px;color:var(--text-muted)">${lang === 'th' ? 'ไม่มีสลิปรอตรวจ' : 'Nothing to approve'}</div>`;
+    } else {
+      toApprove.forEach(slip => { html += renderSlipCard(slip, { showPlayer: true }); });
+    }
+    return html;
+  }
+
   const slipsDetail = calculatePlayerSlipsDetailed(player);
   const totalBalance = slipsDetail.total.profit;
 
