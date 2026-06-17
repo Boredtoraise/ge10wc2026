@@ -228,11 +228,11 @@ function renderPendingSlipCard(slip, lang) {
 
   let borderStyle, bgStyle;
   if (st === 'won' || st === 'approved') {
-    borderStyle = 'border:2px solid var(--accent)';
-    bgStyle = 'background:rgba(212,160,23,0.07)';
+    borderStyle = 'border:3px solid var(--accent);box-shadow:0 0 0 3px rgba(240,201,41,0.25)';
+    bgStyle = 'background:rgba(240,201,41,0.10)';
   } else if (st === 'lost') {
-    borderStyle = 'border:2px dashed var(--secondary)';
-    bgStyle = 'background:rgba(46,134,171,0.05)';
+    borderStyle = 'border:3px solid var(--secondary);box-shadow:0 0 0 3px rgba(46,134,171,0.20)';
+    bgStyle = 'background:rgba(46,134,171,0.10)';
   } else {
     borderStyle = 'border:1px solid var(--border)';
     bgStyle = 'background:var(--bg-card)';

@@ -148,9 +148,9 @@ async function renderBetting() {
 
       let borderStyle = 'border:1px solid var(--border)';
       let bgStyle = 'background:var(--bg-card)';
-      if (needsApprove || st === 'won') { borderStyle = 'border:2px solid var(--accent)'; bgStyle = 'background:rgba(212,160,23,0.07)'; }
-      else if (slip.status === 'approved') { borderStyle = 'border:2px solid var(--accent)'; bgStyle = 'background:rgba(212,160,23,0.05)'; }
-      else if (st === 'lost') { borderStyle = 'border:2px dashed var(--secondary)'; bgStyle = 'background:rgba(46,134,171,0.05)'; }
+      if (needsApprove || st === 'won') { borderStyle = 'border:3px solid var(--accent);box-shadow:0 0 0 3px rgba(240,201,41,0.25)'; bgStyle = 'background:rgba(240,201,41,0.10)'; }
+      else if (slip.status === 'approved') { borderStyle = 'border:3px solid var(--accent);box-shadow:0 0 0 3px rgba(240,201,41,0.25)'; bgStyle = 'background:rgba(240,201,41,0.10)'; }
+      else if (st === 'lost') { borderStyle = 'border:3px solid var(--secondary);box-shadow:0 0 0 3px rgba(46,134,171,0.20)'; bgStyle = 'background:rgba(46,134,171,0.10)'; }
 
       let s = `<div style="padding:10px 12px;margin-bottom:8px;border-radius:var(--radius-lg);${bgStyle};${borderStyle}">`;
       s += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">`;
@@ -611,7 +611,7 @@ function renderSlip(slip, idx) {
   else if (displayStatus === 'lost') cardStyle = 'border:3px solid var(--secondary);box-shadow:0 0 0 3px rgba(46,134,171,0.20);background:rgba(46,134,171,0.10);';
 
   const isApproved = slip.status === 'approved';
-  if (isApproved) cardStyle = 'border:2px solid var(--accent);';
+  if (isApproved) cardStyle = 'border:3px solid var(--accent);box-shadow:0 0 0 3px rgba(240,201,41,0.25);background:rgba(240,201,41,0.10);';
 
   let html = `<div class="card" style="padding:10px;margin-bottom:8px;${cardStyle}">`;
   html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">`;
