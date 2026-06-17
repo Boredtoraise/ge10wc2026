@@ -36,6 +36,43 @@ async function renderBetting() {
   const tabOn  = 'padding:8px 14px;font-size:0.85rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
   const tabOff = 'padding:8px 14px;font-size:0.85rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
 
+  // ── Admin view: house dashboard + all friend slips (no tab UI) ───────
+  if (state.isAdmin) {
+    let html = '';
+    html += `<div class="user-bar"><span class="user-name">${state.currentPlayer}</span><button class="logout-btn" id="bet-logout">${t('logout')}</button></div>`;
+    html += renderHouseDashboard();
+    html += `<div style="margin:16px 0 8px;font-size:0.85rem;color:var(--text-muted);font-weight:700">${lang === 'th' ? 'สลิปเพื่อน' : "Friends' Slips"} (${pendingFriendSlips.length})</div>`;
+    if (!pendingFriendSlips.length) {
+      html += `<div style="color:var(--text-muted);text-align:center;padding:30px">${lang === 'th' ? 'ไม่มีสลิปรอ' : 'No pending slips'}</div>`;
+    } else {
+      pendingFriendSlips.forEach(s => { html += renderSlipCard(s, { showPlayer: true }); });
+    }
+    container.innerHTML = html;
+    container.querySelector('#bet-logout')?.addEventListener('click', () => {
+      state.currentPlayer = null;
+      sessionStorage.removeItem('wc2026_player');
+      sessionStorage.removeItem('wc2026_pin');
+      renderBetting();
+    });
+    container.querySelectorAll('.slip-approve-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const ts = btn.dataset.ts;
+        const result = await approveSlip(ts);
+        if (result && result.success) {
+          const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
+          const slip = allSlips.find(s => String(s.timestamp) === String(ts));
+          if (slip) slip.status = 'approved';
+          updateTabBadges();
+          showToast(lang === 'th' ? 'ยืนยันแล้ว' : 'Approved');
+          renderBetting();
+        } else {
+          showToast('Error');
+        }
+      });
+    });
+    return;
+  }
+
   let html = '';
 
   // User bar
@@ -44,13 +81,10 @@ async function renderBetting() {
   html += `<button class="logout-btn" id="bet-logout">${t('logout')}</button>`;
   html += `</div>`;
 
-  // Top tabs: แทงบอล | สลิปเพื่อน (N) | ภาพรวม (admin only)
+  // Top tabs: แทงบอล | สลิปเพื่อน (N)
   html += `<div style="display:flex;gap:8px;margin-bottom:16px">`;
   html += `<button class="bet-main-tab" data-main="bet" style="${tabOn}">${lang === 'th' ? 'แทงบอล' : 'Betting'}</button>`;
   html += `<button class="bet-main-tab" data-main="friends" style="${tabOff}">${lang === 'th' ? 'สลิปเพื่อน' : 'Friends'}${pendingFriendSlips.length ? ` (${pendingFriendSlips.length})` : ''}</button>`;
-  if (state.isAdmin) {
-    html += `<button class="bet-main-tab" data-main="overview" style="${tabOff}">${lang === 'th' ? 'ภาพรวม' : 'Overview'}</button>`;
-  }
   html += `</div>`;
 
   // ── Tab: แทงบอล ──────────────────────────────────────────────────
@@ -150,13 +184,6 @@ async function renderBetting() {
     });
   }
   html += `</div>`; // bet-main-friends
-
-  // ── Tab: ภาพรวม (admin only) ──────────────────────────────────────
-  if (state.isAdmin) {
-    html += `<div id="bet-main-overview" style="display:none">`;
-    html += typeof renderHouseDashboard === 'function' ? renderHouseDashboard() : '';
-    html += `</div>`;
-  }
 
   container.innerHTML = html;
 
@@ -275,10 +302,8 @@ async function renderBetting() {
     btn.addEventListener('click', () => {
       const key = btn.dataset.main;
       container.querySelectorAll('.bet-main-tab').forEach(b => { b.style.cssText = b.dataset.main === key ? tabOn : tabOff; });
-      container.querySelector('#bet-main-bet').style.display      = key === 'bet'      ? '' : 'none';
-      container.querySelector('#bet-main-friends').style.display  = key === 'friends'  ? '' : 'none';
-      const ov = container.querySelector('#bet-main-overview');
-      if (ov) ov.style.display = key === 'overview' ? '' : 'none';
+      container.querySelector('#bet-main-bet').style.display     = key === 'bet'     ? '' : 'none';
+      container.querySelector('#bet-main-friends').style.display = key === 'friends' ? '' : 'none';
     });
   });
 
