@@ -39,6 +39,20 @@ function renderSummary() {
       container.querySelector(`[data-lb-content="${tab.dataset.lbTab}"]`)?.classList.add('active');
     });
   });
+
+  // Approve buttons (admin only)
+  container.querySelectorAll('.slip-approve-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const ts = btn.dataset.ts;
+      const result = await approveSlip(ts);
+      if (result && result.success) {
+        const allSlips = state.allSlips.length ? state.allSlips : (state.slips || []);
+        const slip = allSlips.find(s => String(s.timestamp) === String(ts));
+        if (slip) slip.status = 'approved';
+        renderSummary();
+      }
+    });
+  });
 }
 
 // --- Summary tab ---
@@ -147,33 +161,18 @@ function renderUserDashboard(player) {
     html += `</div></div>`;
   }
 
-  // Slips detail
+  // Slips detail — unified renderSlipCard
+  const playerSlips = (state.allSlips.length ? state.allSlips : (state.slips || []))
+    .filter(s => s.player === player && s.status !== 'cancelled')
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
   html += `<div class="lb-section open">`;
   html += `<div class="lb-section-header"><h3>${lang === 'th' ? 'สลิปทั้งหมด' : 'All Slips'}: <span style="color:${moneyColor(totalBalance)}">${fmtMoney(totalBalance)}</span></h3><span class="lb-section-arrow">▼</span></div>`;
   html += `<div class="lb-section-body">`;
-
-  if (slipsDetail.tickets.length === 0) {
+  if (!playerSlips.length) {
     html += `<div style="color:var(--text-muted);font-size:0.85rem;text-align:center;padding:12px">${lang === 'th' ? 'ยังไม่มีสลิป' : 'No slips yet'}</div>`;
   } else {
-    slipsDetail.tickets.reverse().forEach((tk, idx) => {
-      const statusColor = { pending: 'var(--secondary)', won: 'var(--accent)', lost: 'var(--wrong)' };
-      const isStep = tk.picks.length >= 3;
-      html += `<div class="card" style="padding:8px;margin-bottom:6px">`;
-      html += `<div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px">`;
-      html += `<span style="color:var(--text-muted)">#${idx + 1} ${isStep ? 'STEP' : 'SINGLE'} — ${new Date(tk.timestamp).toLocaleDateString('th-TH')}</span>`;
-      html += `<span style="font-weight:700;color:${statusColor[tk.status]}">${tk.status.toUpperCase()}</span>`;
-      html += `</div>`;
-      tk.picks.forEach(p => {
-        html += `<div style="font-size:0.75rem;display:flex;justify-content:space-between;padding:1px 0">`;
-        html += `<span>${p.label} <span class="odds-tag">@${p.odds}</span></span>`;
-        html += `<span>${p.resultBadge}</span>`;
-        html += `</div>`;
-      });
-      html += `<div style="display:flex;justify-content:space-between;margin-top:4px;padding-top:4px;border-top:1px solid var(--border);font-size:0.85rem;font-weight:600">`;
-      html += `<span>${tk.bet}฿ × ${tk.odds}</span>`;
-      html += `<span style="color:${moneyColor(tk.profit)}">${fmtMoney(tk.profit)}</span>`;
-      html += `</div></div>`;
-    });
+    playerSlips.forEach(slip => { html += renderSlipCard(slip, { showDetails: true }); });
   }
   html += `</div></div>`;
 
