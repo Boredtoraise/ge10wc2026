@@ -121,6 +121,11 @@ async function renderBetting() {
   } else {
     html += `<div style="margin-bottom:12px"><button id="bet-rules-toggle" style="font-size:0.8rem;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline">${lang === 'th' ? 'กติกา ▸' : 'Rules ▸'}</button><p id="bet-rules-text" style="display:none;font-size:0.85rem;color:var(--text-muted);margin:6px 0 0">${lang === 'th' ? 'กดเลือก กดอีกที=ยกเลิก<br>1 pick = single<br>2 คู่ = 4 picks (AH+O/U ทั้งคู่)<br>3 คู่+ = step (pick ละคู่ก็ได้)' : 'Tap to select, tap again to deselect<br>1 pick = single<br>2 matches = 4 picks (AH+O/U both)<br>3+ matches = step (1 pick/match ok)'}</p></div>`;
     available.forEach(m => { html += renderBettingCard(m); });
+    const todayLocked = locked.filter(m => getTodayMatches().some(t => t.id === m.id));
+    if (todayLocked.length) {
+      html += `<div style="font-size:0.75rem;color:var(--text-muted);margin:10px 0 6px">🔒 ${lang === 'th' ? 'ล็อคแล้ว' : 'Locked'}</div>`;
+      todayLocked.forEach(m => { html += renderBettingCardLocked(m); });
+    }
 
     html += `<div style="margin-top:12px;padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg)">`;
     html += `<div id="bet-summary" style="font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'เลือก' : 'Picks'}: 0</div>`;
