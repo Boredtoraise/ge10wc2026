@@ -126,19 +126,14 @@ function renderUserDashboard(player) {
   }
   html += `</div>`;
 
-  // Today's pending slips
-  const todayStr = new Date().toDateString();
-  const allSlipsForToday = (state.allSlips.length ? state.allSlips : (state.slips || []))
-    .filter(s => s.player === player && s.status !== 'cancelled' && new Date(s.timestamp).toDateString() === todayStr);
-  const todayPending = allSlipsForToday.filter(s => {
-    const resolved = resolveSlip(s);
-    return resolved.status === 'pending';
-  });
+  // All pending slips (not yet settled in sheet)
+  const allSlipsAll = state.allSlips.length ? state.allSlips : (state.slips || []);
+  const todayPending = allSlipsAll.filter(s => s.player === player && s.status === 'pending');
   if (todayPending.length > 0) {
     const todayRoiBplus  = todayPending.reduce((sum, s) => sum + ((s.payout || 0) - (s.bet || 0)), 0);
     const todayRoiMinus  = todayPending.reduce((sum, s) => sum + (s.bet || 0), 0);
     html += `<div style="margin-bottom:12px;padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">`;
-    html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:8px">${lang === 'th' ? 'วันนี้' : 'Today'} (${todayPending.length} ${lang === 'th' ? 'สลิปรอผล' : 'pending'})</div>`;
+    html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:8px">${lang === 'th' ? 'สลิปรอ' : 'Pending'} (${todayPending.length})</div>`;
     html += `<div style="display:flex;gap:12px">`;
     html += `<div style="flex:1;text-align:center">`;
     html += `<div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'รอบวก' : 'Max Win'}</div>`;
