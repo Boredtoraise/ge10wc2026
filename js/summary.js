@@ -503,12 +503,17 @@ function renderHouseDashboard() {
 
         // AH row
         if (d.ahHome + d.ahAway > 0) {
+          const ahLine  = state.ahLines[m.id]  || '';
+          const ahOddsH = state.ahOddsH[m.id]  || '';
+          const ahOddsA = state.ahOddsA[m.id]  || '';
+          const lineH   = ahLine ? formatAhFav(ahLine, true)  : '';
+          const lineA   = ahLine ? formatAhFav(ahLine, false) : '';
           const ahTotal = d.ahHome + d.ahAway;
-          const h1pct = Math.round(d.ahHome / ahTotal * 100);
-          const h2pct = 100 - h1pct;
-          const h1big = d.ahHome >= d.ahAway;
+          const h1pct   = Math.round(d.ahHome / ahTotal * 100);
+          const h2pct   = 100 - h1pct;
+          const h1big   = d.ahHome >= d.ahAway;
           html += `<div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;margin-bottom:3px">`;
-          html += `<span style="width:20px;text-align:right;color:var(--text-muted)">AH</span>`;
+          html += `<span style="width:52px;text-align:right;color:var(--text-muted)">AH ${ahLine}</span>`;
           html += `<span style="width:22px;text-align:right;font-weight:${h1big?'700':'400'};color:${h1big?'var(--text-primary)':'var(--text-muted)'}">${d.ahHome}</span>`;
           html += `<div style="flex:1;display:flex;height:10px;border-radius:3px;overflow:hidden;background:var(--bg-input)">`;
           html += `<div style="width:${h1pct}%;background:var(--secondary)"></div>`;
@@ -516,19 +521,23 @@ function renderHouseDashboard() {
           html += `</div>`;
           html += `<span style="width:22px;font-weight:${!h1big?'700':'400'};color:${!h1big?'var(--text-primary)':'var(--text-muted)'}">${d.ahAway}</span>`;
           html += `</div>`;
-          html += `<div style="display:flex;font-size:0.66rem;color:var(--text-muted);padding:0 48px;justify-content:space-between;margin-bottom:4px">`;
-          html += `<span>${t1Name}</span><span>${t2Name}</span>`;
+          html += `<div style="display:flex;font-size:0.66rem;color:var(--text-muted);padding:0 24px 0 76px;justify-content:space-between;margin-bottom:4px">`;
+          html += `<span>${t1Name}${lineH?' '+lineH:''} ${ahOddsH?'@'+ahOddsH:''}</span>`;
+          html += `<span style="text-align:right">${ahOddsA?'@'+ahOddsA:''} ${t2Name}${lineA?' '+lineA:''}</span>`;
           html += `</div>`;
         }
 
         // O/U row
         if (d.over + d.under > 0) {
+          const ouLine  = state.ouLines[m.id]  || '';
+          const ouOddsO = state.ouOddsO[m.id]  || '';
+          const ouOddsU = state.ouOddsU[m.id]  || '';
           const ouTotal = d.over + d.under;
-          const oPct = Math.round(d.over / ouTotal * 100);
-          const uPct = 100 - oPct;
-          const oBig = d.over >= d.under;
+          const oPct    = Math.round(d.over / ouTotal * 100);
+          const uPct    = 100 - oPct;
+          const oBig    = d.over >= d.under;
           html += `<div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;margin-bottom:3px">`;
-          html += `<span style="width:20px;text-align:right;color:var(--text-muted)">O/U</span>`;
+          html += `<span style="width:52px;text-align:right;color:var(--text-muted)">O/U ${ouLine}</span>`;
           html += `<span style="width:22px;text-align:right;font-weight:${oBig?'700':'400'};color:${oBig?'var(--text-primary)':'var(--text-muted)'}">${d.over}</span>`;
           html += `<div style="flex:1;display:flex;height:10px;border-radius:3px;overflow:hidden;background:var(--bg-input)">`;
           html += `<div style="width:${oPct}%;background:var(--secondary)"></div>`;
@@ -536,8 +545,9 @@ function renderHouseDashboard() {
           html += `</div>`;
           html += `<span style="width:22px;font-weight:${!oBig?'700':'400'};color:${!oBig?'var(--text-primary)':'var(--text-muted)'}">${d.under}</span>`;
           html += `</div>`;
-          html += `<div style="display:flex;font-size:0.66rem;color:var(--text-muted);padding:0 48px;justify-content:space-between">`;
-          html += `<span>${lang === 'th' ? 'สูง' : 'Over'}</span><span>${lang === 'th' ? 'ต่ำ' : 'Under'}</span>`;
+          html += `<div style="display:flex;font-size:0.66rem;color:var(--text-muted);padding:0 24px 0 76px;justify-content:space-between">`;
+          html += `<span>${lang === 'th' ? 'สูง' : 'Over'} ${ouOddsO?'@'+ouOddsO:''}</span>`;
+          html += `<span style="text-align:right">${ouOddsU?'@'+ouOddsU:''} ${lang === 'th' ? 'ต่ำ' : 'Under'}</span>`;
           html += `</div>`;
         }
 

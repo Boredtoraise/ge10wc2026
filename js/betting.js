@@ -42,18 +42,9 @@ async function renderBetting() {
 
   // ── Admin view: house dashboard + friend slips + ราคาบอล tab ───────
   if (state.isAdmin) {
-    const todayLockedAdmin = locked.filter(m => getTodayMatches().some(t => t.id === m.id));
-    const todayAllAdmin = [...available, ...todayLockedAdmin].sort((a, b) => etToThai(a.date) - etToThai(b.date));
-
     let html = '';
     html += `<div class="user-bar"><span class="user-name">${state.currentPlayer}</span><button class="logout-btn" id="bet-logout">${t('logout')}</button></div>`;
     html += renderHouseDashboard();
-
-    // ── Odds section ──
-    if (todayAllAdmin.length) {
-      html += `<div style="margin-bottom:8px;font-size:0.85rem;color:var(--text-muted);font-weight:700">${lang === 'th' ? 'ราคาบอล' : 'Odds'}</div>`;
-      todayAllAdmin.forEach(m => { html += renderBettingCardLocked(m); });
-    }
 
     // ── Slips section ──
     html += `<div style="margin:16px 0 8px;font-size:0.85rem;color:var(--text-muted);font-weight:700">${lang === 'th' ? 'สลิปเพื่อน' : "Friends' Slips"} (${pendingFriendSlips.length})</div>`;
