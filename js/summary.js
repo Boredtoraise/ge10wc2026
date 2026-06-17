@@ -7,10 +7,7 @@ function renderSummary() {
 
   let html = '';
 
-  // Tab bar: summary + per-user (admin excluded — house dashboard in betting tab)
-  const tabPlayers = state.isAdmin
-    ? players.filter(p => p !== state.currentPlayer)
-    : players;
+  const tabPlayers = players;
 
   html += `<div class="lb-tabs">`;
   html += `<button class="lb-tab active" data-lb-tab="summary">${lang === 'th' ? 'สรุป' : 'Summary'}</button>`;
@@ -64,8 +61,8 @@ function renderSummaryTab() {
   const lang = currentLang;
   let html = '';
 
-  // Overall ranking by money (exclude admin — Pok doesn't bet)
-  const allPlayers = getPlayers().filter(p => !(state.isAdmin && p === state.currentPlayer));
+  // Overall ranking by money
+  const allPlayers = getPlayers();
   const summary = [];
   allPlayers.forEach(player => {
     const money = calculatePlayerMoney(player);
@@ -209,7 +206,7 @@ function renderUserDashboard(player) {
 function getPlayers() {
   const slips = getAllSlips();
   return state.players.length
-    ? state.players.map(p => p.player_id)
+    ? state.players.filter(p => String(p.is_admin).toLowerCase() !== 'true').map(p => p.player_id)
     : [...new Set([
         ...Object.values(state.predictions).map(p => p.player || p.player_id),
         ...slips.map(s => s.player),
