@@ -351,11 +351,9 @@ function renderRulesInline() {
 }
 
 function getTodayMatches() {
-  const todayStr = new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10);
-  return MATCHES.filter(m => {
-    const thaiDate = new Date(etToThai(m.date).getTime() + 7 * 3600000).toISOString().slice(0, 10);
-    return thaiDate === todayStr;
-  });
+  // Match dates are stored as ET strings — compare by ET date (UTC-4)
+  const todayET = new Date(Date.now() - 4 * 3600000).toISOString().slice(0, 10);
+  return MATCHES.filter(m => m.date.slice(0, 10) === todayET);
 }
 
 // --- Admin: House (Pok) risk dashboard ---
