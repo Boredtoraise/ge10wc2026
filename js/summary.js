@@ -327,18 +327,31 @@ function renderRulesInline() {
   `;
 }
 
+function getMatchRoundDate(m) {
+  // Round boundary = 14:00 TH — matches before 14:00 TH belong to previous day's round
+  const thaiMs = etToThai(m.date).getTime() + 7 * 3600000;
+  const thaiDate = new Date(thaiMs);
+  const minuteOfDay = thaiDate.getUTCHours() * 60 + thaiDate.getUTCMinutes();
+  const roundMs = minuteOfDay < 14 * 60 ? thaiMs - 24 * 3600000 : thaiMs;
+  return new Date(roundMs).toISOString().slice(0, 10);
+}
+
 function getTodayMatches() {
-  // Start from today's ET date — ignore past dates (even if unscored)
-  // Advance to next group only when current group is fully scored
-  const todayET = new Date(Date.now() - 4 * 3600000).toISOString().slice(0, 10);
+  // Current round date: if now is before 14:00 TH, we're still in yesterday's round
+  const nowTH = Date.now() + 7 * 3600000;
+  const nowDate = new Date(nowTH);
+  const nowMinuteOfDay = nowDate.getUTCHours() * 60 + nowDate.getUTCMinutes();
+  const currentRoundMs = nowMinuteOfDay < 14 * 60 ? nowTH - 24 * 3600000 : nowTH;
+  const currentRound = new Date(currentRoundMs).toISOString().slice(0, 10);
+
   const withLines = MATCHES.filter(m => state.ahLines[m.id] || state.ouLines[m.id]);
   const byDate = {};
   withLines.forEach(m => {
-    const d = m.date.slice(0, 10);
+    const d = getMatchRoundDate(m);
     if (!byDate[d]) byDate[d] = [];
     byDate[d].push(m);
   });
-  const dates = Object.keys(byDate).sort().filter(d => d >= todayET);
+  const dates = Object.keys(byDate).sort().filter(d => d >= currentRound);
   for (const d of dates) {
     const group = byDate[d];
     const allScored = group.every(m => {
