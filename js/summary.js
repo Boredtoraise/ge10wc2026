@@ -64,8 +64,8 @@ function renderSummaryTab() {
   const lang = currentLang;
   let html = '';
 
-  // Overall ranking by money
-  const allPlayers = getPlayers();
+  // Overall ranking by money (exclude admin — Pok doesn't bet)
+  const allPlayers = getPlayers().filter(p => !(state.isAdmin && p === state.currentPlayer));
   const summary = [];
   allPlayers.forEach(player => {
     const money = calculatePlayerMoney(player);
