@@ -514,7 +514,7 @@ function renderHouseDashboard() {
   let html = '';
 
   // Today's round exposure
-  const todayMatches = getTodayMatches();
+  const todayMatches = getTodayMatches().sort((a, b) => etToThai(a.date) - etToThai(b.date));
   let todayRoundPendingCount = 0;
   if (todayMatches.length > 0) {
     const todayIds = new Set(todayMatches.map(m => m.id));
@@ -585,20 +585,26 @@ function renderHouseDashboard() {
 
   // Pick distribution for today's matches
   if (todayMatches.length > 0) {
-    const todayIds = new Set(todayMatches.map(m => m.id));
     const dist = {};
-    allSlips.filter(s => s.status !== 'cancelled').forEach(s => {
-      const w = (s.payout || s.bet || 0) / Math.max(1, (s.picks || []).length);
-      (s.picks || []).forEach(p => {
-        if (!todayIds.has(p.match_id)) return;
-        if (!dist[p.match_id]) dist[p.match_id] = { ahHome: 0, ahAway: 0, over: 0, under: 0 };
-        const match = state.matchById ? state.matchById[p.match_id] : null;
-        if (p.type === 'ou') {
-          if (p.pick === 'over') dist[p.match_id].over += w;
-          else dist[p.match_id].under += w;
+    // Per-match filtering: done match = all non-cancelled; pending match = alive slips only
+    todayMatches.forEach(m => {
+      const matchDone = isMatchLocked(m);
+      dist[m.id] = { ahHome: 0, ahAway: 0, over: 0, under: 0 };
+      allSlips.filter(s => {
+        if (s.status === 'cancelled') return false;
+        if (!matchDone && resolveSlip(s).status !== 'pending') return false;
+        return (s.picks || []).some(p => p.match_id === m.id);
+      }).forEach(s => {
+        const w = (s.payout || s.bet || 0) / Math.max(1, (s.picks || []).length);
+        const pick = (s.picks || []).find(p => p.match_id === m.id);
+        if (!pick) return;
+        const matchObj = state.matchById ? state.matchById[m.id] : null;
+        if (pick.type === 'ou') {
+          if (pick.pick === 'over') dist[m.id].over += w;
+          else dist[m.id].under += w;
         } else {
-          if (match && p.pick === match.team1) dist[p.match_id].ahHome += w;
-          else dist[p.match_id].ahAway += w;
+          if (matchObj && pick.pick === matchObj.team1) dist[m.id].ahHome += w;
+          else dist[m.id].ahAway += w;
         }
       });
     });
