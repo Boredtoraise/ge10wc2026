@@ -40,12 +40,22 @@ async function renderBetting() {
 
   const tabOn = TAB_ON, tabOff = TAB_OFF;
 
-  // ── Admin view: house dashboard + all friend slips (no tab UI) ───────
+  // ── Admin view: house dashboard + friend slips + ราคาบอล tab ───────
   if (state.isAdmin) {
+    const todayLockedAdmin = locked.filter(m => getTodayMatches().some(t => t.id === m.id));
+    const todayAllAdmin = [...available, ...todayLockedAdmin].sort((a, b) => etToThai(a.date) - etToThai(b.date));
+
     let html = '';
     html += `<div class="user-bar"><span class="user-name">${state.currentPlayer}</span><button class="logout-btn" id="bet-logout">${t('logout')}</button></div>`;
     html += renderHouseDashboard();
-    html += `<div style="margin:16px 0 8px;font-size:0.85rem;color:var(--text-muted);font-weight:700">${lang === 'th' ? 'สลิปเพื่อน' : "Friends' Slips"} (${pendingFriendSlips.length})</div>`;
+
+    html += `<div style="display:flex;gap:8px;margin:16px 0 12px">`;
+    html += `<button class="admin-main-tab" data-at="slips" style="${TAB_ON}">${lang === 'th' ? 'สลิปเพื่อน' : "Friends' Slips"}${pendingFriendSlips.length ? ` (${pendingFriendSlips.length})` : ''}</button>`;
+    html += `<button class="admin-main-tab" data-at="odds" style="${TAB_OFF}">${lang === 'th' ? 'ราคาบอล' : 'Odds'}</button>`;
+    html += `</div>`;
+
+    // ── Slips pane ──
+    html += `<div class="admin-pane" data-at="slips">`;
     if (!pendingFriendSlips.length) {
       html += `<div style="color:var(--text-muted);text-align:center;padding:30px">${lang === 'th' ? 'ไม่มีสลิปรอ' : 'No pending slips'}</div>`;
     } else {
@@ -65,12 +75,30 @@ async function renderBetting() {
         html += `</div>`;
       });
     }
+    html += `</div>`;
+
+    // ── Odds pane ──
+    html += `<div class="admin-pane" data-at="odds" style="display:none">`;
+    if (!todayAllAdmin.length) {
+      html += `<div style="color:var(--text-muted);text-align:center;padding:30px">${lang === 'th' ? 'ยังไม่มีราคา' : 'No lines yet'}</div>`;
+    } else {
+      todayAllAdmin.forEach(m => { html += renderBettingCardLocked(m); });
+    }
+    html += `</div>`;
+
     container.innerHTML = html;
     container.querySelector('#bet-logout')?.addEventListener('click', () => {
       state.currentPlayer = null;
       sessionStorage.removeItem('wc2026_player');
       sessionStorage.removeItem('wc2026_pin');
       renderBetting();
+    });
+    container.querySelectorAll('.admin-main-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.at;
+        container.querySelectorAll('.admin-main-tab').forEach(b => { b.style.cssText = b.dataset.at === key ? TAB_ON : TAB_OFF; });
+        container.querySelectorAll('.admin-pane').forEach(p => { p.style.display = p.dataset.at === key ? '' : 'none'; });
+      });
     });
     container.querySelectorAll('.fplayer-tab').forEach(btn => {
       btn.addEventListener('click', () => {
