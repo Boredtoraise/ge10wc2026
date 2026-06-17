@@ -116,29 +116,30 @@ async function renderBetting() {
   html += `<div id="bet-main-bet">`;
   html += `<h2 style="font-size:1.1rem;margin-bottom:12px">${lang === 'th' ? 'แทงบอล' : 'Place Bets'}</h2>`;
 
-  if (available.length === 0) {
+  const todayLocked = locked.filter(m => getTodayMatches().some(t => t.id === m.id));
+  const todayAll = [...available, ...todayLocked].sort((a, b) => etToThai(a.date) - etToThai(b.date));
+  if (todayAll.length === 0) {
     html += `<div style="color:var(--text-muted);text-align:center;padding:20px">${lang === 'th' ? 'ยังไม่มีคู่ที่เปิดรับแทง' : 'No open matches with lines'}</div>`;
   } else {
-    html += `<div style="margin-bottom:12px"><button id="bet-rules-toggle" style="font-size:0.8rem;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline">${lang === 'th' ? 'กติกา ▸' : 'Rules ▸'}</button><p id="bet-rules-text" style="display:none;font-size:0.85rem;color:var(--text-muted);margin:6px 0 0">${lang === 'th' ? 'กดเลือก กดอีกที=ยกเลิก<br>1 pick = single<br>2 คู่ = 4 picks (AH+O/U ทั้งคู่)<br>3 คู่+ = step (pick ละคู่ก็ได้)' : 'Tap to select, tap again to deselect<br>1 pick = single<br>2 matches = 4 picks (AH+O/U both)<br>3+ matches = step (1 pick/match ok)'}</p></div>`;
-    available.forEach(m => { html += renderBettingCard(m); });
-    const todayLocked = locked.filter(m => getTodayMatches().some(t => t.id === m.id));
-    if (todayLocked.length) {
-      html += `<div style="font-size:0.75rem;color:var(--text-muted);margin:10px 0 6px">🔒 ${lang === 'th' ? 'ล็อคแล้ว' : 'Locked'}</div>`;
-      todayLocked.forEach(m => { html += renderBettingCardLocked(m); });
+    if (available.length) html += `<div style="margin-bottom:12px"><button id="bet-rules-toggle" style="font-size:0.8rem;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline">${lang === 'th' ? 'กติกา ▸' : 'Rules ▸'}</button><p id="bet-rules-text" style="display:none;font-size:0.85rem;color:var(--text-muted);margin:6px 0 0">${lang === 'th' ? 'กดเลือก กดอีกที=ยกเลิก<br>1 pick = single<br>2 คู่ = 4 picks (AH+O/U ทั้งคู่)<br>3 คู่+ = step (pick ละคู่ก็ได้)' : 'Tap to select, tap again to deselect<br>1 pick = single<br>2 matches = 4 picks (AH+O/U both)<br>3+ matches = step (1 pick/match ok)'}</p></div>`;
+    todayAll.forEach(m => {
+      if (isMatchLocked(m)) { html += renderBettingCardLocked(m); }
+      else { html += renderBettingCard(m); }
+    });
+    if (available.length) {
+      html += `<div style="margin-top:12px;padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg)">`;
+      html += `<div id="bet-summary" style="font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'เลือก' : 'Picks'}: 0</div>`;
+      html += `<div style="margin-top:8px;display:flex;align-items:center;gap:8px">`;
+      html += `<label style="font-size:0.85rem">${lang === 'th' ? 'จำนวนเงิน' : 'Amount'}</label>`;
+      html += `<input type="number" id="bet-amount" min="1" step="10" value="10" style="width:100px;padding:6px 8px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:0.9rem;text-align:right">`;
+      html += `<span style="color:var(--accent)">฿</span>`;
+      html += `</div>`;
+      html += `<div id="bet-odds-display" style="margin-top:8px;font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'ราคารวม' : 'Odds'}: -</div>`;
+      html += `<div id="bet-payout-display" style="margin-top:4px;font-size:1rem;font-weight:700;color:var(--accent)">${lang === 'th' ? 'จ่าย' : 'Payout'}: -</div>`;
+      html += `<button class="btn btn-primary" id="bet-save-btn" style="margin-top:10px" disabled>${lang === 'th' ? 'ลงเงิน' : 'Place Bet'}</button>`;
+      html += `</div>`;
+      html += `<div style="height:20px"></div>`;
     }
-
-    html += `<div style="margin-top:12px;padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg)">`;
-    html += `<div id="bet-summary" style="font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'เลือก' : 'Picks'}: 0</div>`;
-    html += `<div style="margin-top:8px;display:flex;align-items:center;gap:8px">`;
-    html += `<label style="font-size:0.85rem">${lang === 'th' ? 'จำนวนเงิน' : 'Amount'}</label>`;
-    html += `<input type="number" id="bet-amount" min="1" step="10" value="10" style="width:100px;padding:6px 8px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:0.9rem;text-align:right">`;
-    html += `<span style="color:var(--accent)">฿</span>`;
-    html += `</div>`;
-    html += `<div id="bet-odds-display" style="margin-top:8px;font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'ราคารวม' : 'Odds'}: -</div>`;
-    html += `<div id="bet-payout-display" style="margin-top:4px;font-size:1rem;font-weight:700;color:var(--accent)">${lang === 'th' ? 'จ่าย' : 'Payout'}: -</div>`;
-    html += `<button class="btn btn-primary" id="bet-save-btn" style="margin-top:10px" disabled>${lang === 'th' ? 'ลงเงิน' : 'Place Bet'}</button>`;
-    html += `</div>`;
-    html += `<div style="height:20px"></div>`;
   }
 
   // My slips — subtabs: รอผล / ประวัติ
@@ -533,33 +534,6 @@ function renderBettingCardLocked(m) {
     html += `<button ${btnStyle(ouWinSide === 'over')} class="ah-btn ou-btn">${lang === 'th' ? 'สูง' : 'Over'} <span class="odds-tag">@${ouOddsO}</span></button>`;
     html += `<button ${btnStyle(ouWinSide === 'under')} class="ah-btn ou-btn">${lang === 'th' ? 'ต่ำ' : 'Under'} <span class="odds-tag">@${ouOddsU}</span></button>`;
     html += `</div>`;
-  }
-
-  // My picks for this match
-  if (state.currentPlayer) {
-    const allSlips = getAllSlips();
-    const myPicksHere = [];
-    allSlips.filter(s => s.player === state.currentPlayer && s.status !== 'cancelled').forEach(slip => {
-      (slip.picks || []).filter(p => p.match_id === m.id).forEach(p => myPicksHere.push({ p, slip }));
-    });
-    if (myPicksHere.length > 0) {
-      html += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:0.78rem;display:flex;flex-wrap:wrap;gap:6px;align-items:center">`;
-      html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'ของฉัน:' : 'My picks:'}</span>`;
-      myPicksHere.forEach(({ p }) => {
-        const isOu = p.type === 'ou';
-        let label = '';
-        if (isOu) {
-          label = `${p.pick === 'over' ? (lang === 'th' ? 'สูง' : 'O') : (lang === 'th' ? 'ต่ำ' : 'U')} ${p.line || ''}`;
-        } else {
-          const picked = TEAMS[p.pick];
-          const isHome = p.pick === m.team1;
-          label = `${picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick} ${p.line ? formatAhFav(p.line, isHome) : ''}`;
-        }
-        const badge = getPickResultBadge(p, m);
-        html += `<span style="background:var(--bg-input);padding:2px 7px;border-radius:4px">${label} <span class="odds-tag">@${p.odds}</span> ${badge}</span>`;
-      });
-      html += `</div>`;
-    }
   }
 
   html += `</div>`;
