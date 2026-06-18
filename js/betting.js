@@ -70,8 +70,9 @@ async function renderBetting() {
       waitingSlips.forEach(s => { html += renderSlipCard(s, { showPlayer: true }); });
     }
 
-    // Section C: ยืนยันแล้ว — approved slips, split won/lost
-    const approvedSlips = allSlipsAll.filter(s => s.status === 'approved');
+    // Section C: ยืนยันแล้ว — approved slips today, split won/lost
+    const todayIds = new Set(getTodayMatches().map(m => m.id));
+    const approvedSlips = allSlipsAll.filter(s => s.status === 'approved' && (s.picks || []).some(p => todayIds.has(p.match_id)));
     if (approvedSlips.length) {
       const approvedWon  = approvedSlips.filter(s => resolveSlip(s).status === 'won');
       const approvedLost = approvedSlips.filter(s => resolveSlip(s).status === 'lost');
