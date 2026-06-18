@@ -73,6 +73,36 @@ async function renderBetting() {
       });
     }
 
+    // ── Bulk approve by team ──
+    const scoredMatches = MATCHES.filter(m => {
+      const r = state.matches[m.id];
+      return r && typeof r.team1_score === 'number' && typeof r.team2_score === 'number';
+    });
+    if (scoredMatches.length > 0) {
+      const allSlipsForApprove = getAllSlips();
+      const btnStyle = 'background:var(--accent);color:#000;border:none;padding:6px 14px;border-radius:var(--radius);font-size:0.85rem;font-weight:700;cursor:pointer';
+      html += `<div style="margin:16px 0 8px;font-size:0.85rem;color:var(--text-muted);font-weight:700">${lang === 'th' ? 'ยืนยันสลิปรวม' : 'Bulk Approve'}</div>`;
+      scoredMatches.forEach(m => {
+        const teams = [{ code: m.team1, info: TEAMS[m.team1] }, { code: m.team2, info: TEAMS[m.team2] }];
+        const buttons = teams.map(({ code, info }) => {
+          const count = allSlipsForApprove.filter(s =>
+            s.status !== 'approved' && s.status !== 'cancelled' &&
+            (resolveSlip(s).status === 'won' || resolveSlip(s).status === 'lost') &&
+            s.picks.some(p => p.type === 'ah' && p.pick === code)
+          ).length;
+          if (!count) return '';
+          const name = info ? (lang === 'th' ? info.nameTh : info.name) : code;
+          const flag = info ? info.flag : '';
+          return `<button class="bulk-approve-btn" data-team="${code}" style="${btnStyle}">${flag} ${name} (${count})</button>`;
+        }).join('');
+        if (!buttons) return;
+        html += `<div style="margin-bottom:8px">`;
+        html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:4px">${m.id} · ${m.team1} vs ${m.team2}</div>`;
+        html += `<div style="display:flex;gap:8px;flex-wrap:wrap">${buttons}</div>`;
+        html += `</div>`;
+      });
+    }
+
     container.innerHTML = html;
     container.querySelector('#bet-logout')?.addEventListener('click', () => {
       state.currentPlayer = null;
@@ -101,6 +131,23 @@ async function renderBetting() {
         } else {
           showToast('Error');
         }
+      });
+    });
+    container.querySelectorAll('.bulk-approve-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const teamCode = btn.dataset.team;
+        const toApprove = getAllSlips().filter(s =>
+          s.status !== 'approved' && s.status !== 'cancelled' &&
+          (resolveSlip(s).status === 'won' || resolveSlip(s).status === 'lost') &&
+          s.picks.some(p => p.type === 'ah' && p.pick === teamCode)
+        );
+        if (!toApprove.length) return;
+        showLoading();
+        for (const s of toApprove) { await approveSlip(s.timestamp); }
+        await refreshData();
+        hideLoading();
+        showToast(lang === 'th' ? `ยืนยัน ${toApprove.length} สลิปแล้ว` : `Approved ${toApprove.length} slips`);
+        renderBetting();
       });
     });
     return;

@@ -55,24 +55,6 @@ function renderSummary() {
     });
   });
 
-  // Bulk approve by team (admin only)
-  container.querySelectorAll('.bulk-approve-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const teamCode = btn.dataset.team;
-      const toApprove = getAllSlips().filter(s =>
-        s.status !== 'approved' && s.status !== 'cancelled' &&
-        (resolveSlip(s).status === 'won' || resolveSlip(s).status === 'lost') &&
-        s.picks.some(p => p.type === 'ah' && p.pick === teamCode)
-      );
-      if (!toApprove.length) return;
-      showLoading();
-      for (const s of toApprove) { await approveSlip(s.timestamp); }
-      await refreshData();
-      hideLoading();
-      showToast(currentLang === 'th' ? `ยืนยัน ${toApprove.length} สลิปแล้ว` : `Approved ${toApprove.length} slips`);
-      renderSummary();
-    });
-  });
 }
 
 // --- Summary tab ---
@@ -682,38 +664,6 @@ function renderAdminSummary() {
     html += `<span style="font-size:0.82rem;font-weight:700;color:var(--text-muted)">${lang === 'th' ? 'สะสม' : 'Total'}</span>`;
     html += `<span style="font-size:1rem;font-weight:800;color:${cumColor}">${cumStr}</span>`;
     html += `</div>`;
-    html += `</div>`;
-  }
-
-  // Bulk approve by team pick
-  const scoredMatches = MATCHES.filter(m => {
-    const r = state.matches[m.id];
-    return r && typeof r.team1_score === 'number' && typeof r.team2_score === 'number';
-  });
-
-  if (scoredMatches.length > 0) {
-    const btnStyle = 'background:var(--accent);color:#000;border:none;padding:6px 14px;border-radius:var(--radius);font-size:0.85rem;font-weight:700;cursor:pointer';
-    html += `<div style="margin-top:12px">`;
-    html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:8px">${lang === 'th' ? 'ยืนยันสลิปรวม' : 'Bulk Approve'}</div>`;
-    scoredMatches.forEach(m => {
-      const teams = [{ code: m.team1, info: TEAMS[m.team1] }, { code: m.team2, info: TEAMS[m.team2] }];
-      const buttons = teams.map(({ code, info }) => {
-        const count = allSlips.filter(s =>
-          s.status !== 'approved' && s.status !== 'cancelled' &&
-          (resolveSlip(s).status === 'won' || resolveSlip(s).status === 'lost') &&
-          s.picks.some(p => p.type === 'ah' && p.pick === code)
-        ).length;
-        if (!count) return '';
-        const name = info ? (lang === 'th' ? info.nameTh : info.name) : code;
-        const flag = info ? info.flag : '';
-        return `<button class="bulk-approve-btn" data-team="${code}" style="${btnStyle}">${flag} ${name} (${count})</button>`;
-      }).join('');
-      if (!buttons) return;
-      html += `<div style="margin-bottom:8px">`;
-      html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:4px">${m.id} · ${m.team1} vs ${m.team2}</div>`;
-      html += `<div style="display:flex;gap:8px;flex-wrap:wrap">${buttons}</div>`;
-      html += `</div>`;
-    });
     html += `</div>`;
   }
 
