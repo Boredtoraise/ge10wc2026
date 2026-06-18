@@ -70,12 +70,39 @@ async function renderBetting() {
       waitingSlips.forEach(s => { html += renderSlipCard(s, { showPlayer: true }); });
     }
 
+    // Section C: ยืนยันแล้ว — approved slips, split won/lost
+    const approvedSlips = allSlipsAll.filter(s => s.status === 'approved');
+    if (approvedSlips.length) {
+      const approvedWon  = approvedSlips.filter(s => resolveSlip(s).status === 'won');
+      const approvedLost = approvedSlips.filter(s => resolveSlip(s).status === 'lost');
+      html += `<div style="margin:16px 0 8px;font-size:0.85rem;color:var(--text-muted);font-weight:700">${lang === 'th' ? 'ยืนยันแล้ว' : 'Approved'} (${approvedSlips.length})</div>`;
+      html += `<div style="display:flex;gap:6px;margin-bottom:10px">`;
+      html += `<button class="approved-tab" data-apv="won"  style="${SUBTAB_ON}">${lang === 'th' ? 'ถูก' : 'Won'} (${approvedWon.length})</button>`;
+      html += `<button class="approved-tab" data-apv="lost" style="${SUBTAB_OFF}">${lang === 'th' ? 'ผิด' : 'Lost'} (${approvedLost.length})</button>`;
+      html += `</div>`;
+      html += `<div class="approved-pane" data-apv="won">`;
+      approvedWon.forEach(s => { html += renderSlipCard(s, { showPlayer: true }); });
+      if (!approvedWon.length) html += `<div style="color:var(--text-muted);text-align:center;padding:16px">-</div>`;
+      html += `</div>`;
+      html += `<div class="approved-pane" data-apv="lost" style="display:none">`;
+      approvedLost.forEach(s => { html += renderSlipCard(s, { showPlayer: true }); });
+      if (!approvedLost.length) html += `<div style="color:var(--text-muted);text-align:center;padding:16px">-</div>`;
+      html += `</div>`;
+    }
+
     container.innerHTML = html;
     container.querySelector('#bet-logout')?.addEventListener('click', () => {
       state.currentPlayer = null;
       sessionStorage.removeItem('wc2026_player');
       sessionStorage.removeItem('wc2026_pin');
       renderBetting();
+    });
+    container.querySelectorAll('.approved-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.apv;
+        container.querySelectorAll('.approved-tab').forEach(b => { b.style.cssText = b.dataset.apv === key ? SUBTAB_ON : SUBTAB_OFF; });
+        container.querySelectorAll('.approved-pane').forEach(p => { p.style.display = p.dataset.apv === key ? '' : 'none'; });
+      });
     });
     container.querySelectorAll('.slip-approve-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
