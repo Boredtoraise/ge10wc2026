@@ -306,13 +306,24 @@ function renderFunLeaderboard() {
   });
 
   const active = stats.filter(s => s.settled > 0 || s.totalBet > 0);
-  if (!active.length) return `<div style="text-align:center;padding:24px;color:var(--text-muted)">${lang === 'th' ? 'ยังไม่มีข้อมูล' : 'No data yet'}</div>`;
+  if (!active.length) return `<div style="text-align:center;padding:24px;color:var(--text-muted)">ยังไม่มีข้อมูล</div>`;
 
   const sorted = [...active].sort((a, b) => b.totalProfit - a.totalProfit);
   const maxProfit = sorted[0]?.totalProfit;
   const minProfit = sorted[sorted.length - 1]?.totalProfit;
   const byWinRate = [...active].filter(s => s.settled >= 2).sort((a, b) => (b.winRate || 0) - (a.winRate || 0));
   const biggestBetLost = [...active].filter(s => s.totalProfit < 0).sort((a, b) => b.totalBet - a.totalBet)[0];
+
+  // Pending exposure per player
+  const pendingByPlayer = {};
+  allSlipsAll.filter(s => s.status !== 'cancelled' && players.includes(s.player)).forEach(s => {
+    const r = resolveSlip(s);
+    if (r.status === 'pending') {
+      if (!pendingByPlayer[s.player]) pendingByPlayer[s.player] = { maxWin: 0, maxLose: 0 };
+      pendingByPlayer[s.player].maxWin += Math.max(0, (s.payout || 0) - (s.bet || 0));
+      pendingByPlayer[s.player].maxLose += s.bet || 0;
+    }
+  });
 
   // Assign badges
   sorted.forEach(s => {
@@ -328,10 +339,40 @@ function renderFunLeaderboard() {
     s.badges = b;
   });
 
+  // Headline
+  const headlineParts = [];
+  const leader = sorted[0];
+  const last = sorted[sorted.length - 1];
+  const hottest = [...active].filter(s => s.streakDir === 1).sort((a, b) => b.streakVal - a.streakVal)[0];
+  const coldest = [...active].filter(s => s.streakDir === -1).sort((a, b) => b.streakVal - a.streakVal)[0];
+  if (leader?.totalProfit > 0) headlineParts.push(`${leader.player} นำโด่ง`);
+  if (hottest?.streakVal >= 3) headlineParts.push(`${hottest.player} ร้อนแรง`);
+  if (coldest?.streakVal >= 3) headlineParts.push(`${coldest.player} หนาวสั่น`);
+  if (last?.totalProfit < -300) headlineParts.push(`${last.player} ต้องการการบำบัด`);
+  const headline = headlineParts.length ? `🗞️ ${headlineParts.join(' · ')}` : '🗞️ ดราม่ากำลังก่อตัว...';
+
+  // จับตา alerts
+  const alerts = [];
+  sorted.forEach((s, i) => {
+    if (s.streakDir === 1 && s.streakVal === 1) alerts.push(`⚡ ${s.player} — อีก 1 ถูก ได้ 🔥 ออนไฟร์`);
+    if (s.streakDir === -1 && s.streakVal === 2) alerts.push(`⚠️ ${s.player} — อีก 1 ผิด ได้ 🧊 หนาว`);
+    if (i > 0) {
+      const gap = sorted[i - 1].totalProfit - s.totalProfit;
+      if (gap > 0 && gap <= 50) alerts.push(`📈 ${s.player} ห่างอันดับ ${i} แค่ ${gap}฿`);
+    }
+    if (i < sorted.length - 1) {
+      const gap = s.totalProfit - sorted[i + 1].totalProfit;
+      if (gap > 0 && gap <= 30) alerts.push(`📉 ${s.player} ระวัง! ${sorted[i + 1].player} ตามมาแค่ ${gap}฿`);
+    }
+  });
+
   const rankIcon = ['🏆', '🥈', '🥉'];
   let html = `<div class="lb-section open">`;
   html += `<div class="lb-section-header"><h3>Leaderboard</h3></div>`;
   html += `<div class="lb-section-body">`;
+
+  // Headline banner
+  html += `<div style="padding:8px 12px;margin-bottom:10px;background:var(--bg-input);border-radius:var(--radius);font-size:0.82rem;font-weight:600;color:var(--text-muted)">${headline}</div>`;
 
   sorted.forEach((s, i) => {
     const isMe = s.player === state.currentPlayer;
@@ -342,6 +383,7 @@ function renderFunLeaderboard() {
     const border = i === 0 && s.totalProfit > 0 ? 'border:2px solid var(--accent);'
                  : isMe ? 'border:1px solid var(--secondary);' : '';
     const icon = rankIcon[i] || `${i + 1}`;
+    const pending = pendingByPlayer[s.player];
 
     html += `<div style="padding:10px 12px;margin-bottom:8px;background:var(--bg-card);border-radius:var(--radius-lg);${border}">`;
     html += `<div style="display:flex;align-items:center;gap:10px">`;
@@ -359,10 +401,23 @@ function renderFunLeaderboard() {
     if (s.totalBet > 0) html += ` · ลง ${s.totalBet}฿`;
     if (streakStr) html += ` · ${streakStr}`;
     html += `</div>`;
+    if (pending) {
+      html += `<div style="margin-top:2px;font-size:0.7rem">⏳ รอ: <span style="color:var(--accent)">+${pending.maxWin}฿</span> / <span style="color:var(--secondary)">-${pending.maxLose}฿</span></div>`;
+    }
     html += `</div>`;
     html += `<span style="font-size:1.15rem;font-weight:800;color:${profitColor};white-space:nowrap">${profitStr}</span>`;
     html += `</div></div>`;
   });
+
+  // จับตา section
+  if (alerts.length) {
+    html += `<div style="margin-bottom:8px;padding:8px 12px;background:var(--bg-input);border-radius:var(--radius)">`;
+    html += `<div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);margin-bottom:4px">จับตา</div>`;
+    alerts.forEach(a => {
+      html += `<div style="font-size:0.75rem;margin-bottom:2px">${a}</div>`;
+    });
+    html += `</div>`;
+  }
 
   // Group fun stats footer
   const settledAll = allSlipsAll.filter(s => {
