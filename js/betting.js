@@ -66,8 +66,23 @@ async function renderBetting() {
 
     // Section B: รอผล — slips still pending
     if (waitingSlips.length) {
+      const waitPlayers = [...new Set(waitingSlips.map(s => s.player))];
       html += `<div style="margin:16px 0 8px;font-size:0.85rem;color:var(--text-muted);font-weight:700">${lang === 'th' ? 'รอผลบอล' : 'Awaiting Results'} (${waitingSlips.length})</div>`;
+      html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">`;
+      html += `<button class="wait-player-tab" data-wp="all" style="${SUBTAB_ON}">${lang === 'th' ? 'ทั้งหมด' : 'All'} (${waitingSlips.length})</button>`;
+      waitPlayers.forEach(p => {
+        const n = waitingSlips.filter(s => s.player === p).length;
+        html += `<button class="wait-player-tab" data-wp="${p}" style="${SUBTAB_OFF}">${getDisplayName(p)} (${n})</button>`;
+      });
+      html += `</div>`;
+      html += `<div class="wait-player-pane" data-wp="all">`;
       waitingSlips.forEach(s => { html += renderSlipCard(s, { showPlayer: true }); });
+      html += `</div>`;
+      waitPlayers.forEach(p => {
+        html += `<div class="wait-player-pane" data-wp="${p}" style="display:none">`;
+        waitingSlips.filter(s => s.player === p).forEach(s => { html += renderSlipCard(s, { showPlayer: true }); });
+        html += `</div>`;
+      });
     }
 
     // Section C: ยืนยันแล้ว — approved slips today, split won/lost
@@ -97,6 +112,13 @@ async function renderBetting() {
       sessionStorage.removeItem('wc2026_player');
       sessionStorage.removeItem('wc2026_pin');
       renderBetting();
+    });
+    container.querySelectorAll('.wait-player-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.wp;
+        container.querySelectorAll('.wait-player-tab').forEach(b => { b.style.cssText = b.dataset.wp === key ? SUBTAB_ON : SUBTAB_OFF; });
+        container.querySelectorAll('.wait-player-pane').forEach(p => { p.style.display = p.dataset.wp === key ? '' : 'none'; });
+      });
     });
     container.querySelectorAll('.approved-tab').forEach(btn => {
       btn.addEventListener('click', () => {
