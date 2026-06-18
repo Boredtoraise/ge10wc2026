@@ -114,6 +114,8 @@ body {
   transition: all 0.2s var(--ease);
 }
 .btn-icon:hover { color: var(--primary); border-color: var(--primary); }
+#refresh-btn { background: var(--secondary); color: #fff; border-color: var(--secondary); }
+#refresh-btn:hover { background: var(--secondary-hover); border-color: var(--secondary-hover); color: #fff; }
 
 /* --- Nav tabs --- */
 #nav {
