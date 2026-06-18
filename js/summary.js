@@ -345,10 +345,10 @@ function renderFunLeaderboard() {
   const last = sorted[sorted.length - 1];
   const hottest = [...active].filter(s => s.streakDir === 1).sort((a, b) => b.streakVal - a.streakVal)[0];
   const coldest = [...active].filter(s => s.streakDir === -1).sort((a, b) => b.streakVal - a.streakVal)[0];
-  if (leader?.totalProfit > 0) headlineParts.push(`${leader.player} นำโด่ง`);
-  if (hottest?.streakVal >= 3) headlineParts.push(`${hottest.player} ร้อนแรง`);
-  if (coldest?.streakVal >= 3) headlineParts.push(`${coldest.player} หนาวสั่น`);
-  if (last?.totalProfit < -300) headlineParts.push(`${last.player} ต้องการการบำบัด`);
+  if (leader?.totalProfit > 0) headlineParts.push(`${getDisplayName(leader.player)} นำโด่ง`);
+  if (hottest?.streakVal >= 3) headlineParts.push(`${getDisplayName(hottest.player)} ร้อนแรง`);
+  if (coldest?.streakVal >= 3) headlineParts.push(`${getDisplayName(coldest.player)} หนาวสั่น`);
+  if (last?.totalProfit < -300) headlineParts.push(`${getDisplayName(last.player)} ต้องการการบำบัด`);
   const headline = headlineParts.length ? `🗞️ ${headlineParts.join(' · ')}` : '🗞️ ดราม่ากำลังก่อตัว...';
 
   // จับตา alerts
@@ -446,15 +446,15 @@ function renderFunLeaderboard() {
     html += `<div style="font-weight:700;color:var(--text-muted);margin-bottom:6px">📊 สถิติกลุ่ม</div>`;
     if (worstSlip) {
       const pc = (worstSlip.picks || []).length;
-      html += `<div style="margin-bottom:4px">🗑️ อัปยศประจำรอบ: <b>${worstSlip.player}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${worstSlip.bet}฿ <span style="color:var(--secondary);font-weight:700">หายเกลี้ยง ${worstSlip.r.profit}฿</span></div>`;
+      html += `<div style="margin-bottom:4px">🗑️ อัปยศประจำรอบ: <b>${getDisplayName(worstSlip.player)}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${worstSlip.bet}฿ <span style="color:var(--secondary);font-weight:700">หายเกลี้ยง ${worstSlip.r.profit}฿</span></div>`;
     }
     if (bestSlip) {
       const pc = (bestSlip.picks || []).length;
-      html += `<div style="margin-bottom:4px">👑 มือทองรอบนี้: <b>${bestSlip.player}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${bestSlip.bet}฿ → <span style="color:var(--accent);font-weight:700">+${bestSlip.r.profit}฿</span></div>`;
+      html += `<div style="margin-bottom:4px">👑 มือทองรอบนี้: <b>${getDisplayName(bestSlip.player)}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${bestSlip.bet}฿ → <span style="color:var(--accent);font-weight:700">+${bestSlip.r.profit}฿</span></div>`;
     }
     if (mostPicksWon && (mostPicksWon.picks||[]).length >= 2) {
       const pc = (mostPicksWon.picks||[]).length;
-      html += `<div style="margin-bottom:4px">🏅 step ใหญ่สุดที่ถูก: <b>${mostPicksWon.player}</b> ${pc} คู่ → <span style="color:var(--accent);font-weight:700">+${mostPicksWon.r.profit}฿</span></div>`;
+      html += `<div style="margin-bottom:4px">🏅 step ใหญ่สุดที่ถูก: <b>${getDisplayName(mostPicksWon.player)}</b> ${pc} คู่ → <span style="color:var(--accent);font-weight:700">+${mostPicksWon.r.profit}฿</span></div>`;
     }
     if (mostPicksLost && (mostPicksLost.picks||[]).length >= 2) {
       const pc = (mostPicksLost.picks||[]).length;
@@ -464,7 +464,7 @@ function renderFunLeaderboard() {
       }).length;
       const allWrong = wrongCount === pc;
       const wrongLabel = allWrong ? `ผิดหมด ${pc}/${pc} 😭` : `ผิด ${wrongCount}/${pc}`;
-      html += `<div style="margin-bottom:4px">💣 step ใหญ่สุดที่ผิด: <b>${mostPicksLost.player}</b> ${pc} คู่ ลง ${mostPicksLost.bet}฿ — <span style="color:var(--secondary);font-weight:700">${wrongLabel}</span></div>`;
+      html += `<div style="margin-bottom:4px">💣 step ใหญ่สุดที่ผิด: <b>${getDisplayName(mostPicksLost.player)}</b> ${pc} คู่ ลง ${mostPicksLost.bet}฿ — <span style="color:var(--secondary);font-weight:700">${wrongLabel}</span></div>`;
     }
     html += `<div style="margin-bottom:4px">🎯 win rate กลุ่ม: <b>${groupWinRate}%</b> (${totalWins}/${totalSettled}) — ${winRateRoast}</div>`;
     html += `<div style="color:${groupColor};font-weight:700">${groupSign}${groupProfit}฿ — ${groupRoast}</div>`;
