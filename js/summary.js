@@ -594,9 +594,7 @@ function renderHouseDashboard() {
         ahHomeBet: 0, ahAwayBet: 0, overBet: 0, underBet: 0,
         ahHomePay: 0, ahAwayPay: 0, overPay: 0, underPay: 0,
       };
-      const unapproved = allSlips.filter(s => s.status !== 'cancelled' && s.status !== 'approved' && (s.picks || []).some(p => p.match_id === m.id));
-      const matchSlips = unapproved.length ? unapproved : allSlips.filter(s => s.status !== 'cancelled' && (s.picks || []).some(p => p.match_id === m.id));
-      matchSlips.forEach(s => {
+      allSlips.filter(s => s.status !== 'cancelled' && (s.picks || []).some(p => p.match_id === m.id)).forEach(s => {
         const w = (s.payout || s.bet || 0) / Math.max(1, (s.picks || []).length);
         const matchObj = state.matchById ? state.matchById[m.id] : null;
         let cntH = false, cntA = false, cntO = false, cntU = false;
