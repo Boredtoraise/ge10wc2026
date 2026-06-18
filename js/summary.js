@@ -67,13 +67,6 @@ function renderSummaryTab() {
 
   html += renderFunLeaderboard();
 
-  // Rules
-  html += `<div class="lb-section">`;
-  html += `<div class="lb-section-header"><h3>${lang === 'th' ? 'กติกา' : 'Rules'}</h3><span class="lb-section-arrow">▼</span></div>`;
-  html += `<div class="lb-section-body">`;
-  html += renderRulesInline();
-  html += `</div></div>`;
-
   return html;
 }
 
