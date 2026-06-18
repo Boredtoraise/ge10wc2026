@@ -784,7 +784,7 @@ function renderSlipCard(slip, opts) {
   html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">`;
   html += `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">`;
   if (showPlayer) html += `<span style="font-size:0.88rem;font-weight:700;color:var(--primary)">${getDisplayName(slip.player)}</span>`;
-  if (opts.idx != null) html += `<span style="font-size:0.75rem;color:var(--text-muted)">#${opts.idx + 1} · ${new Date(slip.timestamp).toLocaleDateString('th-TH')}</span>`;
+  { const d = new Date(slip.timestamp); const idxPart = opts.idx != null ? `#${opts.idx + 1} · ` : ''; html += `<span style="font-size:0.75rem;color:var(--text-muted)">${idxPart}${d.toLocaleDateString('th-TH')} ${d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}</span>`; }
   html += `<span style="font-size:0.72rem;color:var(--text-muted);background:var(--bg-input);padding:2px 7px;border-radius:4px">${isStep ? 'STEP' : 'SINGLE'}</span>`;
   html += `</div>`;
   html += `<div style="display:flex;align-items:center;gap:8px">`;
