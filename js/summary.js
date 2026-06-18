@@ -65,38 +65,7 @@ function renderSummaryTab() {
     html += renderAdminSummary();
   }
 
-  // Overall ranking by money
-  const allPlayers = getPlayers();
-  const summary = [];
-  allPlayers.forEach(player => {
-    const money = calculatePlayerMoney(player);
-    summary.push({ player, money, totalBalance: money.profit });
-  });
-  summary.sort((a, b) => b.totalBalance - a.totalBalance);
-
-  // Money leaderboard
-  html += `<div class="lb-section open">`;
-  html += `<div class="lb-section-header"><h3>${lang === 'th' ? 'ยอดเงินรวม' : 'Money Total'}</h3><span class="lb-section-arrow">▼</span></div>`;
-  html += `<div class="lb-section-body">`;
-
-  const moneySorted = [...summary].sort((a, b) => b.totalBalance - a.totalBalance);
-  const rankIcon = ['🏆', '🥈', '🥉'];
-  moneySorted.forEach((s, i) => {
-    const isMe = s.player === state.currentPlayer;
-    const c = s.totalBalance >= 0 ? 'var(--accent)' : 'var(--wrong)';
-    const sign = s.totalBalance >= 0 ? '+' : '';
-    const icon = rankIcon[i] || `${i + 1}.`;
-    const border = i === 0 ? 'border:2px solid var(--accent);' : isMe ? 'border:1px solid var(--secondary);' : '';
-    html += `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:8px;background:var(--bg-card);border-radius:var(--radius-lg);${border}">`;
-    html += `<span style="font-size:1.4rem;min-width:28px;text-align:center">${icon}</span>`;
-    html += `<div style="flex:1;min-width:0">`;
-    html += `<div style="font-weight:700;font-size:0.95rem">${s.player}${isMe ? ' <span style="color:var(--secondary);font-size:0.75rem">★ ฉัน</span>' : ''}</div>`;
-    html += `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">${lang === 'th' ? 'ลง' : 'Bet'} ${s.money.totalBet}฿ · ${lang === 'th' ? 'ถูก' : 'W'} ${s.money.wins} · ${lang === 'th' ? 'ผิด' : 'L'} ${s.money.losses}</div>`;
-    html += `</div>`;
-    html += `<span style="font-size:1.15rem;font-weight:800;color:${c};white-space:nowrap">${sign}${s.totalBalance}฿</span>`;
-    html += `</div>`;
-  });
-  html += `</div></div>`;
+  html += renderFunLeaderboard();
 
   // Rules
   html += `<div class="lb-section">`;
@@ -303,6 +272,136 @@ function calculatePlayerSlipsDetailed(player) {
   });
 
   return { total, tickets };
+}
+
+// --- Fun leaderboard with badges + streaks ---
+function renderFunLeaderboard() {
+  const lang = currentLang;
+  const players = getPlayers();
+  if (!players.length) return '';
+
+  const allSlipsAll = getAllSlips();
+
+  // Compute per-player stats from all non-cancelled slips (live resolveSlip, not approval-based)
+  const stats = players.map(player => {
+    const pSlips = allSlipsAll
+      .filter(s => s.player === player && s.status !== 'cancelled')
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    let wins = 0, losses = 0, totalBet = 0, totalProfit = 0;
+    let streakVal = 0, streakDir = 0; // 1=win, -1=loss
+    let hasStep = false, hasSingle = false;
+
+    pSlips.forEach(s => {
+      const r = resolveSlip(s);
+      totalBet += s.bet || 0;
+      totalProfit += r.profit;
+      if ((s.picks || []).length >= 3) hasStep = true; else hasSingle = true;
+      if (r.status === 'won') {
+        wins++;
+        if (streakDir === 1) streakVal++; else { streakDir = 1; streakVal = 1; }
+      } else if (r.status === 'lost') {
+        losses++;
+        if (streakDir === -1) streakVal++; else { streakDir = -1; streakVal = 1; }
+      }
+      // pending = skip (don't reset streak)
+    });
+
+    const settled = wins + losses;
+    const winRate = settled > 0 ? wins / settled : null;
+    return { player, wins, losses, totalBet, totalProfit, settled, winRate, streakVal, streakDir, hasStep, hasSingle };
+  });
+
+  const active = stats.filter(s => s.settled > 0 || s.totalBet > 0);
+  if (!active.length) return `<div style="text-align:center;padding:24px;color:var(--text-muted)">${lang === 'th' ? 'ยังไม่มีข้อมูล' : 'No data yet'}</div>`;
+
+  const sorted = [...active].sort((a, b) => b.totalProfit - a.totalProfit);
+  const maxProfit = sorted[0]?.totalProfit;
+  const minProfit = sorted[sorted.length - 1]?.totalProfit;
+  const byWinRate = [...active].filter(s => s.settled >= 2).sort((a, b) => (b.winRate || 0) - (a.winRate || 0));
+  const biggestBetLost = [...active].filter(s => s.totalProfit < 0).sort((a, b) => b.totalBet - a.totalBet)[0];
+
+  // Assign badges
+  sorted.forEach(s => {
+    const b = [];
+    if (active.length > 1 && s.totalProfit === maxProfit && maxProfit > 0) b.push('👑 ราชา');
+    if (byWinRate[0]?.player === s.player && s.settled >= 2) b.push('🎯 สไนเปอร์');
+    if (s.streakDir === 1 && s.streakVal >= 2) b.push(`🔥 ออนไฟร์ ×${s.streakVal}`);
+    if (active.length > 1 && s.totalProfit === minProfit && minProfit < 0) b.push('🗑️ เผาเงิน');
+    if (s.winRate === 0 && s.settled >= 3) b.push('🤡 วันนี้ตาย');
+    if (s.streakDir === -1 && s.streakVal >= 3) b.push(`🧊 หนาว ×${s.streakVal}`);
+    if (biggestBetLost?.player === s.player) b.push('🙈 ตาบอด');
+    if (!s.hasStep && s.hasSingle && s.settled >= 2) b.push('🐔 ขี้กลัว');
+    s.badges = b;
+  });
+
+  const rankIcon = ['🏆', '🥈', '🥉'];
+  let html = `<div class="lb-section open">`;
+  html += `<div class="lb-section-header"><h3>${lang === 'th' ? '🏟️ ตารางสนุก' : '🏟️ Fun Board'}</h3><span class="lb-section-arrow">▼</span></div>`;
+  html += `<div class="lb-section-body">`;
+
+  sorted.forEach((s, i) => {
+    const isMe = s.player === state.currentPlayer;
+    const profitColor = s.totalProfit >= 0 ? 'var(--accent)' : 'var(--secondary)';
+    const profitStr = (s.totalProfit >= 0 ? '+' : '') + s.totalProfit + '฿';
+    const winStr = s.settled > 0 ? `${s.wins}/${s.settled}` : '-';
+    const streakStr = s.streakVal >= 1 ? `${s.streakDir === 1 ? '🔥' : '🧊'}${s.streakVal} ติด` : '';
+    const border = i === 0 && s.totalProfit > 0 ? 'border:2px solid var(--accent);'
+                 : isMe ? 'border:1px solid var(--secondary);' : '';
+    const icon = rankIcon[i] || `${i + 1}`;
+
+    html += `<div style="padding:10px 12px;margin-bottom:8px;background:var(--bg-card);border-radius:var(--radius-lg);${border}">`;
+    html += `<div style="display:flex;align-items:center;gap:10px">`;
+    html += `<span style="font-size:1.2rem;min-width:24px;text-align:center">${icon}</span>`;
+    html += `<div style="flex:1;min-width:0">`;
+    html += `<div style="font-weight:700;font-size:0.95rem">${s.player}${isMe ? ' <span style="color:var(--secondary);font-size:0.72rem">★</span>' : ''}</div>`;
+    if (s.badges.length) {
+      html += `<div style="margin-top:3px;display:flex;flex-wrap:wrap;gap:3px">`;
+      s.badges.forEach(b => {
+        html += `<span style="font-size:0.7rem;background:var(--bg-input);border:1px solid var(--border);border-radius:99px;padding:1px 7px">${b}</span>`;
+      });
+      html += `</div>`;
+    }
+    html += `<div style="margin-top:3px;font-size:0.72rem;color:var(--text-muted)">ถูก ${winStr}`;
+    if (s.totalBet > 0) html += ` · ลง ${s.totalBet}฿`;
+    if (streakStr) html += ` · ${streakStr}`;
+    html += `</div>`;
+    html += `</div>`;
+    html += `<span style="font-size:1.15rem;font-weight:800;color:${profitColor};white-space:nowrap">${profitStr}</span>`;
+    html += `</div></div>`;
+  });
+
+  // Group fun stats footer
+  const settledAll = allSlipsAll.filter(s => {
+    if (s.status === 'cancelled') return false;
+    if (!players.includes(s.player)) return false;
+    return resolveSlip(s).status !== 'pending';
+  });
+
+  if (settledAll.length > 0) {
+    const withResolved = settledAll.map(s => ({ ...s, r: resolveSlip(s) }));
+    const worstSlip = withResolved.filter(s => s.r.status === 'lost').sort((a, b) => a.r.profit - b.r.profit)[0];
+    const bestSlip  = withResolved.filter(s => s.r.status === 'won').sort((a, b) => b.r.profit - a.r.profit)[0];
+    const groupProfit = active.reduce((sum, s) => sum + s.totalProfit, 0);
+    const groupColor = groupProfit >= 0 ? 'var(--accent)' : 'var(--secondary)';
+    const groupSign  = groupProfit >= 0 ? '+' : '';
+
+    html += `<div style="margin-top:4px;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius);font-size:0.78rem">`;
+    html += `<div style="font-weight:700;color:var(--text-muted);margin-bottom:6px">📊 ${lang === 'th' ? 'สถิติกลุ่ม' : 'Group Stats'}</div>`;
+    if (worstSlip) {
+      const pc = (worstSlip.picks || []).length;
+      html += `<div style="margin-bottom:4px">📉 สลิปโคตรแย่: <b>${worstSlip.player}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${worstSlip.bet}฿ → <span style="color:var(--secondary);font-weight:700">${worstSlip.r.profit}฿</span></div>`;
+    }
+    if (bestSlip) {
+      const pc = (bestSlip.picks || []).length;
+      html += `<div style="margin-bottom:4px">🎰 จ่ายหนักสุด: <b>${bestSlip.player}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${bestSlip.bet}฿ → <span style="color:var(--accent);font-weight:700">+${bestSlip.r.profit}฿</span></div>`;
+    }
+    html += `<div>💀 รวมทั้งกลุ่ม: <span style="color:${groupColor};font-weight:700">${groupSign}${groupProfit}฿</span>${groupProfit < 0 ? ' (หิ้วกันทั้งนั้น 😂)' : ' (บวกทั้งกลุ่ม!)'}</div>`;
+    html += `</div>`;
+  }
+
+  html += `</div></div>`;
+  return html;
 }
 
 // --- Rules inline ---
