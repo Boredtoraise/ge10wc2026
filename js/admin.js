@@ -36,7 +36,62 @@ function renderAdmin() {
     html += `<button class="btn btn-primary" id="admin-save-scores" style="margin:12px 0">${lang === 'th' ? 'บันทึกผล' : 'Save All Scores'}</button>`;
   }
 
+  // Section 3: Bulk Approve Slips by Team Pick
+  const allSlips = getAllSlips();
+  const scoredMatches = MATCHES.filter(m => {
+    const r = state.matches[m.id];
+    return r && typeof r.team1_score === 'number' && typeof r.team2_score === 'number';
+  });
+
+  if (scoredMatches.length > 0) {
+    html += `<h2 style="font-size:1.1rem;margin:24px 0 12px">${lang === 'th' ? 'ยืนยันสลิป' : 'Approve Slips'}</h2>`;
+    const btnStyle = 'background:var(--accent);color:#000;border:none;padding:6px 14px;border-radius:var(--radius);font-size:0.85rem;font-weight:700;cursor:pointer';
+
+    scoredMatches.forEach(m => {
+      const teams = [
+        { code: m.team1, info: TEAMS[m.team1] },
+        { code: m.team2, info: TEAMS[m.team2] },
+      ];
+      const buttons = teams.map(({ code, info }) => {
+        const count = allSlips.filter(s =>
+          s.status !== 'approved' && s.status !== 'cancelled' &&
+          (resolveSlip(s).status === 'won' || resolveSlip(s).status === 'lost') &&
+          s.picks.some(p => p.type === 'ah' && p.pick === code)
+        ).length;
+        if (!count) return '';
+        const name = info ? (lang === 'th' ? info.nameTh : info.name) : code;
+        const flag = info ? info.flag : '';
+        return `<button class="bulk-approve-btn" data-team="${code}" style="${btnStyle}">${flag} ${name} (${count} สลิป)</button>`;
+      }).join('');
+
+      if (!buttons) return;
+      html += `<div class="card" style="padding:10px;margin-bottom:6px">`;
+      html += `<div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:6px">${m.id} · ${formatMatchDate(m, lang)}</div>`;
+      html += `<div style="display:flex;gap:8px;flex-wrap:wrap">${buttons}</div>`;
+      html += `</div>`;
+    });
+  }
+
   container.innerHTML = html;
+
+  // Bulk Approve
+  container.querySelectorAll('.bulk-approve-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const teamCode = btn.dataset.team;
+      const toApprove = getAllSlips().filter(s =>
+        s.status !== 'approved' && s.status !== 'cancelled' &&
+        (resolveSlip(s).status === 'won' || resolveSlip(s).status === 'lost') &&
+        s.picks.some(p => p.type === 'ah' && p.pick === teamCode)
+      );
+      if (!toApprove.length) return;
+      showLoading();
+      for (const s of toApprove) { await approveSlip(s.timestamp); }
+      await refreshData();
+      hideLoading();
+      showToast(lang === 'th' ? `ยืนยัน ${toApprove.length} สลิปแล้ว` : `Approved ${toApprove.length} slips`);
+      renderAdmin();
+    });
+  });
 
   // Save Lines
   container.querySelector('#admin-save-lines')?.addEventListener('click', async () => {
