@@ -129,7 +129,8 @@ async function renderBetting() {
   if (todayAll.length === 0) {
     html += `<div style="color:var(--text-muted);text-align:center;padding:20px">${lang === 'th' ? 'ยังไม่มีคู่ที่เปิดรับแทง' : 'No open matches with lines'}</div>`;
   } else {
-    if (available.length) html += `<div style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:8px"><button id="bet-rules-toggle" style="font-size:0.8rem;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline">${lang === 'th' ? 'กติกา ▸' : 'Rules ▸'}</button><button id="bet-random-btn" style="font-size:0.82rem;font-weight:700;background:var(--secondary);color:#fff;border:none;padding:5px 14px;border-radius:var(--radius);cursor:pointer">🎲 สุ่ม</button></div><p id="bet-rules-text" style="display:none;font-size:0.85rem;color:var(--text-muted);margin:6px 0 0">${lang === 'th' ? 'กดเลือก กดอีกที=ยกเลิก<br>1 pick = single<br>2 คู่ = 4 picks (AH+O/U ทั้งคู่)<br>3 คู่+ = step (pick ละคู่ก็ได้)' : 'Tap to select, tap again to deselect<br>1 pick = single<br>2 matches = 4 picks (AH+O/U both)<br>3+ matches = step (1 pick/match ok)'}</p></div>`;
+    const chipStyle = 'font-size:0.82rem;font-weight:700;background:var(--secondary);color:#fff;border:none;padding:5px 12px;border-radius:var(--radius);cursor:pointer';
+    if (available.length) html += `<div style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button id="bet-rules-toggle" style="font-size:0.8rem;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline">${lang === 'th' ? 'กติกา ▸' : 'Rules ▸'}</button><button class="bet-random-chip" data-count="4" style="${chipStyle}">🎲 4</button><button class="bet-random-chip" data-count="6" style="${chipStyle}">🎲 6</button><button class="bet-random-chip" data-count="8" style="${chipStyle}">🎲 8</button><button class="bet-random-chip" data-count="all" style="${chipStyle}">🎲 ทั้งหมด</button></div><p id="bet-rules-text" style="display:none;font-size:0.85rem;color:var(--text-muted);margin:6px 0 0">${lang === 'th' ? 'กดเลือก กดอีกที=ยกเลิก<br>1 pick = single<br>2 คู่ = 4 picks (AH+O/U ทั้งคู่)<br>3 คู่+ = step (pick ละคู่ก็ได้)' : 'Tap to select, tap again to deselect<br>1 pick = single<br>2 matches = 4 picks (AH+O/U both)<br>3+ matches = step (1 pick/match ok)'}</p></div>`;
     todayAll.forEach(m => {
       if (isMatchLocked(m)) { html += renderBettingCardLocked(m); }
       else { html += renderBettingCard(m); }
@@ -233,17 +234,26 @@ async function renderBetting() {
     btn.textContent = open ? (currentLang === 'th' ? 'กติกา ▾' : 'Rules ▾') : (currentLang === 'th' ? 'กติกา ▸' : 'Rules ▸');
   });
 
-  // Random pick button — fills AH + O/U for all available matches
-  container.querySelector('#bet-random-btn')?.addEventListener('click', () => {
-    [...container.querySelectorAll('.bet-pick.selected')].forEach(btn => btn.click());
-    const matchIds = [...new Set(
-      [...container.querySelectorAll('.bet-pick:not([disabled])')].map(b => b.dataset.match)
-    )].filter(Boolean);
-    matchIds.forEach(id => {
-      const ahBtns = [...container.querySelectorAll(`.ah-btn.bet-pick:not(.ou-btn)[data-match="${id}"]`)];
-      const ouBtns = [...container.querySelectorAll(`.ou-btn.bet-pick[data-match="${id}"]`)];
-      if (ahBtns.length) ahBtns[Math.floor(Math.random() * ahBtns.length)].click();
-      if (ouBtns.length) ouBtns[Math.floor(Math.random() * ouBtns.length)].click();
+  // Random pick chips — สุ่ม N picks จาก slot pool (AH slot + O/U slot ต่อคู่)
+  container.querySelectorAll('.bet-random-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const countRaw = chip.dataset.count;
+      const matchIds = [...new Set(
+        [...container.querySelectorAll('.bet-pick:not([disabled])')].map(b => b.dataset.match)
+      )].filter(Boolean);
+      const slots = [];
+      matchIds.forEach(id => {
+        const ahBtns = [...container.querySelectorAll(`.ah-btn.bet-pick:not(.ou-btn)[data-match="${id}"]`)];
+        const ouBtns = [...container.querySelectorAll(`.ou-btn.bet-pick[data-match="${id}"]`)];
+        if (ahBtns.length) slots.push(ahBtns);
+        if (ouBtns.length) slots.push(ouBtns);
+      });
+      slots.sort(() => Math.random() - 0.5);
+      const n = countRaw === 'all' ? slots.length : Math.min(parseInt(countRaw), slots.length);
+      [...container.querySelectorAll('.bet-pick.selected')].forEach(btn => btn.click());
+      slots.slice(0, n).forEach(btns => {
+        btns[Math.floor(Math.random() * btns.length)].click();
+      });
     });
   });
 
