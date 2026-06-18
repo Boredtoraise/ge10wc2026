@@ -61,29 +61,46 @@ async function renderBetting() {
     if (!readySlips.length) {
       html += `<div style="color:var(--text-muted);text-align:center;padding:16px">${lang === 'th' ? 'ยังไม่มีสลิปที่รู้ผล' : 'No resolved slips yet'}</div>`;
     } else {
-      // Bulk approve buttons grouped by match
+      // Bulk approve buttons — per match, per pick type (AH team + O/U)
       const scoredMatches = MATCHES.filter(m => {
         const r = state.matches[m.id];
         return r && typeof r.team1_score === 'number' && typeof r.team2_score === 'number';
       });
       if (scoredMatches.length) {
         const btnStyle = 'background:var(--accent);color:#000;border:none;padding:5px 12px;border-radius:var(--radius);font-size:0.8rem;font-weight:700;cursor:pointer';
-        html += `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">`;
         scoredMatches.forEach(m => {
-          [m.team1, m.team2].forEach(code => {
-            const info = TEAMS[code];
+          const t1 = TEAMS[m.team1], t2 = TEAMS[m.team2];
+          const matchLabel = `${m.id}`;
+          let rowBtns = '';
+
+          // AH: one button per team
+          [{ code: m.team1, info: t1 }, { code: m.team2, info: t2 }].forEach(({ code, info }) => {
             const count = allSlipsAll.filter(s =>
               s.status !== 'approved' && s.status !== 'cancelled' &&
               (resolveSlip(s).status === 'won' || resolveSlip(s).status === 'lost') &&
-              s.picks.some(p => p.type === 'ah' && p.pick === code)
+              s.picks.some(p => p.type === 'ah' && p.pick === code && p.match_id === m.id)
             ).length;
             if (!count) return;
-            const name = info ? (lang === 'th' ? info.nameTh : info.name) : code;
             const flag = info ? info.flag : '';
-            html += `<button class="bulk-approve-btn" data-team="${code}" style="${btnStyle}">${flag} ${name} ✓ ทั้งหมด (${count})</button>`;
+            rowBtns += `<button class="bulk-approve-btn" data-matchid="${m.id}" data-team="${code}" style="${btnStyle}">${flag} ${code} AH (${count})</button>`;
           });
+
+          // O/U: one button for all O/U picks in this match
+          const ouCount = allSlipsAll.filter(s =>
+            s.status !== 'approved' && s.status !== 'cancelled' &&
+            (resolveSlip(s).status === 'won' || resolveSlip(s).status === 'lost') &&
+            s.picks.some(p => p.type === 'ou' && p.match_id === m.id)
+          ).length;
+          if (ouCount) {
+            rowBtns += `<button class="bulk-approve-ou-btn" data-matchid="${m.id}" style="${btnStyle}">O/U (${ouCount})</button>`;
+          }
+
+          if (!rowBtns) return;
+          html += `<div style="margin-bottom:8px">`;
+          html += `<div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:4px">${matchLabel}</div>`;
+          html += `<div style="display:flex;gap:6px;flex-wrap:wrap">${rowBtns}</div>`;
+          html += `</div>`;
         });
-        html += `</div>`;
       }
       // Individual slip cards
       readySlips.forEach(s => { html += renderSlipCard(s, { showPlayer: true }); });
@@ -121,10 +138,28 @@ async function renderBetting() {
     container.querySelectorAll('.bulk-approve-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const teamCode = btn.dataset.team;
+        const matchId  = btn.dataset.matchid;
         const toApprove = getAllSlips().filter(s =>
           s.status !== 'approved' && s.status !== 'cancelled' &&
           (resolveSlip(s).status === 'won' || resolveSlip(s).status === 'lost') &&
-          s.picks.some(p => p.type === 'ah' && p.pick === teamCode)
+          s.picks.some(p => p.type === 'ah' && p.pick === teamCode && p.match_id === matchId)
+        );
+        if (!toApprove.length) return;
+        showLoading();
+        for (const s of toApprove) { await approveSlip(s.timestamp); }
+        await refreshData();
+        hideLoading();
+        showToast(lang === 'th' ? `ยืนยัน ${toApprove.length} สลิปแล้ว` : `Approved ${toApprove.length} slips`);
+        renderBetting();
+      });
+    });
+    container.querySelectorAll('.bulk-approve-ou-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const matchId = btn.dataset.matchid;
+        const toApprove = getAllSlips().filter(s =>
+          s.status !== 'approved' && s.status !== 'cancelled' &&
+          (resolveSlip(s).status === 'won' || resolveSlip(s).status === 'lost') &&
+          s.picks.some(p => p.type === 'ou' && p.match_id === matchId)
         );
         if (!toApprove.length) return;
         showLoading();
