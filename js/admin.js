@@ -25,8 +25,8 @@ function renderAdmin() {
     html += `<button class="btn btn-primary" id="admin-save-lines" style="margin:12px 0">${lang === 'th' ? 'บันทึกราคา' : 'Save All Lines'}</button>`;
   }
 
-  // Section 2: Enter Scores (EPL only)
-  const finished = MATCHES.filter(m => m.stage === 'epl' && isMatchLocked(m));
+  // Section 2: Enter Scores (group stage locked matches)
+  const finished = MATCHES.filter(m => m.stage === 'group' && isMatchLocked(m));
   html += `<h2 style="font-size:1.1rem;margin:24px 0 12px">${lang === 'th' ? 'ใส่ผลการแข่ง' : 'Enter Scores'}</h2>`;
 
   if (finished.length === 0) {
