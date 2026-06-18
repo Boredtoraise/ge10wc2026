@@ -400,6 +400,25 @@ function renderFunLeaderboard() {
     html += `</div>`;
   }
 
+  // Badge legend
+  const badgeLegend = [
+    ['👑', 'ราชา', 'กำไรสูงสุด'],
+    ['🎯', 'สไนเปอร์', 'win rate สูงสุด'],
+    ['🔥', 'ออนไฟร์', 'ชนะติดต่อกัน'],
+    ['🗑️', 'เผาเงิน', 'ขาดทุนหนักสุด'],
+    ['🤡', 'วันนี้ตาย', '0% ถูกจาก 3+ slip'],
+    ['🧊', 'หนาว', 'แพ้ติดต่อกัน 3+'],
+    ['🙈', 'ตาบอด', 'แทงเยอะสุดแต่ยังติดลบ'],
+    ['🐔', 'ขี้กลัว', 'single อย่างเดียว ไม่เล่น step'],
+  ];
+  html += `<div style="margin-top:8px;padding:8px 10px;background:var(--bg-input);border-radius:var(--radius)">`;
+  html += `<div style="font-size:0.68rem;font-weight:700;color:var(--text-muted);margin-bottom:5px">ความหมาย badge</div>`;
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 8px">`;
+  badgeLegend.forEach(([icon, name, desc]) => {
+    html += `<div style="font-size:0.68rem;color:var(--text-muted)">${icon} <b>${name}</b> — ${desc}</div>`;
+  });
+  html += `</div></div>`;
+
   html += `</div></div>`;
   return html;
 }
