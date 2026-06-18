@@ -330,7 +330,7 @@ function renderFunLeaderboard() {
 
   const rankIcon = ['🏆', '🥈', '🥉'];
   let html = `<div class="lb-section open">`;
-  html += `<div class="lb-section-header"><h3>${lang === 'th' ? '🏟️ ตารางสนุก' : '🏟️ Fun Board'}</h3><span class="lb-section-arrow">▼</span></div>`;
+  html += `<div class="lb-section-header"><h3>Leaderboard</h3></div>`;
   html += `<div class="lb-section-body">`;
 
   sorted.forEach((s, i) => {
