@@ -42,6 +42,12 @@ function getAllSlips() {
   return state.allSlips.length ? state.allSlips : (state.slips || []);
 }
 
+function getDisplayName(playerId) {
+  if (!playerId) return '';
+  const p = state.players.find(p => p.player_id === playerId);
+  return p ? p.display_name : playerId;
+}
+
 const STATUS_CONFIG = {
   pending:   { color: 'var(--secondary)', th: 'รอผล',   en: 'Pending'  },
   approved:  { color: 'var(--accent)',    th: 'อนุมัติ', en: 'Approved' },

@@ -10,7 +10,7 @@ function renderAdmin() {
 
   let html = '';
   html += `<div class="user-bar">`;
-  html += `<span class="user-name">${state.currentPlayer} (${lang === 'th' ? 'แอดมิน' : 'Admin'})</span>`;
+  html += `<span class="user-name">${getDisplayName(state.currentPlayer)} (${lang === 'th' ? 'แอดมิน' : 'Admin'})</span>`;
   html += `<button class="logout-btn" id="admin-logout">${t('logout')}</button>`;
   html += `</div>`;
 

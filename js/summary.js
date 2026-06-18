@@ -13,7 +13,7 @@ function renderSummary() {
   html += `<button class="lb-tab active" data-lb-tab="summary">${lang === 'th' ? 'สรุป' : 'Summary'}</button>`;
   tabPlayers.forEach(p => {
     const isMe = p === state.currentPlayer;
-    html += `<button class="lb-tab${isMe ? ' me' : ''}" data-lb-tab="${p}">${p}${isMe ? ' ★' : ''}</button>`;
+    html += `<button class="lb-tab${isMe ? ' me' : ''}" data-lb-tab="${p}">${getDisplayName(p)}${isMe ? ' ★' : ''}</button>`;
   });
   html += `</div>`;
 
@@ -354,15 +354,15 @@ function renderFunLeaderboard() {
   // จับตา alerts
   const alerts = [];
   sorted.forEach((s, i) => {
-    if (s.streakDir === 1 && s.streakVal === 1) alerts.push(`⚡ ${s.player} — อีก 1 ถูก ได้ 🔥 ออนไฟร์`);
-    if (s.streakDir === -1 && s.streakVal === 2) alerts.push(`⚠️ ${s.player} — อีก 1 ผิด ได้ 🧊 หนาว`);
+    if (s.streakDir === 1 && s.streakVal === 1) alerts.push(`⚡ ${getDisplayName(s.player)} — อีก 1 ถูก ได้ 🔥 ออนไฟร์`);
+    if (s.streakDir === -1 && s.streakVal === 2) alerts.push(`⚠️ ${getDisplayName(s.player)} — อีก 1 ผิด ได้ 🧊 หนาว`);
     if (i > 0) {
       const gap = sorted[i - 1].totalProfit - s.totalProfit;
-      if (gap > 0 && gap <= 50) alerts.push(`📈 ${s.player} ห่างอันดับ ${i} แค่ ${gap}฿`);
+      if (gap > 0 && gap <= 50) alerts.push(`📈 ${getDisplayName(s.player)} ห่างอันดับ ${i} แค่ ${gap}฿`);
     }
     if (i < sorted.length - 1) {
       const gap = s.totalProfit - sorted[i + 1].totalProfit;
-      if (gap > 0 && gap <= 30) alerts.push(`📉 ${s.player} ระวัง! ${sorted[i + 1].player} ตามมาแค่ ${gap}฿`);
+      if (gap > 0 && gap <= 30) alerts.push(`📉 ${getDisplayName(s.player)} ระวัง! ${getDisplayName(sorted[i + 1].player)} ตามมาแค่ ${gap}฿`);
     }
   });
 
@@ -389,7 +389,7 @@ function renderFunLeaderboard() {
     html += `<div style="display:flex;align-items:center;gap:10px">`;
     html += `<span style="font-size:1.2rem;min-width:24px;text-align:center">${icon}</span>`;
     html += `<div style="flex:1;min-width:0">`;
-    html += `<div style="font-weight:700;font-size:0.95rem">${s.player}${isMe ? ' <span style="color:var(--secondary);font-size:0.72rem">★</span>' : ''}</div>`;
+    html += `<div style="font-weight:700;font-size:0.95rem">${getDisplayName(s.player)}${isMe ? ' <span style="color:var(--secondary);font-size:0.72rem">★</span>' : ''}</div>`;
     if (s.badges.length) {
       html += `<div style="margin-top:3px;display:flex;flex-wrap:wrap;gap:3px">`;
       s.badges.forEach(b => {

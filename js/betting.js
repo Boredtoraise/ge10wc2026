@@ -48,7 +48,7 @@ async function renderBetting() {
   // ── Admin view: house dashboard + friend slips + ราคาบอล tab ───────
   if (state.isAdmin) {
     let html = '';
-    html += `<div class="user-bar"><span class="user-name">${state.currentPlayer}</span><button class="logout-btn" id="bet-logout">${t('logout')}</button></div>`;
+    html += `<div class="user-bar"><span class="user-name">${getDisplayName(state.currentPlayer)}</span><button class="logout-btn" id="bet-logout">${t('logout')}</button></div>`;
     html += renderHouseDashboard();
 
     // ── Slips section ──
@@ -60,7 +60,7 @@ async function renderBetting() {
       html += `<button class="fplayer-tab" data-fp="all" style="${SUBTAB_ON}">${lang === 'th' ? 'ทั้งหมด' : 'All'} (${pendingFriendSlips.length})</button>`;
       friendPlayers.forEach(p => {
         const n = pendingFriendSlips.filter(s => s.player === p).length;
-        html += `<button class="fplayer-tab" data-fp="${p}" style="${SUBTAB_OFF}">${p} (${n})</button>`;
+        html += `<button class="fplayer-tab" data-fp="${p}" style="${SUBTAB_OFF}">${getDisplayName(p)} (${n})</button>`;
       });
       html += `</div>`;
       html += `<div class="fplayer-pane" data-fp="all">`;
@@ -110,7 +110,7 @@ async function renderBetting() {
 
   // User bar
   html += `<div class="user-bar">`;
-  html += `<span class="user-name">${state.currentPlayer}</span>`;
+  html += `<span class="user-name">${getDisplayName(state.currentPlayer)}</span>`;
   html += `<button class="logout-btn" id="bet-logout">${t('logout')}</button>`;
   html += `</div>`;
 
@@ -208,7 +208,7 @@ async function renderBetting() {
     html += `<button class="fplayer-tab" data-fp="all" style="${stOn}">${lang === 'th' ? 'ทั้งหมด' : 'All'} (${pendingFriendSlips.length})</button>`;
     friendPlayers.forEach(p => {
       const n = pendingFriendSlips.filter(s => s.player === p).length;
-      html += `<button class="fplayer-tab" data-fp="${p}" style="${stOff}">${p} (${n})</button>`;
+      html += `<button class="fplayer-tab" data-fp="${p}" style="${stOff}">${getDisplayName(p)} (${n})</button>`;
     });
     html += `</div>`;
     html += `<div class="fplayer-pane" data-fp="all">`;
@@ -317,7 +317,7 @@ async function renderBetting() {
         return `${name1}-${name2}: ${pickName} @${p.odds}`;
       }).join('\n');
 
-      const msg = `แทงตาม ${slip.player}\n${pickSummary}\nจำนวน: ${slip.bet}฿\n\nยืนยัน?`;
+      const msg = `แทงตาม ${getDisplayName(slip.player)}\n${pickSummary}\nจำนวน: ${slip.bet}฿\n\nยืนยัน?`;
       if (!window.confirm(msg)) return;
 
       const combinedOdds = validPicks.reduce((a, p) => a * p.odds, 1);
@@ -721,7 +721,7 @@ function renderSlipCard(slip, opts) {
   // Header
   html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">`;
   html += `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">`;
-  if (showPlayer) html += `<span style="font-size:0.88rem;font-weight:700;color:var(--primary)">${slip.player}</span>`;
+  if (showPlayer) html += `<span style="font-size:0.88rem;font-weight:700;color:var(--primary)">${getDisplayName(slip.player)}</span>`;
   if (opts.idx != null) html += `<span style="font-size:0.75rem;color:var(--text-muted)">#${opts.idx + 1} · ${new Date(slip.timestamp).toLocaleDateString('th-TH')}</span>`;
   html += `<span style="font-size:0.72rem;color:var(--text-muted);background:var(--bg-input);padding:2px 7px;border-radius:4px">${isStep ? 'STEP' : 'SINGLE'}</span>`;
   html += `</div>`;
