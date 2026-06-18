@@ -51,56 +51,48 @@ async function renderBetting() {
     html += `<div class="user-bar"><span class="user-name">${getDisplayName(state.currentPlayer)}</span><button class="logout-btn" id="bet-logout">${t('logout')}</button></div>`;
     html += renderHouseDashboard();
 
-    // ── Slips section ──
-    html += `<div style="margin:16px 0 8px;font-size:0.85rem;color:var(--text-muted);font-weight:700">${lang === 'th' ? 'สลิปเพื่อน' : "Friends' Slips"} (${pendingFriendSlips.length})</div>`;
-    if (!pendingFriendSlips.length) {
-      html += `<div style="color:var(--text-muted);text-align:center;padding:30px">${lang === 'th' ? 'ไม่มีสลิปรอ' : 'No pending slips'}</div>`;
+    // ── Slips: split into ready-to-approve vs still-pending ──
+    const allSlipsAll = getAllSlips();
+    const readySlips   = pendingFriendSlips.filter(s => { const r = resolveSlip(s); return r.status === 'won' || r.status === 'lost'; });
+    const waitingSlips = pendingFriendSlips.filter(s => resolveSlip(s).status === 'pending');
+
+    // Section A: พร้อมยืนยัน — bulk buttons + slip cards
+    html += `<div style="margin:16px 0 8px;font-size:0.85rem;color:var(--text-muted);font-weight:700">${lang === 'th' ? 'พร้อมยืนยัน' : 'Ready to Approve'} (${readySlips.length})</div>`;
+    if (!readySlips.length) {
+      html += `<div style="color:var(--text-muted);text-align:center;padding:16px">${lang === 'th' ? 'ยังไม่มีสลิปที่รู้ผล' : 'No resolved slips yet'}</div>`;
     } else {
-      html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">`;
-      html += `<button class="fplayer-tab" data-fp="all" style="${SUBTAB_ON}">${lang === 'th' ? 'ทั้งหมด' : 'All'} (${pendingFriendSlips.length})</button>`;
-      friendPlayers.forEach(p => {
-        const n = pendingFriendSlips.filter(s => s.player === p).length;
-        html += `<button class="fplayer-tab" data-fp="${p}" style="${SUBTAB_OFF}">${getDisplayName(p)} (${n})</button>`;
+      // Bulk approve buttons grouped by match
+      const scoredMatches = MATCHES.filter(m => {
+        const r = state.matches[m.id];
+        return r && typeof r.team1_score === 'number' && typeof r.team2_score === 'number';
       });
-      html += `</div>`;
-      html += `<div class="fplayer-pane" data-fp="all">`;
-      pendingFriendSlips.forEach(s => { html += renderSlipCard(s, { showPlayer: true }); });
-      html += `</div>`;
-      friendPlayers.forEach(p => {
-        html += `<div class="fplayer-pane" data-fp="${p}" style="display:none">`;
-        pendingFriendSlips.filter(s => s.player === p).forEach(s => { html += renderSlipCard(s, { showPlayer: true }); });
+      if (scoredMatches.length) {
+        const btnStyle = 'background:var(--accent);color:#000;border:none;padding:5px 12px;border-radius:var(--radius);font-size:0.8rem;font-weight:700;cursor:pointer';
+        html += `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">`;
+        scoredMatches.forEach(m => {
+          [m.team1, m.team2].forEach(code => {
+            const info = TEAMS[code];
+            const count = allSlipsAll.filter(s =>
+              s.status !== 'approved' && s.status !== 'cancelled' &&
+              (resolveSlip(s).status === 'won' || resolveSlip(s).status === 'lost') &&
+              s.picks.some(p => p.type === 'ah' && p.pick === code)
+            ).length;
+            if (!count) return;
+            const name = info ? (lang === 'th' ? info.nameTh : info.name) : code;
+            const flag = info ? info.flag : '';
+            html += `<button class="bulk-approve-btn" data-team="${code}" style="${btnStyle}">${flag} ${name} ✓ ทั้งหมด (${count})</button>`;
+          });
+        });
         html += `</div>`;
-      });
+      }
+      // Individual slip cards
+      readySlips.forEach(s => { html += renderSlipCard(s, { showPlayer: true }); });
     }
 
-    // ── Bulk approve by team ──
-    const scoredMatches = MATCHES.filter(m => {
-      const r = state.matches[m.id];
-      return r && typeof r.team1_score === 'number' && typeof r.team2_score === 'number';
-    });
-    if (scoredMatches.length > 0) {
-      const allSlipsForApprove = getAllSlips();
-      const btnStyle = 'background:var(--accent);color:#000;border:none;padding:6px 14px;border-radius:var(--radius);font-size:0.85rem;font-weight:700;cursor:pointer';
-      html += `<div style="margin:16px 0 8px;font-size:0.85rem;color:var(--text-muted);font-weight:700">${lang === 'th' ? 'ยืนยันสลิปรวม' : 'Bulk Approve'}</div>`;
-      scoredMatches.forEach(m => {
-        const teams = [{ code: m.team1, info: TEAMS[m.team1] }, { code: m.team2, info: TEAMS[m.team2] }];
-        const buttons = teams.map(({ code, info }) => {
-          const count = allSlipsForApprove.filter(s =>
-            s.status !== 'approved' && s.status !== 'cancelled' &&
-            (resolveSlip(s).status === 'won' || resolveSlip(s).status === 'lost') &&
-            s.picks.some(p => p.type === 'ah' && p.pick === code)
-          ).length;
-          if (!count) return '';
-          const name = info ? (lang === 'th' ? info.nameTh : info.name) : code;
-          const flag = info ? info.flag : '';
-          return `<button class="bulk-approve-btn" data-team="${code}" style="${btnStyle}">${flag} ${name} (${count})</button>`;
-        }).join('');
-        if (!buttons) return;
-        html += `<div style="margin-bottom:8px">`;
-        html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:4px">${m.id} · ${m.team1} vs ${m.team2}</div>`;
-        html += `<div style="display:flex;gap:8px;flex-wrap:wrap">${buttons}</div>`;
-        html += `</div>`;
-      });
+    // Section B: รอผล — slips still pending
+    if (waitingSlips.length) {
+      html += `<div style="margin:16px 0 8px;font-size:0.85rem;color:var(--text-muted);font-weight:700">${lang === 'th' ? 'รอผลบอล' : 'Awaiting Results'} (${waitingSlips.length})</div>`;
+      waitingSlips.forEach(s => { html += renderSlipCard(s, { showPlayer: true }); });
     }
 
     container.innerHTML = html;
@@ -109,13 +101,6 @@ async function renderBetting() {
       sessionStorage.removeItem('wc2026_player');
       sessionStorage.removeItem('wc2026_pin');
       renderBetting();
-    });
-    container.querySelectorAll('.fplayer-tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const key = btn.dataset.fp;
-        container.querySelectorAll('.fplayer-tab').forEach(b => { b.style.cssText = b.dataset.fp === key ? SUBTAB_ON : SUBTAB_OFF; });
-        container.querySelectorAll('.fplayer-pane').forEach(p => { p.style.display = p.dataset.fp === key ? '' : 'none'; });
-      });
     });
     container.querySelectorAll('.slip-approve-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
