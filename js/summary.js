@@ -458,7 +458,13 @@ function renderFunLeaderboard() {
     }
     if (mostPicksLost && (mostPicksLost.picks||[]).length >= 2) {
       const pc = (mostPicksLost.picks||[]).length;
-      html += `<div style="margin-bottom:4px">💣 step ใหญ่สุดที่ผิด: <b>${mostPicksLost.player}</b> ${pc} คู่ ลง ${mostPicksLost.bet}฿ <span style="color:var(--secondary);font-weight:700">หายหมด</span></div>`;
+      const wrongCount = (mostPicksLost.picks||[]).filter(p => {
+        const o = getPickOutcome(p, state.matches[p.match_id]);
+        return o === 'loss' || o === 'half_loss';
+      }).length;
+      const allWrong = wrongCount === pc;
+      const wrongLabel = allWrong ? `ผิดหมด ${pc}/${pc} 😭` : `ผิด ${wrongCount}/${pc}`;
+      html += `<div style="margin-bottom:4px">💣 step ใหญ่สุดที่ผิด: <b>${mostPicksLost.player}</b> ${pc} คู่ ลง ${mostPicksLost.bet}฿ — <span style="color:var(--secondary);font-weight:700">${wrongLabel}</span></div>`;
     }
     html += `<div style="margin-bottom:4px">🎯 win rate กลุ่ม: <b>${groupWinRate}%</b> (${totalWins}/${totalSettled}) — ${winRateRoast}</div>`;
     html += `<div style="color:${groupColor};font-weight:700">${groupSign}${groupProfit}฿ — ${groupRoast}</div>`;
