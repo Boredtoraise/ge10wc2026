@@ -151,20 +151,57 @@ function renderUserDashboard(player) {
     html += `</div></div>`;
   }
 
-  // Slips detail — unified renderSlipCard
+  // Slips detail — grouped by date (14:00 Thai cutoff)
   const playerSlips = (getAllSlips())
     .filter(s => s.player === player && s.status !== 'cancelled')
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-  html += `<div class="lb-section open">`;
-  html += `<div class="lb-section-header"><h3>${lang === 'th' ? 'สลิปทั้งหมด' : 'All Slips'}: <span style="color:${moneyColor(totalBalance)}">${fmtMoney(totalBalance)}</span></h3><span class="lb-section-arrow">▼</span></div>`;
-  html += `<div class="lb-section-body">`;
-  if (!playerSlips.length) {
-    html += `<div style="color:var(--text-muted);font-size:0.85rem;text-align:center;padding:12px">${lang === 'th' ? 'ยังไม่มีสลิป' : 'No slips yet'}</div>`;
-  } else {
-    playerSlips.forEach(slip => { html += renderSlipCard(slip, { showDetails: true }); });
+  function getPlayerRoundKey(s) {
+    const picks = s.picks || [];
+    if (!picks.length) return null;
+    const match = (state.matchById || {})[picks[0].match_id] || MATCHES.find(m => m.id === picks[0].match_id);
+    if (!match) return null;
+    const thaiMs = etToThai(match.date).getTime() + 7 * 3600 * 1000;
+    const d = new Date(thaiMs);
+    if (d.getUTCHours() < 14) d.setUTCDate(d.getUTCDate() - 1);
+    return d.toISOString().slice(0, 10);
   }
-  html += `</div></div>`;
+
+  // Group slips by round key
+  const slipsByRound = {};
+  playerSlips.forEach(s => {
+    const key = getPlayerRoundKey(s) || 'other';
+    if (!slipsByRound[key]) slipsByRound[key] = [];
+    slipsByRound[key].push(s);
+  });
+  const roundKeys = Object.keys(slipsByRound).sort().reverse();
+
+  if (!playerSlips.length) {
+    html += `<div class="lb-section open">`;
+    html += `<div class="lb-section-header"><h3>${lang === 'th' ? 'สลิปทั้งหมด' : 'All Slips'}</h3><span class="lb-section-arrow">▼</span></div>`;
+    html += `<div class="lb-section-body"><div style="color:var(--text-muted);font-size:0.85rem;text-align:center;padding:12px">${lang === 'th' ? 'ยังไม่มีสลิป' : 'No slips yet'}</div></div></div>`;
+  } else {
+    roundKeys.forEach(key => {
+      const daySlips = slipsByRound[key];
+      let dayNet = 0;
+      daySlips.forEach(s => { const r = resolveSlip(s); dayNet += r.profit || 0; });
+      const daySettled = daySlips.some(s => { const r = resolveSlip(s); return r.status === 'won' || r.status === 'lost'; });
+      const dayLabel = key === 'other' ? (lang === 'th' ? 'อื่นๆ' : 'Other') : (() => {
+        const [yr, mo, dy] = key.split('-').map(Number);
+        return new Date(Date.UTC(yr, mo - 1, dy)).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+      })();
+      const netStr = dayNet >= 0 ? `+${dayNet}฿` : `${dayNet}฿`;
+      const netColor = dayNet >= 0 ? 'var(--accent)' : 'var(--secondary)';
+      const headerRight = daySettled
+        ? `<span style="font-size:0.85rem;font-weight:700;color:${netColor}">${netStr}</span>`
+        : `<span style="font-size:0.78rem;color:var(--text-muted)">${daySlips.length} ${lang === 'th' ? 'สลิปรอ' : 'pending'}</span>`;
+      html += `<div class="lb-section open">`;
+      html += `<div class="lb-section-header"><h3>${dayLabel}</h3>${headerRight}<span class="lb-section-arrow">▼</span></div>`;
+      html += `<div class="lb-section-body">`;
+      daySlips.forEach(slip => { html += renderSlipCard(slip, { showDetails: true }); });
+      html += `</div></div>`;
+    });
+  }
 
   return html;
 }
