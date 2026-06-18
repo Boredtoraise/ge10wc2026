@@ -24,7 +24,7 @@ function parsePicks(s) {
 // Check if match is locked (kickoff passed OR has score)
 function isMatchLocked(match) {
   const thaiTime = etToThai(match.date);
-  const timePassed = new Date() >= thaiTime;
+  const timePassed = new Date() >= new Date(thaiTime.getTime() - 5 * 60 * 1000);
   const result = state.matches[match.id];
   const hasScore = result && typeof result.team1_score === 'number' && typeof result.team2_score === 'number';
   return timePassed || hasScore;
