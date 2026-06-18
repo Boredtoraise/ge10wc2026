@@ -733,15 +733,16 @@ function renderHouseDashboard() {
     // Slip count row
     html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">`;
     const todayItems = [
-      { label: lang === 'th' ? 'ทั้งหมด' : 'Total',   val: allSlipsForToday.length, color: 'var(--text-primary)' },
-      { label: lang === 'th' ? 'ถูกแล้ว' : 'Won',     val: todayWonCount,            color: 'var(--accent)'       },
-      { label: lang === 'th' ? 'ผิดแล้ว' : 'Lost',    val: todayLostCount,           color: 'var(--secondary)'    },
-      { label: lang === 'th' ? 'รอผล'   : 'Pending',  val: todayPending.length,      color: 'var(--text-muted)'   },
+      { label: lang === 'th' ? 'ทั้งหมด' : 'Total',   val: allSlipsForToday.length, color: 'var(--text-primary)', amt: null },
+      { label: lang === 'th' ? 'ถูกแล้ว' : 'Won',     val: todayWonCount,            color: 'var(--accent)',       amt: todayWonPaid  > 0 ? `-${todayWonPaid}฿`  : null, amtColor: 'var(--secondary)' },
+      { label: lang === 'th' ? 'ผิดแล้ว' : 'Lost',    val: todayLostCount,           color: 'var(--secondary)',    amt: todayLostKept > 0 ? `+${todayLostKept}฿` : null, amtColor: 'var(--accent)'    },
+      { label: lang === 'th' ? 'รอผล'   : 'Pending',  val: todayPending.length,      color: 'var(--text-muted)',   amt: null },
     ];
-    todayItems.forEach(({ label, val, color }) => {
+    todayItems.forEach(({ label, val, color, amt, amtColor }) => {
       html += `<div style="text-align:center;padding:7px 4px;background:var(--bg-input);border-radius:var(--radius)">`;
       html += `<div style="font-size:0.65rem;color:var(--text-muted);margin-bottom:2px">${label}</div>`;
       html += `<div style="font-size:1rem;font-weight:700;color:${color}">${val}</div>`;
+      if (amt) html += `<div style="font-size:0.7rem;font-weight:700;color:${amtColor};margin-top:2px">${amt}</div>`;
       html += `</div>`;
     });
     html += `</div>`;
