@@ -430,6 +430,8 @@ function renderFunLeaderboard() {
     const withResolved = settledAll.map(s => ({ ...s, r: resolveSlip(s) }));
     const worstSlip = withResolved.filter(s => s.r.status === 'lost').sort((a, b) => a.r.profit - b.r.profit)[0];
     const bestSlip  = withResolved.filter(s => s.r.status === 'won').sort((a, b) => b.r.profit - a.r.profit)[0];
+    const mostPicksWon  = withResolved.filter(s => s.r.status === 'won').sort((a, b) => (b.picks||[]).length - (a.picks||[]).length)[0];
+    const mostPicksLost = withResolved.filter(s => s.r.status === 'lost').sort((a, b) => (b.picks||[]).length - (a.picks||[]).length)[0];
     const groupProfit = active.reduce((sum, s) => sum + s.totalProfit, 0);
     const groupColor = groupProfit >= 0 ? 'var(--accent)' : 'var(--secondary)';
     const groupSign  = groupProfit >= 0 ? '+' : '';
@@ -449,6 +451,14 @@ function renderFunLeaderboard() {
     if (bestSlip) {
       const pc = (bestSlip.picks || []).length;
       html += `<div style="margin-bottom:4px">👑 มือทองรอบนี้: <b>${bestSlip.player}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${bestSlip.bet}฿ → <span style="color:var(--accent);font-weight:700">+${bestSlip.r.profit}฿</span></div>`;
+    }
+    if (mostPicksWon && (mostPicksWon.picks||[]).length >= 2) {
+      const pc = (mostPicksWon.picks||[]).length;
+      html += `<div style="margin-bottom:4px">🏅 step ใหญ่สุดที่ถูก: <b>${mostPicksWon.player}</b> ${pc} คู่ → <span style="color:var(--accent);font-weight:700">+${mostPicksWon.r.profit}฿</span></div>`;
+    }
+    if (mostPicksLost && (mostPicksLost.picks||[]).length >= 2) {
+      const pc = (mostPicksLost.picks||[]).length;
+      html += `<div style="margin-bottom:4px">💣 step ใหญ่สุดที่ผิด: <b>${mostPicksLost.player}</b> ${pc} คู่ ลง ${mostPicksLost.bet}฿ <span style="color:var(--secondary);font-weight:700">หายหมด</span></div>`;
     }
     html += `<div style="margin-bottom:4px">🎯 win rate กลุ่ม: <b>${groupWinRate}%</b> (${totalWins}/${totalSettled}) — ${winRateRoast}</div>`;
     html += `<div style="color:${groupColor};font-weight:700">${groupSign}${groupProfit}฿ — ${groupRoast}</div>`;
