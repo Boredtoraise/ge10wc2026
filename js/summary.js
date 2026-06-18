@@ -378,18 +378,25 @@ function renderFunLeaderboard() {
     const groupProfit = active.reduce((sum, s) => sum + s.totalProfit, 0);
     const groupColor = groupProfit >= 0 ? 'var(--accent)' : 'var(--secondary)';
     const groupSign  = groupProfit >= 0 ? '+' : '';
+    const totalWins = active.reduce((s, p) => s + p.wins, 0);
+    const totalSettled = active.reduce((s, p) => s + p.settled, 0);
+    const groupWinRate = totalSettled > 0 ? Math.round(totalWins / totalSettled * 100) : 0;
+    const winRateRoast = groupWinRate < 40 ? 'แย่กว่าโยนเหรียญมาก 💀' : groupWinRate < 50 ? 'แย่กว่าโยนเหรียญนิดนึง 🪙' : groupWinRate < 60 ? 'พอๆ กับโยนเหรียญ 🤷' : 'เก่งกว่าโยนเหรียญ 🎯';
+    const coffees = Math.round(Math.abs(groupProfit) / 50);
+    const groupRoast = groupProfit < -500 ? `เผาไป ${Math.abs(groupProfit)}฿ ซื้อตั๋วบอลโลกได้เลยนะ` : groupProfit < 0 ? `เผาไป ${Math.abs(groupProfit)}฿ หรือ ${coffees} แก้วกาแฟ` : groupProfit === 0 ? 'เสมอตัว... อย่างน้อยไม่ขาดทุน' : `บวกรวม ${groupProfit}฿ Pok ร้องไห้อยู่`;
 
     html += `<div style="margin-top:4px;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius);font-size:0.78rem">`;
-    html += `<div style="font-weight:700;color:var(--text-muted);margin-bottom:6px">📊 ${lang === 'th' ? 'สถิติกลุ่ม' : 'Group Stats'}</div>`;
+    html += `<div style="font-weight:700;color:var(--text-muted);margin-bottom:6px">📊 สถิติกลุ่ม</div>`;
     if (worstSlip) {
       const pc = (worstSlip.picks || []).length;
-      html += `<div style="margin-bottom:4px">📉 สลิปโคตรแย่: <b>${worstSlip.player}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${worstSlip.bet}฿ → <span style="color:var(--secondary);font-weight:700">${worstSlip.r.profit}฿</span></div>`;
+      html += `<div style="margin-bottom:4px">🗑️ อัปยศประจำรอบ: <b>${worstSlip.player}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${worstSlip.bet}฿ <span style="color:var(--secondary);font-weight:700">หายเกลี้ยง ${worstSlip.r.profit}฿</span></div>`;
     }
     if (bestSlip) {
       const pc = (bestSlip.picks || []).length;
-      html += `<div style="margin-bottom:4px">🎰 จ่ายหนักสุด: <b>${bestSlip.player}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${bestSlip.bet}฿ → <span style="color:var(--accent);font-weight:700">+${bestSlip.r.profit}฿</span></div>`;
+      html += `<div style="margin-bottom:4px">👑 มือทองรอบนี้: <b>${bestSlip.player}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${bestSlip.bet}฿ → <span style="color:var(--accent);font-weight:700">+${bestSlip.r.profit}฿</span></div>`;
     }
-    html += `<div>💀 รวมทั้งกลุ่ม: <span style="color:${groupColor};font-weight:700">${groupSign}${groupProfit}฿</span>${groupProfit < 0 ? ' (หิ้วกันทั้งนั้น 😂)' : ' (บวกทั้งกลุ่ม!)'}</div>`;
+    html += `<div style="margin-bottom:4px">🎯 win rate กลุ่ม: <b>${groupWinRate}%</b> (${totalWins}/${totalSettled}) — ${winRateRoast}</div>`;
+    html += `<div style="color:${groupColor};font-weight:700">${groupSign}${groupProfit}฿ — ${groupRoast}</div>`;
     html += `</div>`;
   }
 
