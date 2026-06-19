@@ -92,7 +92,7 @@ const MATCHES = [
   { id: 'M013', num: 13, stage: 'group', group: 'C', date: '2026-06-13T18:00', tz: 'ET', team1: 'BRA', team2: 'MAR', venue: 'MetLife Stadium (East Rutherford, USA)' },
   { id: 'M014', num: 14, stage: 'group', group: 'C', date: '2026-06-13T21:00', tz: 'ET', team1: 'HAI', team2: 'SCO', venue: 'Gillette Stadium (Boston, USA)' },
   { id: 'M015', num: 15, stage: 'group', group: 'C', date: '2026-06-19T18:00', tz: 'ET', team1: 'SCO', team2: 'MAR', venue: 'Lincoln Financial Field (Philadelphia, USA)' },
-  { id: 'M016', num: 16, stage: 'group', group: 'C', date: '2026-06-19T21:00', tz: 'ET', team1: 'BRA', team2: 'HAI', venue: 'Gillette Stadium (Boston, USA)' },
+  { id: 'M016', num: 16, stage: 'group', group: 'C', date: '2026-06-19T20:30', tz: 'ET', team1: 'BRA', team2: 'HAI', venue: 'Gillette Stadium (Boston, USA)' },
   { id: 'M017', num: 17, stage: 'group', group: 'C', date: '2026-06-24T18:00', tz: 'ET', team1: 'SCO', team2: 'BRA', venue: 'Hard Rock Stadium (Miami, USA)' },
   { id: 'M018', num: 18, stage: 'group', group: 'C', date: '2026-06-24T18:00', tz: 'ET', team1: 'MAR', team2: 'HAI', venue: 'Mercedes-Benz Stadium (Atlanta, USA)' },
 
