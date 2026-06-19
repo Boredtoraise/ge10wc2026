@@ -14,7 +14,7 @@ function renderInsight() {
     return;
   }
 
-  // ── Compute per-player insight ──────────────────────────────────────
+  // ── Helpers ─────────────────────────────────────────────────────────
   function getRoundKey(s) {
     const picks = s.picks || [];
     if (!picks.length) return null;
@@ -26,6 +26,13 @@ function renderInsight() {
     return d.toISOString().slice(0, 10);
   }
 
+  function fmtHours(h) {
+    if (h < 1)   return Math.round(h * 60) + 'm';
+    if (h < 24)  return Math.round(h) + 'h';
+    return Math.round(h / 24) + 'd';
+  }
+
+  // ── Per-player computation ───────────────────────────────────────────
   function computeInsight(player) {
     const mine = allSlips
       .filter(s => s.player === player && s.status !== 'cancelled')
@@ -33,28 +40,65 @@ function renderInsight() {
 
     let wins = 0, losses = 0, totalBet = 0, netPnl = 0;
     let streakVal = 0, streakDir = 0;
-    let singles = 0, steps = 0, ahCount = 0, ouCount = 0;
+    let singles = 0, steps = 0;
+    let singleWins = 0, singleLosses = 0, stepWins = 0, stepLosses = 0;
+    let ahCount = 0, ouCount = 0;
+    let ahWins = 0, ahLosses = 0, ouWins = 0, ouLosses = 0;
+    let totalOdds = 0, oddsCount = 0;
+    let totalTimingHours = 0, timingCount = 0;
     const pickFreq = {};
-    const byRound = {};
+    const byRound  = {};
 
     mine.forEach(s => {
-      const r = resolveSlip(s);
+      const r      = resolveSlip(s);
+      const isStep = (s.picks || []).length >= 3;
       totalBet += s.bet || 0;
       netPnl   += r.profit;
-      if ((s.picks || []).length >= 3) steps++; else singles++;
 
+      // Avg odds
+      const co = parseFloat(s.combined_odds);
+      if (co > 0) { totalOdds += co; oddsCount++; }
+
+      // Bet timing: hours between submission and earliest kickoff in slip
+      const slipMatches = (s.picks || [])
+        .map(p => (state.matchById || {})[p.match_id] || MATCHES.find(m => m.id === p.match_id))
+        .filter(Boolean)
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+      if (slipMatches.length && s.timestamp) {
+        const kickoff   = etToThai(slipMatches[0].date).getTime();
+        const submitted = new Date(s.timestamp).getTime();
+        const hrs       = (kickoff - submitted) / 3600000;
+        if (hrs > 0 && hrs < 24 * 30) { totalTimingHours += hrs; timingCount++; }
+      }
+
+      // Single vs Step counts + win rates
+      if (isStep) {
+        steps++;
+        if (r.status === 'won')  stepWins++;
+        else if (r.status === 'lost') stepLosses++;
+      } else {
+        singles++;
+        if (r.status === 'won')  singleWins++;
+        else if (r.status === 'lost') singleLosses++;
+      }
+
+      // Pick-type breakdown (AH vs O/U)
       (s.picks || []).forEach(p => {
         if (p.type === 'ou') ouCount++; else ahCount++;
         const k = p.type === 'ou' ? (p.pick === 'over' ? 'สูง' : 'ต่ำ') : (p.pick || '?');
         pickFreq[k] = (pickFreq[k] || 0) + 1;
+        // Win rate per type: singles only (steps can't be attributed per pick)
+        if (!isStep) {
+          if (p.type === 'ou') { if (r.status === 'won') ouWins++; else if (r.status === 'lost') ouLosses++; }
+          else                 { if (r.status === 'won') ahWins++; else if (r.status === 'lost') ahLosses++; }
+        }
       });
 
+      // P&L by round
       const rk = getRoundKey(s);
-      if (rk) {
-        if (!byRound[rk]) byRound[rk] = 0;
-        byRound[rk] += r.profit;
-      }
+      if (rk) { if (!byRound[rk]) byRound[rk] = 0; byRound[rk] += r.profit; }
 
+      // Streak
       if (r.status === 'won') {
         wins++;
         if (streakDir === 1) streakVal++; else { streakDir = 1; streakVal = 1; }
@@ -64,14 +108,31 @@ function renderInsight() {
       }
     });
 
-    const settled   = wins + losses;
-    const winRate   = settled > 0 ? Math.round(wins / settled * 100) : null;
-    const avgBet    = mine.length ? Math.round(totalBet / mine.length) : 0;
+    const settled        = wins + losses;
+    const winRate        = settled > 0 ? Math.round(wins / settled * 100) : null;
+    const roi            = totalBet > 0 ? Math.round(netPnl / totalBet * 100) : null;
+    const avgBet         = mine.length ? Math.round(totalBet / mine.length) : 0;
+    const avgOdds        = oddsCount > 0 ? (totalOdds / oddsCount).toFixed(2) : null;
+    const avgTimingHours = timingCount > 0 ? totalTimingHours / timingCount : null;
+
+    const singleSettled  = singleWins + singleLosses;
+    const stepSettled    = stepWins   + stepLosses;
+    const singleWinRate  = singleSettled > 0 ? Math.round(singleWins / singleSettled * 100) : null;
+    const stepWinRate    = stepSettled   > 0 ? Math.round(stepWins   / stepSettled   * 100) : null;
+
+    const ahSettled = ahWins + ahLosses;
+    const ouSettled = ouWins + ouLosses;
+    const ahWinRate = ahSettled > 0 ? Math.round(ahWins / ahSettled * 100) : null;
+    const ouWinRate = ouSettled > 0 ? Math.round(ouWins / ouSettled * 100) : null;
+
     const topPicks  = Object.entries(pickFreq).sort((a, b) => b[1] - a[1]).slice(0, 3);
     const roundKeys = Object.keys(byRound).sort();
 
-    return { player, mine, wins, losses, settled, winRate, totalBet, netPnl, avgBet,
-             singles, steps, ahCount, ouCount, topPicks, byRound, roundKeys,
+    return { player, mine, wins, losses, settled, winRate, roi, totalBet, netPnl, avgBet,
+             avgOdds, avgTimingHours,
+             singles, steps, singleWinRate, stepWinRate,
+             ahCount, ouCount, ahWinRate, ouWinRate,
+             topPicks, byRound, roundKeys,
              streakVal, streakDir, total: mine.length };
   }
 
@@ -81,8 +142,8 @@ function renderInsight() {
     return;
   }
 
-  const sorted = [...insights].sort((a, b) => b.netPnl - a.netPnl);
-  const maxAbsPnl = Math.max(...insights.map(x => Math.abs(x.netPnl)), 1);
+  const sorted     = [...insights].sort((a, b) => b.netPnl - a.netPnl);
+  const maxAbsPnl  = Math.max(...insights.map(x => Math.abs(x.netPnl)), 1);
 
   let html = `<div style="padding:12px 14px 80px">`;
 
@@ -94,12 +155,13 @@ function renderInsight() {
     const barW   = Math.round(Math.abs(x.netPnl) / maxAbsPnl * 120);
     const color  = isPos ? 'var(--accent)' : 'var(--secondary)';
     const amtStr = (isPos ? '+' : '') + x.netPnl + '฿';
+    const roiStr = x.roi !== null ? ` (${x.roi > 0 ? '+' : ''}${x.roi}%)` : '';
     html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">`;
     html += `<span style="font-size:0.78rem;color:var(--text-primary);width:64px;flex-shrink:0;font-weight:600">${getDisplayName(x.player)}</span>`;
     html += `<div style="flex:1;height:14px;background:var(--bg-input);border-radius:3px;overflow:hidden">`;
     html += `<div style="width:${barW}px;max-width:100%;height:100%;background:${color};border-radius:3px"></div>`;
     html += `</div>`;
-    html += `<span style="font-size:0.78rem;font-weight:700;color:${color};width:56px;text-align:right;flex-shrink:0">${amtStr}</span>`;
+    html += `<span style="font-size:0.78rem;font-weight:700;color:${color};width:80px;text-align:right;flex-shrink:0">${amtStr}<span style="font-size:0.65rem;font-weight:500">${roiStr}</span></span>`;
     html += `</div>`;
   });
   html += `</div>`;
@@ -108,14 +170,15 @@ function renderInsight() {
   const totalSlipsAll = insights.reduce((s, x) => s + x.total, 0);
   const totalWonAll   = insights.reduce((s, x) => s + x.wins, 0);
   const totalLostAll  = insights.reduce((s, x) => s + x.losses, 0);
+  const groupWinRate  = (totalWonAll + totalLostAll) > 0
+    ? Math.round(totalWonAll / (totalWonAll + totalLostAll) * 100) : 0;
 
   const matchSlipCount = {};
   allSlips.filter(s => s.status !== 'cancelled').forEach(s => {
     (s.picks || []).forEach(p => { matchSlipCount[p.match_id] = (matchSlipCount[p.match_id] || 0) + 1; });
   });
-  const topMatchId   = Object.entries(matchSlipCount).sort((a, b) => b[1] - a[1])[0];
-  const topMatchObj  = topMatchId && ((state.matchById || {})[topMatchId[0]] || MATCHES.find(m => m.id === topMatchId[0]));
-  const topMatchLabel = topMatchObj ? `${topMatchObj.team1} vs ${topMatchObj.team2}` : '-';
+  const topMatchId  = Object.entries(matchSlipCount).sort((a, b) => b[1] - a[1])[0];
+  const topMatchObj = topMatchId && ((state.matchById || {})[topMatchId[0]] || MATCHES.find(m => m.id === topMatchId[0]));
 
   const allPickFreq = {};
   allSlips.filter(s => s.status !== 'cancelled').forEach(s => {
@@ -127,10 +190,10 @@ function renderInsight() {
   const topTeam = Object.entries(allPickFreq).sort((a, b) => b[1] - a[1])[0];
 
   const gridItems = [
-    { label: lang === 'th' ? 'สลิปรวม'  : 'Total Slips', val: totalSlipsAll,         color: 'var(--text-primary)' },
-    { label: lang === 'th' ? 'ถูกรวม'   : 'Total Won',   val: totalWonAll,            color: 'var(--accent)'       },
-    { label: lang === 'th' ? 'ผิดรวม'   : 'Total Lost',  val: totalLostAll,           color: 'var(--secondary)'    },
-    { label: lang === 'th' ? 'ทีมฮิต'   : 'Top Pick',    val: topTeam ? topTeam[0] : '-', color: 'var(--text-primary)', small: true },
+    { label: lang === 'th' ? 'สลิปรวม' : 'Total Slips', val: totalSlipsAll,              color: 'var(--text-primary)' },
+    { label: lang === 'th' ? 'Win Rate' : 'Win Rate',   val: groupWinRate + '%',          color: groupWinRate >= 50 ? 'var(--accent)' : 'var(--secondary)' },
+    { label: lang === 'th' ? 'ถูก/ผิด'  : 'Won/Lost',   val: `${totalWonAll}/${totalLostAll}`, color: 'var(--text-primary)' },
+    { label: lang === 'th' ? 'ทีมฮิต'   : 'Top Pick',   val: topTeam ? topTeam[0] : '-', color: 'var(--text-primary)', small: true },
   ];
   html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px">`;
   gridItems.forEach(({ label, val, color, small }) => {
@@ -141,10 +204,9 @@ function renderInsight() {
   });
   html += `</div>`;
 
-  // Most popular match callout
   if (topMatchObj) {
     html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;margin-bottom:12px;font-size:0.8rem;color:var(--text-muted)">`;
-    html += `⚽ ${lang === 'th' ? 'แมตช์ฮิตสุด' : 'Most bet match'}: <span style="color:var(--text-primary);font-weight:700">${topMatchLabel}</span> (${topMatchId[1]} ${lang === 'th' ? 'picks' : 'picks'})`;
+    html += `⚽ ${lang === 'th' ? 'แมตช์ฮิตสุด' : 'Most bet match'}: <span style="color:var(--text-primary);font-weight:700">${topMatchObj.team1} vs ${topMatchObj.team2}</span> (${topMatchId[1]} picks)`;
     html += `</div>`;
   }
 
@@ -152,37 +214,89 @@ function renderInsight() {
   html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:10px">${lang === 'th' ? 'รายคน' : 'Per Player'}</div>`;
 
   sorted.forEach(x => {
-    const isPos    = x.netPnl >= 0;
-    const pnlColor = isPos ? 'var(--accent)' : 'var(--secondary)';
-    const pnlStr   = (isPos ? '+' : '') + x.netPnl + '฿';
-    const streak   = x.streakVal > 0 ? (x.streakDir === 1 ? `🔥 ${x.streakVal}` : `🧊 ${x.streakVal}`) : '-';
-    const winRateStr = x.winRate !== null ? x.winRate + '%' : '-';
+    const isPos     = x.netPnl >= 0;
+    const pnlColor  = isPos ? 'var(--accent)' : 'var(--secondary)';
+    const pnlStr    = (isPos ? '+' : '') + x.netPnl + '฿';
+    const roiStr    = x.roi !== null ? ` ${x.roi > 0 ? '+' : ''}${x.roi}%` : '';
+    const streak    = x.streakVal > 0 ? (x.streakDir === 1 ? `🔥 ${x.streakVal}` : `🧊 ${x.streakVal}`) : '-';
+    const wrStr     = x.winRate !== null ? x.winRate + '%' : '-';
+    const wrColor   = x.winRate !== null ? (x.winRate >= 50 ? 'var(--accent)' : 'var(--secondary)') : 'var(--text-muted)';
+    const roiColor  = x.roi !== null ? (x.roi >= 0 ? 'var(--accent)' : 'var(--secondary)') : 'var(--text-muted)';
 
     html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px">`;
 
     // Header
     html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">`;
     html += `<span style="font-size:1rem;font-weight:700;color:var(--text-primary)">${getDisplayName(x.player)}</span>`;
-    html += `<span style="font-size:1rem;font-weight:700;color:${pnlColor}">${pnlStr}</span>`;
+    html += `<span style="text-align:right"><span style="font-size:1rem;font-weight:700;color:${pnlColor}">${pnlStr}</span><span style="font-size:0.72rem;color:${roiColor};margin-left:4px">${roiStr}</span></span>`;
     html += `</div>`;
 
-    // Stat grid 3×2
+    // Stat grid 4×2
     const stats = [
-      { label: lang === 'th' ? 'สลิป'      : 'Slips',     val: x.total },
-      { label: lang === 'th' ? 'Win Rate'  : 'Win Rate',  val: winRateStr, color: x.winRate !== null ? (x.winRate >= 50 ? 'var(--accent)' : 'var(--secondary)') : 'var(--text-muted)' },
-      { label: lang === 'th' ? 'Avg Bet'   : 'Avg Bet',   val: x.avgBet + '฿' },
-      { label: 'Single/Step', val: `${x.singles}/${x.steps}` },
-      { label: 'AH/O·U',     val: `${x.ahCount}/${x.ouCount}` },
-      { label: lang === 'th' ? 'Streak'    : 'Streak',    val: streak },
+      { label: lang === 'th' ? 'สลิป'    : 'Slips',    val: x.total,                                    color: 'var(--text-primary)' },
+      { label: 'Win Rate',                               val: wrStr,                                      color: wrColor },
+      { label: 'ROI',                                    val: x.roi !== null ? (x.roi > 0 ? '+' : '') + x.roi + '%' : '-', color: roiColor },
+      { label: lang === 'th' ? 'Avg Bet' : 'Avg Bet',  val: x.avgBet + '฿',                             color: 'var(--text-primary)' },
+      { label: 'Single/Step',                            val: `${x.singles}/${x.steps}`,                 color: 'var(--text-primary)' },
+      { label: 'AH/O·U picks',                          val: `${x.ahCount}/${x.ouCount}`,               color: 'var(--text-primary)' },
+      { label: 'Avg Odds',                               val: x.avgOdds || '-',                           color: 'var(--text-primary)' },
+      { label: 'Streak',                                 val: streak,                                     color: 'var(--text-primary)' },
     ];
-    html += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">`;
+    html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">`;
     stats.forEach(({ label, val, color }) => {
       html += `<div style="text-align:center;padding:7px 4px;background:var(--bg-input);border-radius:var(--radius)">`;
-      html += `<div style="font-size:0.65rem;color:var(--text-muted);margin-bottom:2px">${label}</div>`;
-      html += `<div style="font-size:0.9rem;font-weight:700;color:${color || 'var(--text-primary)'}">${val}</div>`;
+      html += `<div style="font-size:0.6rem;color:var(--text-muted);margin-bottom:2px">${label}</div>`;
+      html += `<div style="font-size:0.85rem;font-weight:700;color:${color}">${val}</div>`;
       html += `</div>`;
     });
     html += `</div>`;
+
+    // Win rate breakdown: Single vs Step
+    const hasWrBreakdown = x.singleWinRate !== null || x.stepWinRate !== null;
+    if (hasWrBreakdown) {
+      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">`;
+      const bkItems = [
+        { label: `Single WR (${x.singles})`, val: x.singleWinRate !== null ? x.singleWinRate + '%' : '-', color: x.singleWinRate !== null ? (x.singleWinRate >= 50 ? 'var(--accent)' : 'var(--secondary)') : 'var(--text-muted)' },
+        { label: `Step WR (${x.steps})`,     val: x.stepWinRate   !== null ? x.stepWinRate   + '%' : '-', color: x.stepWinRate   !== null ? (x.stepWinRate   >= 50 ? 'var(--accent)' : 'var(--secondary)') : 'var(--text-muted)' },
+      ];
+      bkItems.forEach(({ label, val, color }) => {
+        html += `<div style="text-align:center;padding:7px 4px;background:var(--bg-input);border-radius:var(--radius)">`;
+        html += `<div style="font-size:0.6rem;color:var(--text-muted);margin-bottom:2px">${label}</div>`;
+        html += `<div style="font-size:0.88rem;font-weight:700;color:${color}">${val}</div>`;
+        html += `</div>`;
+      });
+      html += `</div>`;
+    }
+
+    // Win rate breakdown: AH vs O/U (singles only)
+    const hasTypeWr = x.ahWinRate !== null || x.ouWinRate !== null;
+    if (hasTypeWr) {
+      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">`;
+      const typeItems = [
+        { label: `AH WR (singles, ${x.ahCount})`, val: x.ahWinRate !== null ? x.ahWinRate + '%' : '-', color: x.ahWinRate !== null ? (x.ahWinRate >= 50 ? 'var(--accent)' : 'var(--secondary)') : 'var(--text-muted)' },
+        { label: `O/U WR (singles, ${x.ouCount})`, val: x.ouWinRate !== null ? x.ouWinRate + '%' : '-', color: x.ouWinRate !== null ? (x.ouWinRate >= 50 ? 'var(--accent)' : 'var(--secondary)') : 'var(--text-muted)' },
+      ];
+      typeItems.forEach(({ label, val, color }) => {
+        html += `<div style="text-align:center;padding:7px 4px;background:var(--bg-input);border-radius:var(--radius)">`;
+        html += `<div style="font-size:0.6rem;color:var(--text-muted);margin-bottom:2px">${label}</div>`;
+        html += `<div style="font-size:0.88rem;font-weight:700;color:${color}">${val}</div>`;
+        html += `</div>`;
+      });
+      html += `</div>`;
+    }
+
+    // Bet timing chip
+    if (x.avgTimingHours !== null) {
+      const timingLabel = fmtHours(x.avgTimingHours);
+      const timingDesc  = x.avgTimingHours < 1
+        ? (lang === 'th' ? 'แทงนาทีสุดท้าย' : 'last-minute')
+        : x.avgTimingHours < 3
+        ? (lang === 'th' ? 'แทงก่อนเตะไม่นาน' : 'close to kickoff')
+        : (lang === 'th' ? 'แทงล่วงหน้า' : 'plans ahead');
+      html += `<div style="margin-bottom:10px;font-size:0.72rem;color:var(--text-muted)">`;
+      html += `⏰ ${lang === 'th' ? 'แทงก่อนเตะ avg' : 'Avg bet timing'} <span style="color:var(--text-primary);font-weight:700">${timingLabel}</span> — ${timingDesc}`;
+      html += `</div>`;
+    }
 
     // Mini P&L by round bars
     if (x.roundKeys.length > 0) {
@@ -191,10 +305,10 @@ function renderInsight() {
       html += `<div style="margin-bottom:10px">`;
       html += `<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:5px">${lang === 'th' ? 'P&L รายวัน' : 'Daily P&L'}</div>`;
       recentRounds.forEach(key => {
-        const net    = x.byRound[key];
-        const barW   = Math.round(Math.abs(net) / maxRoundAbs * 100);
-        const isP    = net >= 0;
-        const col    = isP ? 'var(--accent)' : 'var(--secondary)';
+        const net  = x.byRound[key];
+        const barW = Math.round(Math.abs(net) / maxRoundAbs * 100);
+        const isP  = net >= 0;
+        const col  = isP ? 'var(--accent)' : 'var(--secondary)';
         const [yr, mo, dy] = key.split('-').map(Number);
         const dlabel = new Date(Date.UTC(yr, mo - 1, dy)).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
         html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">`;
@@ -212,7 +326,7 @@ function renderInsight() {
     if (x.topPicks.length > 0) {
       html += `<div style="display:flex;gap:6px;flex-wrap:wrap">`;
       x.topPicks.forEach(([pick, count]) => {
-        const team = typeof TEAMS !== 'undefined' && TEAMS[pick];
+        const team  = typeof TEAMS !== 'undefined' && TEAMS[pick];
         const label = team ? (lang === 'th' ? team.nameTh : team.name) : pick;
         html += `<span style="font-size:0.72rem;background:var(--bg-input);border:1px solid var(--border);border-radius:100px;padding:3px 10px;color:var(--text-muted)">${label} ×${count}</span>`;
       });
