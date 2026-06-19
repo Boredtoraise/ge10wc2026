@@ -179,6 +179,37 @@ function renderInsight() {
   });
   html += `</div>`;
 
+  // ── Section 1b: Balance overview (only when initial_balance set) ───
+  const balanceRows = players.map(p => {
+    const pd  = state.players.find(x => x.player_id === p);
+    const ini = pd && pd.initial_balance !== '' && pd.initial_balance != null ? parseFloat(pd.initial_balance) || 0 : null;
+    if (ini === null) return null;
+    const approvedPnl = allSlips
+      .filter(s => s.player === p && s.status === 'approved')
+      .reduce((sum, s) => sum + resolveSlip(s).profit, 0);
+    return { player: p, ini, current: ini + approvedPnl };
+  }).filter(Boolean);
+
+  if (balanceRows.length > 0) {
+    const maxBal = Math.max(...balanceRows.map(r => Math.abs(r.current - r.ini)), 1);
+    html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:12px">`;
+    html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:12px">${lang === 'th' ? 'ยอดเงินปัจจุบัน (ยืนยันแล้ว)' : 'Current Balance (settled)'}</div>`;
+    balanceRows.sort((a, b) => b.current - a.current).forEach(r => {
+      const diff    = r.current - r.ini;
+      const isPos   = diff >= 0;
+      const color   = isPos ? 'var(--accent)' : 'var(--secondary)';
+      const barW    = Math.round(Math.abs(diff) / maxBal * 80);
+      html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">`;
+      html += `<span style="font-size:0.78rem;color:var(--text-primary);width:64px;flex-shrink:0;font-weight:600">${getDisplayName(r.player)}</span>`;
+      html += `<div style="flex:1;height:14px;background:var(--bg-input);border-radius:3px;overflow:hidden">`;
+      html += `<div style="width:${barW}px;max-width:100%;height:100%;background:${color};border-radius:3px"></div>`;
+      html += `</div>`;
+      html += `<span style="font-size:0.78rem;font-weight:700;color:var(--text-primary);width:88px;text-align:right;flex-shrink:0">${r.current.toLocaleString()}฿ <span style="font-size:0.65rem;color:${color}">${isPos ? '+' : ''}${diff}฿</span></span>`;
+      html += `</div>`;
+    });
+    html += `</div>`;
+  }
+
   // ── Section 2: Group stats grid ─────────────────────────────────────
   const totalSlipsAll = insights.reduce((s, x) => s + x.total, 0);
   const totalWonAll   = insights.reduce((s, x) => s + x.wins, 0);

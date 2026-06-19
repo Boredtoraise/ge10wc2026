@@ -102,9 +102,61 @@ function renderUserDashboard(player) {
   const fmtMoney = (v) => { const sg = v >= 0 ? '+' : ''; return `${sg}${v}฿`; };
   const moneyColor = (v) => v >= 0 ? 'var(--accent)' : 'var(--wrong)';
 
+  // Initial balance from players sheet
+  const playerData    = state.players.find(p => p.player_id === player);
+  const initialBal    = playerData && playerData.initial_balance !== '' && playerData.initial_balance != null
+    ? parseFloat(playerData.initial_balance) || 0 : null;
+
   let html = '';
 
-  // Grand total banner
+  // Balance card (only when initial_balance is set in Sheet)
+  if (initialBal !== null) {
+    const allSlipsAll2  = getAllSlips();
+    const approvedPnl   = allSlipsAll2
+      .filter(s => s.player === player && s.status === 'approved')
+      .reduce((sum, s) => sum + resolveSlip(s).profit, 0);
+    const currentBal    = initialBal + approvedPnl;
+    const balColor      = currentBal >= initialBal ? 'var(--accent)' : 'var(--secondary)';
+    const pnlColor      = approvedPnl >= 0 ? 'var(--accent)' : 'var(--secondary)';
+
+    // Slips resolved but awaiting Pok's approval
+    const toConfirm     = allSlipsAll2.filter(s => s.player === player && s.status === 'pending' && resolveSlip(s).status !== 'pending');
+    const toConfirmPnl  = toConfirm.reduce((sum, s) => sum + resolveSlip(s).profit, 0);
+
+    // Slips still waiting for match result
+    const stillPending  = allSlipsAll2.filter(s => s.player === player && s.status === 'pending' && resolveSlip(s).status === 'pending');
+    const pendMaxWin    = stillPending.reduce((sum, s) => sum + Math.max(0, (s.payout || 0) - (s.bet || 0)), 0);
+    const pendMaxLose   = stillPending.reduce((sum, s) => sum + (s.bet || 0), 0);
+
+    html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px">`;
+    html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:10px">${lang === 'th' ? 'ยอดเงิน' : 'Balance'}</div>`;
+    html += `<div style="display:flex;justify-content:space-between;margin-bottom:5px">`;
+    html += `<span style="font-size:0.82rem;color:var(--text-muted)">${lang === 'th' ? 'เงินเริ่ม' : 'Starting'}</span>`;
+    html += `<span style="font-size:0.88rem;font-weight:600;color:var(--text-primary)">${initialBal.toLocaleString()}฿</span>`;
+    html += `</div>`;
+    html += `<div style="display:flex;justify-content:space-between;margin-bottom:8px">`;
+    html += `<span style="font-size:0.82rem;color:var(--text-muted)">${lang === 'th' ? 'กำไร/ขาดทุน (ยืนยันแล้ว)' : 'Settled P&L'}</span>`;
+    html += `<span style="font-size:0.88rem;font-weight:600;color:${pnlColor}">${approvedPnl >= 0 ? '+' : ''}${approvedPnl}฿</span>`;
+    html += `</div>`;
+    html += `<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)">`;
+    html += `<span style="font-size:0.9rem;font-weight:700">${lang === 'th' ? 'ยอดปัจจุบัน' : 'Current Balance'}</span>`;
+    html += `<span style="font-size:1.3rem;font-weight:800;color:${balColor}">${currentBal.toLocaleString()}฿</span>`;
+    html += `</div>`;
+    if (toConfirm.length > 0) {
+      const tcColor = toConfirmPnl >= 0 ? 'var(--accent)' : 'var(--secondary)';
+      html += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:0.76rem;color:var(--text-muted)">`;
+      html += `⏳ ${lang === 'th' ? 'รอ Pok ยืนยัน' : 'Awaiting approval'} (${toConfirm.length}): <span style="color:${tcColor};font-weight:700">${toConfirmPnl >= 0 ? '+' : ''}${toConfirmPnl}฿</span>`;
+      html += `</div>`;
+    }
+    if (stillPending.length > 0) {
+      html += `<div style="margin-top:5px;font-size:0.76rem;color:var(--text-muted)">`;
+      html += `⚽ ${lang === 'th' ? 'รอผลบอล' : 'Match pending'} (${stillPending.length}): <span style="color:var(--accent)">+${pendMaxWin}฿</span> / <span style="color:var(--secondary)">-${pendMaxLose}฿</span>`;
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Grand total banner (P&L all slips)
   html += `<div style="text-align:center;padding:16px;margin-bottom:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg)">`;
   html += `<div style="font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'ยอดรวมทั้งหมด' : 'Grand Total'}</div>`;
   html += `<div style="font-size:1.8rem;font-weight:700;color:${moneyColor(totalBalance)}">${fmtMoney(totalBalance)}</div>`;
