@@ -437,7 +437,7 @@ function renderFunLeaderboard() {
     const profitColor = s.totalProfit >= 0 ? 'var(--accent)' : 'var(--secondary)';
     const profitStr = (s.totalProfit >= 0 ? '+' : '') + s.totalProfit + '฿';
     const winStr = s.settled > 0 ? `${s.wins}/${s.settled}` : '-';
-    const streakStr = s.streakVal >= 1 ? `${s.streakDir === 1 ? '🔥' : '🧊'}${s.streakVal} ติด` : '';
+    const streakStr = s.streakVal >= 1 ? `${s.streakVal} วันติด` : '';
     const border = i === 0 && s.totalProfit > 0 ? 'border:2px solid var(--accent);'
                  : isMe ? 'border:1px solid var(--secondary);' : '';
     const icon = rankIcon[i] || `${i + 1}`;
