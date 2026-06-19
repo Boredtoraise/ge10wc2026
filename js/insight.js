@@ -231,7 +231,7 @@ function renderInsight() {
     const pnlColor  = isPos ? 'var(--accent)' : 'var(--secondary)';
     const pnlStr    = (isPos ? '+' : '') + x.netPnl + '฿';
     const roiStr    = x.roi !== null ? ` ${x.roi > 0 ? '+' : ''}${x.roi}%` : '';
-    const streak    = x.streakVal > 0 ? (x.streakDir === 1 ? `🔥 ${x.streakVal}` : `🧊 ${x.streakVal}`) : '-';
+    const streak    = x.streakVal > 0 ? (x.streakDir === 1 ? `🔥 ${x.streakVal} วัน` : `🧊 ${x.streakVal} วัน`) : '-';
     const wrStr     = x.winRate !== null ? x.winRate + '%' : '-';
     const wrColor   = x.winRate !== null ? (x.winRate >= 50 ? 'var(--accent)' : 'var(--secondary)') : 'var(--text-muted)';
     const roiColor  = x.roi !== null ? (x.roi >= 0 ? 'var(--accent)' : 'var(--secondary)') : 'var(--text-muted)';

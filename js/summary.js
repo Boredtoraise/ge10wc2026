@@ -388,10 +388,10 @@ function renderFunLeaderboard() {
     const b = [];
     if (active.length > 1 && s.totalProfit === maxProfit && maxProfit > 0) b.push('👑 ราชา');
     if (byWinRate[0]?.player === s.player && s.settled >= 2) b.push('🎯 สไนเปอร์');
-    if (s.streakDir === 1 && s.streakVal >= 2) b.push(`🔥 ออนไฟร์ ×${s.streakVal}`);
+    if (s.streakDir === 1 && s.streakVal >= 2) b.push(`🔥 ออนไฟร์ ×${s.streakVal} วัน`);
     if (active.length > 1 && s.totalProfit === minProfit && minProfit < 0) b.push('🗑️ เผาเงิน');
     if (s.winRate === 0 && s.settled >= 3) b.push('🤡 วันนี้ตาย');
-    if (s.streakDir === -1 && s.streakVal >= 3) b.push(`🧊 หนาว ×${s.streakVal}`);
+    if (s.streakDir === -1 && s.streakVal >= 3) b.push(`🧊 หนาว ×${s.streakVal} วัน`);
     if (biggestBetLost?.player === s.player) b.push('🙈 ตาบอด');
     if (!s.hasStep && s.hasSingle && s.settled >= 2) b.push('🐔 ขี้กลัว');
     s.badges = b;
