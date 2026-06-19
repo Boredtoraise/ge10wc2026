@@ -320,22 +320,42 @@ function renderFunLeaderboard() {
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
     let wins = 0, losses = 0, totalBet = 0, totalProfit = 0;
-    let streakVal = 0, streakDir = 0; // 1=win, -1=loss
+    let streakVal = 0, streakDir = 0; // 1=win day, -1=loss day (by daily net P&L)
     let hasStep = false, hasSingle = false;
+    const byDay = {};
 
     pSlips.forEach(s => {
       const r = resolveSlip(s);
-      totalBet += s.bet || 0;
+      totalBet    += s.bet || 0;
       totalProfit += r.profit;
       if ((s.picks || []).length >= 3) hasStep = true; else hasSingle = true;
-      if (r.status === 'won') {
-        wins++;
+      if (r.status === 'won') wins++;
+      else if (r.status === 'lost') losses++;
+
+      // Group into days (14:00 Thai cutoff) for streak
+      const picks = s.picks || [];
+      if (!picks.length) return;
+      const m0 = (state.matchById || {})[picks[0].match_id] || MATCHES.find(m => m.id === picks[0].match_id);
+      if (!m0) return;
+      const thaiMs = etToThai(m0.date).getTime() + 7 * 3600 * 1000;
+      const dObj = new Date(thaiMs);
+      if (dObj.getUTCHours() < 14) dObj.setUTCDate(dObj.getUTCDate() - 1);
+      const dk = dObj.toISOString().slice(0, 10);
+      if (!byDay[dk]) byDay[dk] = { net: 0, hasPending: false };
+      if (r.status === 'pending') byDay[dk].hasPending = true;
+      else byDay[dk].net += r.profit;
+    });
+
+    // Walk days oldest→newest: count consecutive net+ / net- days
+    Object.keys(byDay).sort().forEach(dk => {
+      const day = byDay[dk];
+      if (day.hasPending) return; // skip day if any slip still unresolved
+      if (day.net > 0) {
         if (streakDir === 1) streakVal++; else { streakDir = 1; streakVal = 1; }
-      } else if (r.status === 'lost') {
-        losses++;
+      } else if (day.net < 0) {
         if (streakDir === -1) streakVal++; else { streakDir = -1; streakVal = 1; }
       }
-      // pending = skip (don't reset streak)
+      // net === 0 (push/breakeven): don't reset streak
     });
 
     const settled = wins + losses;

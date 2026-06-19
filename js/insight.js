@@ -94,19 +94,32 @@ function renderInsight() {
         }
       });
 
-      // P&L by round
+      // P&L by round (also used for daily streak)
       const rk = getRoundKey(s);
-      if (rk) { if (!byRound[rk]) byRound[rk] = 0; byRound[rk] += r.profit; }
+      if (rk) {
+        if (!byRound[rk]) byRound[rk] = { net: 0, hasPending: false };
+        if (r.status === 'pending') byRound[rk].hasPending = true;
+        else byRound[rk].net += r.profit;
+      }
 
-      // Streak
-      if (r.status === 'won') {
-        wins++;
+      if (r.status === 'won') wins++;
+      else if (r.status === 'lost') losses++;
+    });
+
+    // Daily streak (net+ / net- per day, skip days with pending)
+    Object.keys(byRound).sort().forEach(dk => {
+      const day = byRound[dk];
+      if (day.hasPending) return;
+      if (day.net > 0) {
         if (streakDir === 1) streakVal++; else { streakDir = 1; streakVal = 1; }
-      } else if (r.status === 'lost') {
-        losses++;
+      } else if (day.net < 0) {
         if (streakDir === -1) streakVal++; else { streakDir = -1; streakVal = 1; }
       }
     });
+
+    // Flatten byRound to net values for chart
+    const byRoundNet = {};
+    Object.keys(byRound).forEach(k => { byRoundNet[k] = byRound[k].net; });
 
     const settled        = wins + losses;
     const winRate        = settled > 0 ? Math.round(wins / settled * 100) : null;
@@ -126,13 +139,13 @@ function renderInsight() {
     const ouWinRate = ouSettled > 0 ? Math.round(ouWins / ouSettled * 100) : null;
 
     const topPicks  = Object.entries(pickFreq).sort((a, b) => b[1] - a[1]).slice(0, 3);
-    const roundKeys = Object.keys(byRound).sort();
+    const roundKeys = Object.keys(byRoundNet).sort();
 
     return { player, mine, wins, losses, settled, winRate, roi, totalBet, netPnl, avgBet,
              avgOdds, avgTimingHours,
              singles, steps, singleWinRate, stepWinRate,
              ahCount, ouCount, ahWinRate, ouWinRate,
-             topPicks, byRound, roundKeys,
+             topPicks, byRound: byRoundNet, roundKeys,
              streakVal, streakDir, total: mine.length };
   }
 
