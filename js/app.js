@@ -117,6 +117,7 @@ async function renderCurrentView() {
     case 'schedule': renderSchedule(); break;
     case 'bet': renderBetting(); break;
     case 'summary': await renderSummaryLazy(); break;
+    case 'insight': renderInsight(); break;
   }
 }
 
