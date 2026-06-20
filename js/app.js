@@ -285,6 +285,10 @@ async function manualRefresh() {
 
 // --- Start ---
 document.addEventListener('DOMContentLoaded', init);
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('scroll-top-btn');
+  if (btn) btn.style.display = window.scrollY > 300 ? '' : 'none';
+}, { passive: true });
 
 function updateAdminUI() {
   document.querySelectorAll('.admin-only').forEach(el => {
