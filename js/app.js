@@ -1,3 +1,5 @@
+const fmtM = n => Math.round(n).toLocaleString('th-TH');
+
 // App State
 const state = {
   currentPlayer: null,

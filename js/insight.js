@@ -360,7 +360,7 @@ function renderInsight() {
         html += `<div style="flex:1;height:10px;background:var(--bg-deep);border-radius:2px;overflow:hidden">`;
         html += `<div style="width:${barW}%;height:100%;background:${col};border-radius:2px"></div>`;
         html += `</div>`;
-        html += `<span style="font-size:0.68rem;font-weight:700;color:${col};width:44px;text-align:right;flex-shrink:0">${isP ? '+' : ''}${net}</span>`;
+        html += `<span style="font-size:0.68rem;font-weight:700;color:${col};width:44px;text-align:right;flex-shrink:0">${isP ? '+' : ''}${fmtM(net)}</span>`;
         html += `</div>`;
       });
       html += `</div>`;
