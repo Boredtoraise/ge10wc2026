@@ -245,8 +245,8 @@ async function renderBetting() {
     html += `</div>`;
 
     const myTabOn = SUBTAB_ON, myTabOff = SUBTAB_OFF;
-    const myPending = mySlips.filter((s, i) => myResolved[i].st.status === 'pending');
-    const myHistory = mySlips.filter((s, i) => myResolved[i].st.status !== 'pending');
+    const myPending = mySlips.filter(s => s.status === 'pending');
+    const myHistory = mySlips.filter(s => s.status === 'approved');
     const myDefaultTab = myPending.length > 0 ? 'mypend' : 'myhist';
 
     html += `<div style="display:flex;gap:6px;margin-bottom:12px">`;
