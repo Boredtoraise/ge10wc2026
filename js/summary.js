@@ -136,7 +136,7 @@ function renderUserDashboard(player) {
     html += `</div>`;
     html += `<div style="display:flex;justify-content:space-between;margin-bottom:8px">`;
     html += `<span style="font-size:0.82rem;color:var(--text-muted)">${lang === 'th' ? 'กำไร/ขาดทุน (ยืนยันแล้ว)' : 'Settled P&L'}</span>`;
-    html += `<span style="font-size:0.88rem;font-weight:600;color:${pnlColor}">${approvedPnl >= 0 ? '+' : '-'}${fmtM(Math.abs(approvedPnl))</span>`;
+    html += `<span style="font-size:0.88rem;font-weight:600;color:${pnlColor}">${approvedPnl >= 0 ? '+' : '-'}${fmtM(Math.abs(approvedPnl))}</span>`;
     html += `</div>`;
     html += `<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)">`;
     html += `<span style="font-size:0.9rem;font-weight:700">${lang === 'th' ? 'ยอดปัจจุบัน' : 'Current Balance'}</span>`;
@@ -145,7 +145,7 @@ function renderUserDashboard(player) {
     if (toConfirm.length > 0) {
       const tcColor = toConfirmPnl >= 0 ? 'var(--accent)' : 'var(--secondary)';
       html += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:0.76rem;color:var(--text-muted)">`;
-      html += `⏳ ${lang === 'th' ? 'รอ Pok ยืนยัน' : 'Awaiting approval'} (${toConfirm.length}): <span style="color:${tcColor};font-weight:700">${toConfirmPnl >= 0 ? '+' : '-'}${fmtM(Math.abs(toConfirmPnl))</span>`;
+      html += `⏳ ${lang === 'th' ? 'รอ Pok ยืนยัน' : 'Awaiting approval'} (${toConfirm.length}): <span style="color:${tcColor};font-weight:700">${toConfirmPnl >= 0 ? '+' : '-'}${fmtM(Math.abs(toConfirmPnl))}</span>`;
       html += `</div>`;
     }
     if (stillPending.length > 0) {
@@ -933,7 +933,7 @@ function renderHouseDashboard() {
       const netColor = todayNet >= 0 ? 'var(--accent)' : 'var(--secondary)';
       html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--border);border-bottom:${todayPending.length ? '1px solid var(--border)' : 'none'};margin-bottom:${todayPending.length ? '10px' : '0'}">`;
       html += `<span style="font-size:0.82rem;color:var(--text-muted)">${lang === 'th' ? 'ยอดสุทธิวันนี้ (เจ้ามือ)' : 'Net today (house)'}</span>`;
-      html += `<span style="font-size:1rem;font-weight:700;color:${netColor}">${todayNet >= 0 ? '+' : '-'}${fmtM(Math.abs(todayNet))</span>`;
+      html += `<span style="font-size:1rem;font-weight:700;color:${netColor}">${todayNet >= 0 ? '+' : '-'}${fmtM(Math.abs(todayNet))}</span>`;
       html += `</div>`;
     }
 
