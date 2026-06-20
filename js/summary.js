@@ -623,17 +623,19 @@ function renderFunLeaderboard() {
     if (pending) {
       html += `<div style="margin-top:2px;font-size:0.7rem">⏳ รอ: <span style="color:var(--accent)">+${pending.maxWin}฿</span> / <span style="color:var(--secondary)">-${pending.maxLose}฿</span></div>`;
     }
+    html += `</div>`;
     const playerData = state.players.find(p => p.player_id === s.player);
     const initBal = playerData && playerData.initial_balance !== '' && playerData.initial_balance != null
       ? parseFloat(playerData.initial_balance) || 0 : null;
+    html += `<div style="text-align:right;white-space:nowrap;flex-shrink:0">`;
+    html += `<div style="font-size:1.15rem;font-weight:800;color:${profitColor}">${profitStr}</div>`;
     if (initBal !== null) {
       const approvedPnl = approvedPnlByPlayer[s.player] || 0;
       const balance = initBal + approvedPnl;
       const balColor = balance >= initBal ? 'var(--accent)' : 'var(--secondary)';
-      html += `<div style="margin-top:2px;font-size:0.7rem;color:var(--text-muted)">💰 ยอด: <span style="color:${balColor};font-weight:700">${balance.toLocaleString()}฿</span></div>`;
+      html += `<div style="font-size:0.82rem;font-weight:700;color:${balColor}">💰 ${balance.toLocaleString()}฿</div>`;
     }
     html += `</div>`;
-    html += `<span style="font-size:1.15rem;font-weight:800;color:${profitColor};white-space:nowrap">${profitStr}</span>`;
     html += `</div></div>`;
   });
 
