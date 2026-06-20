@@ -167,7 +167,7 @@ function renderInsight() {
     const isPos  = x.netPnl >= 0;
     const barW   = Math.round(Math.abs(x.netPnl) / maxAbsPnl * 120);
     const color  = isPos ? 'var(--accent)' : 'var(--secondary)';
-    const amtStr = (isPos ? '+' : '') + x.netPnl + '฿';
+    const amtStr = (isPos ? '+' : '') + x.netPnl + '';
     const roiStr = x.roi !== null ? ` (${x.roi > 0 ? '+' : ''}${x.roi}%)` : '';
     html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">`;
     html += `<span style="font-size:0.78rem;color:var(--text-primary);width:64px;flex-shrink:0;font-weight:600">${getDisplayName(x.player)}</span>`;
@@ -204,7 +204,7 @@ function renderInsight() {
       html += `<div style="flex:1;height:14px;background:var(--bg-input);border-radius:3px;overflow:hidden">`;
       html += `<div style="width:${barW}px;max-width:100%;height:100%;background:${color};border-radius:3px"></div>`;
       html += `</div>`;
-      html += `<span style="font-size:0.78rem;font-weight:700;color:var(--text-primary);width:88px;text-align:right;flex-shrink:0">${r.current.toLocaleString()}฿ <span style="font-size:0.65rem;color:${color}">${isPos ? '+' : ''}${diff}฿</span></span>`;
+      html += `<span style="font-size:0.78rem;font-weight:700;color:var(--text-primary);width:88px;text-align:right;flex-shrink:0">${r.current.toLocaleString()} <span style="font-size:0.65rem;color:${color}">${isPos ? '+' : ''}${diff}</span></span>`;
       html += `</div>`;
     });
     html += `</div>`;
@@ -260,7 +260,7 @@ function renderInsight() {
   sorted.forEach(x => {
     const isPos     = x.netPnl >= 0;
     const pnlColor  = isPos ? 'var(--accent)' : 'var(--secondary)';
-    const pnlStr    = (isPos ? '+' : '') + x.netPnl + '฿';
+    const pnlStr    = (isPos ? '+' : '') + x.netPnl + '';
     const roiStr    = x.roi !== null ? ` ${x.roi > 0 ? '+' : ''}${x.roi}%` : '';
     const streak    = x.streakVal > 0 ? (x.streakDir === 1 ? `🔥 ${x.streakVal} วัน` : `🧊 ${x.streakVal} วัน`) : '-';
     const wrStr     = x.winRate !== null ? x.winRate + '%' : '-';
@@ -280,7 +280,7 @@ function renderInsight() {
       { label: lang === 'th' ? 'สลิป'    : 'Slips',    val: x.total,                                    color: 'var(--text-primary)' },
       { label: 'Win Rate',                               val: wrStr,                                      color: wrColor },
       { label: 'ROI',                                    val: x.roi !== null ? (x.roi > 0 ? '+' : '') + x.roi + '%' : '-', color: roiColor },
-      { label: lang === 'th' ? 'Avg Bet' : 'Avg Bet',  val: x.avgBet + '฿',                             color: 'var(--text-primary)' },
+      { label: lang === 'th' ? 'Avg Bet' : 'Avg Bet',  val: x.avgBet + '',                             color: 'var(--text-primary)' },
       { label: 'Single/Step',                            val: `${x.singles}/${x.steps}`,                 color: 'var(--text-primary)' },
       { label: 'AH/O·U picks',                          val: `${x.ahCount}/${x.ouCount}`,               color: 'var(--text-primary)' },
       { label: 'Avg Odds',                               val: x.avgOdds || '-',                           color: 'var(--text-primary)' },
@@ -360,7 +360,7 @@ function renderInsight() {
         html += `<div style="flex:1;height:10px;background:var(--bg-deep);border-radius:2px;overflow:hidden">`;
         html += `<div style="width:${barW}%;height:100%;background:${col};border-radius:2px"></div>`;
         html += `</div>`;
-        html += `<span style="font-size:0.68rem;font-weight:700;color:${col};width:44px;text-align:right;flex-shrink:0">${isP ? '+' : ''}${net}฿</span>`;
+        html += `<span style="font-size:0.68rem;font-weight:700;color:${col};width:44px;text-align:right;flex-shrink:0">${isP ? '+' : ''}${net}</span>`;
         html += `</div>`;
       });
       html += `</div>`;

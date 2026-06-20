@@ -99,7 +99,7 @@ function renderUserDashboard(player) {
   const slipsDetail = calculatePlayerSlipsDetailed(player);
   const totalBalance = slipsDetail.total.profit;
 
-  const fmtMoney = (v) => { const sg = v >= 0 ? '+' : ''; return `${sg}${v}฿`; };
+  const fmtMoney = (v) => { const sg = v >= 0 ? '+' : ''; return `${sg}${v}`; };
   const moneyColor = (v) => v >= 0 ? 'var(--accent)' : 'var(--wrong)';
 
   // Initial balance from players sheet
@@ -132,25 +132,25 @@ function renderUserDashboard(player) {
     html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:10px">${lang === 'th' ? 'ยอดเงิน' : 'Balance'}</div>`;
     html += `<div style="display:flex;justify-content:space-between;margin-bottom:5px">`;
     html += `<span style="font-size:0.82rem;color:var(--text-muted)">${lang === 'th' ? 'เงินเริ่ม' : 'Starting'}</span>`;
-    html += `<span style="font-size:0.88rem;font-weight:600;color:var(--text-primary)">${initialBal.toLocaleString()}฿</span>`;
+    html += `<span style="font-size:0.88rem;font-weight:600;color:var(--text-primary)">${initialBal.toLocaleString()}</span>`;
     html += `</div>`;
     html += `<div style="display:flex;justify-content:space-between;margin-bottom:8px">`;
     html += `<span style="font-size:0.82rem;color:var(--text-muted)">${lang === 'th' ? 'กำไร/ขาดทุน (ยืนยันแล้ว)' : 'Settled P&L'}</span>`;
-    html += `<span style="font-size:0.88rem;font-weight:600;color:${pnlColor}">${approvedPnl >= 0 ? '+' : ''}${approvedPnl}฿</span>`;
+    html += `<span style="font-size:0.88rem;font-weight:600;color:${pnlColor}">${approvedPnl >= 0 ? '+' : ''}${approvedPnl}</span>`;
     html += `</div>`;
     html += `<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)">`;
     html += `<span style="font-size:0.9rem;font-weight:700">${lang === 'th' ? 'ยอดปัจจุบัน' : 'Current Balance'}</span>`;
-    html += `<span style="font-size:1.3rem;font-weight:800;color:${balColor}">${currentBal.toLocaleString()}฿</span>`;
+    html += `<span style="font-size:1.3rem;font-weight:800;color:${balColor}">${currentBal.toLocaleString()}</span>`;
     html += `</div>`;
     if (toConfirm.length > 0) {
       const tcColor = toConfirmPnl >= 0 ? 'var(--accent)' : 'var(--secondary)';
       html += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:0.76rem;color:var(--text-muted)">`;
-      html += `⏳ ${lang === 'th' ? 'รอ Pok ยืนยัน' : 'Awaiting approval'} (${toConfirm.length}): <span style="color:${tcColor};font-weight:700">${toConfirmPnl >= 0 ? '+' : ''}${toConfirmPnl}฿</span>`;
+      html += `⏳ ${lang === 'th' ? 'รอ Pok ยืนยัน' : 'Awaiting approval'} (${toConfirm.length}): <span style="color:${tcColor};font-weight:700">${toConfirmPnl >= 0 ? '+' : ''}${toConfirmPnl}</span>`;
       html += `</div>`;
     }
     if (stillPending.length > 0) {
       html += `<div style="margin-top:5px;font-size:0.76rem;color:var(--text-muted)">`;
-      html += `⚽ ${lang === 'th' ? 'รอผลบอล' : 'Match pending'} (${stillPending.length}): <span style="color:var(--accent)">+${pendMaxWin}฿</span> / <span style="color:var(--secondary)">-${pendMaxLose}฿</span>`;
+      html += `⚽ ${lang === 'th' ? 'รอผลบอล' : 'Match pending'} (${stillPending.length}): <span style="color:var(--accent)">+${pendMaxWin}</span> / <span style="color:var(--secondary)">-${pendMaxLose}</span>`;
       html += `</div>`;
     }
     html += `</div>`;
@@ -167,17 +167,17 @@ function renderUserDashboard(player) {
   html += `<div style="display:flex;gap:8px;margin-bottom:12px">`;
   html += `<div style="flex:1;text-align:center;padding:10px 6px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">`;
   html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'บวกรวม' : 'Total Won'}</div>`;
-  html += `<div style="font-size:1rem;font-weight:700;color:var(--accent)">+${totalWon}฿</div>`;
+  html += `<div style="font-size:1rem;font-weight:700;color:var(--accent)">+${totalWon}</div>`;
   html += `</div>`;
   html += `<div style="flex:1;text-align:center;padding:10px 6px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">`;
   html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'ลบรวม' : 'Total Lost'}</div>`;
-  html += `<div style="font-size:1rem;font-weight:700;color:var(--secondary)">${totalLost}฿</div>`;
+  html += `<div style="font-size:1rem;font-weight:700;color:var(--secondary)">${totalLost}</div>`;
   html += `</div>`;
   if (pendingBet > 0) {
     html += `<div style="flex:1;text-align:center;padding:10px 6px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">`;
     html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'รอผล' : 'Pending'}</div>`;
-    html += `<div style="font-size:1rem;font-weight:700;color:var(--text-primary)">${pendingBet}฿</div>`;
-    html += `<div style="font-size:0.68rem;color:var(--text-muted)">${lang === 'th' ? 'จ่าย' : 'payout'} ${pendingPayout}฿</div>`;
+    html += `<div style="font-size:1rem;font-weight:700;color:var(--text-primary)">${pendingBet}</div>`;
+    html += `<div style="font-size:0.68rem;color:var(--text-muted)">${lang === 'th' ? 'จ่าย' : 'payout'} ${pendingPayout}</div>`;
     html += `</div>`;
   }
   html += `</div>`;
@@ -193,12 +193,12 @@ function renderUserDashboard(player) {
     html += `<div style="display:flex;gap:12px">`;
     html += `<div style="flex:1;text-align:center">`;
     html += `<div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'รอบวก' : 'Max Win'}</div>`;
-    html += `<div style="font-size:1.05rem;font-weight:700;color:var(--accent)">+${todayRoiBplus}฿</div>`;
+    html += `<div style="font-size:1.05rem;font-weight:700;color:var(--accent)">+${todayRoiBplus}</div>`;
     html += `</div>`;
     html += `<div style="width:1px;background:var(--border)"></div>`;
     html += `<div style="flex:1;text-align:center">`;
     html += `<div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'รอลบ' : 'Max Loss'}</div>`;
-    html += `<div style="font-size:1.05rem;font-weight:700;color:var(--secondary)">-${todayRoiMinus}฿</div>`;
+    html += `<div style="font-size:1.05rem;font-weight:700;color:var(--secondary)">-${todayRoiMinus}</div>`;
     html += `</div>`;
     html += `</div></div>`;
   }
@@ -242,7 +242,7 @@ function renderUserDashboard(player) {
         const [yr, mo, dy] = key.split('-').map(Number);
         return new Date(Date.UTC(yr, mo - 1, dy)).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
       })();
-      const netStr = dayNet >= 0 ? `+${dayNet}฿` : `${dayNet}฿`;
+      const netStr = dayNet >= 0 ? `+${dayNet}` : `${dayNet}`;
       const netColor = dayNet >= 0 ? 'var(--accent)' : 'var(--secondary)';
       const headerRight = daySettled
         ? `<span style="font-size:0.85rem;font-weight:700;color:${netColor}">${netStr}</span>`
@@ -463,7 +463,7 @@ function renderFunLeaderboard() {
   const hottest = [...active].filter(s => s.streakDir === 1).sort((a, b) => b.streakVal - a.streakVal)[0];
   const coldest = [...active].filter(s => s.streakDir === -1).sort((a, b) => b.streakVal - a.streakVal)[0];
   if (leader?.totalProfit > 0) headlineParts.push([
-    `${getDisplayName(leader.player)} นำโด่ง +${leader.totalProfit}฿`,
+    `${getDisplayName(leader.player)} นำโด่ง +${leader.totalProfit}`,
     `${getDisplayName(leader.player)} กำลังสบาย อย่าไปอิจฉาเลย`,
     `${getDisplayName(leader.player)} ยิ้มอยู่คนเดียว`,
   ][leader.totalProfit % 3]);
@@ -479,7 +479,7 @@ function renderFunLeaderboard() {
   ][coldest.streakVal % 3]);
   if (last?.totalProfit < -200) headlineParts.push([
     `${getDisplayName(last.player)} ต้องการการบำบัด 💀`,
-    `${getDisplayName(last.player)} ขาดทุน ${last.totalProfit}฿ แต่โอเคนะ`,
+    `${getDisplayName(last.player)} ขาดทุน ${last.totalProfit} แต่โอเคนะ`,
     `ส่งกำลังใจให้ ${getDisplayName(last.player)} หน่อย 😅`,
   ][Math.abs(last.totalProfit) % 3]);
   const fallbacks = [
@@ -499,11 +499,11 @@ function renderFunLeaderboard() {
     if (s.streakDir === -1 && s.streakVal === 2) alerts.push(`⚠️ ${getDisplayName(s.player)} — อีก 1 ผิด ได้ 🧊 หนาว`);
     if (i > 0) {
       const gap = sorted[i - 1].totalProfit - s.totalProfit;
-      if (gap > 0 && gap <= 50) alerts.push(`📈 ${getDisplayName(s.player)} ห่างอันดับ ${i} แค่ ${gap}฿`);
+      if (gap > 0 && gap <= 50) alerts.push(`📈 ${getDisplayName(s.player)} ห่างอันดับ ${i} แค่ ${gap}`);
     }
     if (i < sorted.length - 1) {
       const gap = s.totalProfit - sorted[i + 1].totalProfit;
-      if (gap > 0 && gap <= 30) alerts.push(`📉 ${getDisplayName(s.player)} ระวัง! ${getDisplayName(sorted[i + 1].player)} ตามมาแค่ ${gap}฿`);
+      if (gap > 0 && gap <= 30) alerts.push(`📉 ${getDisplayName(s.player)} ระวัง! ${getDisplayName(sorted[i + 1].player)} ตามมาแค่ ${gap}`);
     }
   });
 
@@ -545,28 +545,28 @@ function renderFunLeaderboard() {
 
     const coffees = Math.round(Math.abs(groupProfit) / 50);
     const groupRoast = groupProfit < -500
-      ? pick([`เผาไป ${Math.abs(groupProfit)}฿ ซื้อตั๋วบอลโลกได้เลยนะ`, `${Math.abs(groupProfit)}฿ หายไปไหน... อ๋อ Pok เก็บไว้`, `ขาดทุน ${Math.abs(groupProfit)}฿ โอเคนะ ยังมีบอลเหลืออีก`])
+      ? pick([`เผาไป ${Math.abs(groupProfit)} ซื้อตั๋วบอลโลกได้เลยนะ`, `${Math.abs(groupProfit)} หายไปไหน... อ๋อ Pok เก็บไว้`, `ขาดทุน ${Math.abs(groupProfit)} โอเคนะ ยังมีบอลเหลืออีก`])
       : groupProfit < 0
-      ? pick([`เผาไป ${Math.abs(groupProfit)}฿ หรือ ${coffees} แก้วกาแฟ`, `${Math.abs(groupProfit)}฿ หายไปแล้ว ไม่เป็นไร`, `ลงทุนไป ${Math.abs(groupProfit)}฿ ยังไม่ได้กำไร 😬`])
+      ? pick([`เผาไป ${Math.abs(groupProfit)} หรือ ${coffees} แก้วกาแฟ`, `${Math.abs(groupProfit)} หายไปแล้ว ไม่เป็นไร`, `ลงทุนไป ${Math.abs(groupProfit)} ยังไม่ได้กำไร 😬`])
       : groupProfit === 0
       ? pick(['เสมอตัว อย่างน้อยไม่ขาดทุน', 'ยังไม่มีใครได้ ไม่มีใครเสีย 🤝', 'เสมอตัวเป๊ะ — ทำใจ'])
-      : pick([`บวกรวม ${groupProfit}฿ Pok ร้องไห้อยู่`, `กลุ่มได้ ${groupProfit}฿ ไปฉลองได้เลย`, `+${groupProfit}฿ Pok กำลังหาเงินมาจ่ายเพิ่ม 😭`]);
+      : pick([`บวกรวม ${groupProfit} Pok ร้องไห้อยู่`, `กลุ่มได้ ${groupProfit} ไปฉลองได้เลย`, `+${groupProfit} Pok กำลังหาเงินมาจ่ายเพิ่ม 😭`]);
 
     groupStatsHtml += `<div style="margin-bottom:12px;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius);font-size:0.78rem">`;
     groupStatsHtml += `<div style="font-weight:700;color:var(--text-muted);margin-bottom:6px">📊 สถิติกลุ่ม (${statsLabel})</div>`;
     if (worstSlip) {
       const pc = (worstSlip.picks || []).length;
       const worstLabels = ['อัปยศประจำรอบ', 'slip สุดเจ็บปวด', 'เผาเงินแห่งรอบ'];
-      groupStatsHtml += `<div style="margin-bottom:4px">🗑️ ${pick(worstLabels)}: <b>${getDisplayName(worstSlip.player)}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${worstSlip.bet}฿ <span style="color:var(--secondary);font-weight:700">หายเกลี้ยง ${worstSlip.r.profit}฿</span></div>`;
+      groupStatsHtml += `<div style="margin-bottom:4px">🗑️ ${pick(worstLabels)}: <b>${getDisplayName(worstSlip.player)}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${worstSlip.bet} <span style="color:var(--secondary);font-weight:700">หายเกลี้ยง ${worstSlip.r.profit}</span></div>`;
     }
     if (bestSlip) {
       const pc = (bestSlip.picks || []).length;
       const bestLabels = ['มือทองรอบนี้', 'slip สุดปัง', 'คนโชคดีแห่งรอบ'];
-      groupStatsHtml += `<div style="margin-bottom:4px">👑 ${pick(bestLabels)}: <b>${getDisplayName(bestSlip.player)}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${bestSlip.bet}฿ → <span style="color:var(--accent);font-weight:700">+${bestSlip.r.profit}฿</span></div>`;
+      groupStatsHtml += `<div style="margin-bottom:4px">👑 ${pick(bestLabels)}: <b>${getDisplayName(bestSlip.player)}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${bestSlip.bet} → <span style="color:var(--accent);font-weight:700">+${bestSlip.r.profit}</span></div>`;
     }
     if (mostPicksWon && (mostPicksWon.picks||[]).length >= 2) {
       const pc = (mostPicksWon.picks||[]).length;
-      groupStatsHtml += `<div style="margin-bottom:4px">🏅 step ใหญ่สุดที่ถูก: <b>${getDisplayName(mostPicksWon.player)}</b> ${pc} คู่ → <span style="color:var(--accent);font-weight:700">+${mostPicksWon.r.profit}฿</span></div>`;
+      groupStatsHtml += `<div style="margin-bottom:4px">🏅 step ใหญ่สุดที่ถูก: <b>${getDisplayName(mostPicksWon.player)}</b> ${pc} คู่ → <span style="color:var(--accent);font-weight:700">+${mostPicksWon.r.profit}</span></div>`;
     }
     if (mostPicksLost && (mostPicksLost.picks||[]).length >= 2) {
       const pc = (mostPicksLost.picks||[]).length;
@@ -577,10 +577,10 @@ function renderFunLeaderboard() {
       const allWrong = wrongCount === pc;
       const wrongLabel = allWrong ? `ผิดหมด ${pc}/${pc} 😭` : `ผิด ${wrongCount}/${pc}`;
       const lostLabels = ['step ใหญ่สุดที่ผิด', 'step ฝันสลาย', 'step ที่เจ็บที่สุด'];
-      groupStatsHtml += `<div style="margin-bottom:4px">💣 ${pick(lostLabels)}: <b>${getDisplayName(mostPicksLost.player)}</b> ${pc} คู่ ลง ${mostPicksLost.bet}฿ — <span style="color:var(--secondary);font-weight:700">${wrongLabel}</span></div>`;
+      groupStatsHtml += `<div style="margin-bottom:4px">💣 ${pick(lostLabels)}: <b>${getDisplayName(mostPicksLost.player)}</b> ${pc} คู่ ลง ${mostPicksLost.bet} — <span style="color:var(--secondary);font-weight:700">${wrongLabel}</span></div>`;
     }
     groupStatsHtml += `<div style="margin-bottom:4px">🎯 win rate กลุ่ม: <b>${groupWinRate}%</b> (${totalWins}/${totalSettled}) — ${winRateRoast}</div>`;
-    groupStatsHtml += `<div style="color:${groupColor};font-weight:700">${groupSign}${groupProfit}฿ — ${groupRoast}</div>`;
+    groupStatsHtml += `<div style="color:${groupColor};font-weight:700">${groupSign}${groupProfit} — ${groupRoast}</div>`;
     groupStatsHtml += `</div>`;
   }
 
@@ -596,7 +596,7 @@ function renderFunLeaderboard() {
   sorted.forEach((s, i) => {
     const isMe = s.player === state.currentPlayer;
     const profitColor = s.totalProfit >= 0 ? 'var(--accent)' : 'var(--secondary)';
-    const profitStr = (s.totalProfit >= 0 ? '+' : '') + s.totalProfit + '฿';
+    const profitStr = (s.totalProfit >= 0 ? '+' : '') + s.totalProfit + '';
     const winStr = s.settled > 0 ? `${s.wins}/${s.settled}` : '-';
     const streakStr = s.streakVal >= 1 ? `${s.streakVal} วันติด` : '';
     const border = i === 0 && s.totalProfit > 0 ? 'border:2px solid var(--accent);'
@@ -617,11 +617,11 @@ function renderFunLeaderboard() {
       html += `</div>`;
     }
     html += `<div style="margin-top:3px;font-size:0.72rem;color:var(--text-muted)">ถูก ${winStr}`;
-    if (s.totalBet > 0) html += ` · ลง ${s.totalBet}฿`;
+    if (s.totalBet > 0) html += ` · ลง ${s.totalBet}`;
     if (streakStr) html += ` · ${streakStr}`;
     html += `</div>`;
     if (pending) {
-      html += `<div style="margin-top:2px;font-size:0.7rem">⏳ รอ: <span style="color:var(--accent)">+${pending.maxWin}฿</span> / <span style="color:var(--secondary)">-${pending.maxLose}฿</span></div>`;
+      html += `<div style="margin-top:2px;font-size:0.7rem">⏳ รอ: <span style="color:var(--accent)">+${pending.maxWin}</span> / <span style="color:var(--secondary)">-${pending.maxLose}</span></div>`;
     }
     html += `</div>`;
     const playerData = state.players.find(p => p.player_id === s.player);
@@ -776,15 +776,15 @@ function renderAdminSummary() {
   html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:10px">${lang === 'th' ? 'สถานะเงิน (มุมมองเจ้ามือ)' : 'House Position'}</div>`;
   html += `<div style="display:flex;justify-content:space-between;margin-bottom:6px">`;
   html += `<span style="font-size:0.82rem;color:var(--text-muted)">${lang === 'th' ? 'เก็บจากที่ผิด' : 'Collected (losses)'}</span>`;
-  html += `<span style="font-size:0.88rem;font-weight:700;color:var(--accent)">+${pokCollected}฿</span>`;
+  html += `<span style="font-size:0.88rem;font-weight:700;color:var(--accent)">+${pokCollected}</span>`;
   html += `</div>`;
   html += `<div style="display:flex;justify-content:space-between;margin-bottom:10px">`;
   html += `<span style="font-size:0.82rem;color:var(--text-muted)">${lang === 'th' ? 'จ่ายให้ที่ถูก' : 'Paid out (wins)'}</span>`;
-  html += `<span style="font-size:0.88rem;font-weight:700;color:var(--secondary)">-${pokPaidOut}฿</span>`;
+  html += `<span style="font-size:0.88rem;font-weight:700;color:var(--secondary)">-${pokPaidOut}</span>`;
   html += `</div>`;
   html += `<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border)">`;
   html += `<span style="font-size:0.9rem;font-weight:700">${lang === 'th' ? 'กำไรตอนนี้' : 'Net so far'}</span>`;
-  html += `<span style="font-size:1.1rem;font-weight:800;color:${netColor}">${netSign}${pokNet}฿</span>`;
+  html += `<span style="font-size:1.1rem;font-weight:800;color:${netColor}">${netSign}${pokNet}</span>`;
   html += `</div>`;
   html += `</div>`;
 
@@ -825,7 +825,7 @@ function renderAdminSummary() {
       const isPos = net >= 0;
       const barColor = isPos ? 'var(--accent)' : 'var(--secondary)';
       const amtColor = isPos ? 'var(--accent)' : 'var(--secondary)';
-      const amtStr  = (isPos ? '+' : '') + net + '฿';
+      const amtStr  = (isPos ? '+' : '') + net + '';
       const [yr, mo, dy] = key.split('-').map(Number);
       const dateLabel = new Date(Date.UTC(yr, mo - 1, dy))
         .toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
@@ -838,7 +838,7 @@ function renderAdminSummary() {
       html += `</div>`;
     });
     const cumColor = cumulative >= 0 ? 'var(--accent)' : 'var(--secondary)';
-    const cumStr   = (cumulative >= 0 ? '+' : '') + cumulative + '฿';
+    const cumStr   = (cumulative >= 0 ? '+' : '') + cumulative + '';
     html += `<div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:8px;margin-top:2px">`;
     html += `<span style="font-size:0.82rem;font-weight:700;color:var(--text-muted)">${lang === 'th' ? 'สะสม' : 'Total'}</span>`;
     html += `<span style="font-size:1rem;font-weight:800;color:${cumColor}">${cumStr}</span>`;
@@ -915,8 +915,8 @@ function renderHouseDashboard() {
     html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">`;
     const todayItems = [
       { label: lang === 'th' ? 'ทั้งหมด' : 'Total',   val: allSlipsForToday.length, color: 'var(--text-primary)', amt: null },
-      { label: lang === 'th' ? 'ถูกแล้ว' : 'Won',     val: todayWonCount,            color: 'var(--accent)',       amt: todayWonPaid  > 0 ? `-${todayWonPaid}฿`  : null, amtColor: 'var(--secondary)' },
-      { label: lang === 'th' ? 'ผิดแล้ว' : 'Lost',    val: todayLostCount,           color: 'var(--secondary)',    amt: todayLostKept > 0 ? `+${todayLostKept}฿` : null, amtColor: 'var(--accent)'    },
+      { label: lang === 'th' ? 'ถูกแล้ว' : 'Won',     val: todayWonCount,            color: 'var(--accent)',       amt: todayWonPaid  > 0 ? `-${todayWonPaid}`  : null, amtColor: 'var(--secondary)' },
+      { label: lang === 'th' ? 'ผิดแล้ว' : 'Lost',    val: todayLostCount,           color: 'var(--secondary)',    amt: todayLostKept > 0 ? `+${todayLostKept}` : null, amtColor: 'var(--accent)'    },
       { label: lang === 'th' ? 'รอผล'   : 'Pending',  val: todayPending.length,      color: 'var(--text-muted)',   amt: null },
     ];
     todayItems.forEach(({ label, val, color, amt, amtColor }) => {
@@ -933,7 +933,7 @@ function renderHouseDashboard() {
       const netColor = todayNet >= 0 ? 'var(--accent)' : 'var(--secondary)';
       html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--border);border-bottom:${todayPending.length ? '1px solid var(--border)' : 'none'};margin-bottom:${todayPending.length ? '10px' : '0'}">`;
       html += `<span style="font-size:0.82rem;color:var(--text-muted)">${lang === 'th' ? 'ยอดสุทธิวันนี้ (เจ้ามือ)' : 'Net today (house)'}</span>`;
-      html += `<span style="font-size:1rem;font-weight:700;color:${netColor}">${todayNet >= 0 ? '+' : ''}${todayNet}฿</span>`;
+      html += `<span style="font-size:1rem;font-weight:700;color:${netColor}">${todayNet >= 0 ? '+' : ''}${todayNet}</span>`;
       html += `</div>`;
     }
 
@@ -943,12 +943,12 @@ function renderHouseDashboard() {
       html += `<div style="flex:1;text-align:center;padding:8px;border:1px solid var(--border);border-radius:var(--radius)">`;
       html += `<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:4px">${lang === 'th' ? 'ถ้าถูกหมด' : 'If all win'}</div>`;
       html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'จ่ายเพิ่ม' : 'Pay extra'}</div>`;
-      html += `<div style="font-size:1.05rem;font-weight:700;color:var(--secondary)">-${todayWorstPay}฿</div>`;
+      html += `<div style="font-size:1.05rem;font-weight:700;color:var(--secondary)">-${todayWorstPay}</div>`;
       html += `</div>`;
       html += `<div style="flex:1;text-align:center;padding:8px;border:1px solid var(--border);border-radius:var(--radius)">`;
       html += `<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:4px">${lang === 'th' ? 'ถ้าผิดหมด' : 'If all lose'}</div>`;
       html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'เก็บเพิ่ม' : 'Keep extra'}</div>`;
-      html += `<div style="font-size:1.05rem;font-weight:700;color:var(--accent)">+${todayBestKeep}฿</div>`;
+      html += `<div style="font-size:1.05rem;font-weight:700;color:var(--accent)">+${todayBestKeep}</div>`;
       html += `</div>`;
       html += `</div>`;
     }
@@ -1049,12 +1049,12 @@ function renderHouseDashboard() {
           const h2pct   = 100 - h1pct;
           const h1big   = d.ahHome >= d.ahAway;
           html += `<div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;margin-bottom:2px">`;
-          html += `<span style="width:36px;text-align:right;${ahWinner==='team1'?winBox:`font-weight:${h1big?'700':'400'};color:${h1big?'var(--text-primary)':'var(--text-muted)'}`}">${Math.round(d.ahHome)}฿</span>`;
+          html += `<span style="width:36px;text-align:right;${ahWinner==='team1'?winBox:`font-weight:${h1big?'700':'400'};color:${h1big?'var(--text-primary)':'var(--text-muted)'}`}">${Math.round(d.ahHome)}</span>`;
           html += `<div style="flex:1;display:flex;height:10px;border-radius:3px;overflow:hidden;background:var(--bg-input)">`;
           html += `<div style="width:${h1pct}%;background:var(--secondary)"></div>`;
           html += `<div style="width:${h2pct}%;background:var(--accent)"></div>`;
           html += `</div>`;
-          html += `<span style="width:36px;${ahWinner==='team2'?winBox:`font-weight:${!h1big?'700':'400'};color:${!h1big?'var(--text-primary)':'var(--text-muted)'}`}">${Math.round(d.ahAway)}฿</span>`;
+          html += `<span style="width:36px;${ahWinner==='team2'?winBox:`font-weight:${!h1big?'700':'400'};color:${!h1big?'var(--text-primary)':'var(--text-muted)'}`}">${Math.round(d.ahAway)}</span>`;
           html += `</div>`;
           html += `<div style="display:flex;justify-content:space-between;font-size:0.66rem;color:var(--text-muted);margin-bottom:6px">`;
           html += `<span>${t1Name}${lineH?' '+lineH:''} ${ahOddsH?'@'+ahOddsH:''}</span>`;
@@ -1062,8 +1062,8 @@ function renderHouseDashboard() {
           html += `<span style="text-align:right">${ahOddsA?'@'+ahOddsA:''} ${t2Name}${lineA?' '+lineA:''}</span>`;
           html += `</div>`;
           html += `<div style="display:flex;justify-content:space-between;font-size:0.63rem;color:var(--text-muted);margin-bottom:6px">`;
-          html += `<span>${d.ahHomeC} slip · เก็บ ${d.ahHomeBet}฿ · จ่าย ${d.ahHomePay}฿</span>`;
-          html += `<span style="text-align:right">${d.ahAwayC} slip · เก็บ ${d.ahAwayBet}฿ · จ่าย ${d.ahAwayPay}฿</span>`;
+          html += `<span>${d.ahHomeC} slip · เก็บ ${d.ahHomeBet} · จ่าย ${d.ahHomePay}</span>`;
+          html += `<span style="text-align:right">${d.ahAwayC} slip · เก็บ ${d.ahAwayBet} · จ่าย ${d.ahAwayPay}</span>`;
           html += `</div>`;
         }
 
@@ -1076,12 +1076,12 @@ function renderHouseDashboard() {
           const uPct    = 100 - oPct;
           const oBig    = d.over >= d.under;
           html += `<div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;margin-bottom:2px">`;
-          html += `<span style="width:36px;text-align:right;${ouWinner==='over'?winBox:`font-weight:${oBig?'700':'400'};color:${oBig?'var(--text-primary)':'var(--text-muted)'}`}">${Math.round(d.over)}฿</span>`;
+          html += `<span style="width:36px;text-align:right;${ouWinner==='over'?winBox:`font-weight:${oBig?'700':'400'};color:${oBig?'var(--text-primary)':'var(--text-muted)'}`}">${Math.round(d.over)}</span>`;
           html += `<div style="flex:1;display:flex;height:10px;border-radius:3px;overflow:hidden;background:var(--bg-input)">`;
           html += `<div style="width:${oPct}%;background:var(--secondary)"></div>`;
           html += `<div style="width:${uPct}%;background:var(--accent)"></div>`;
           html += `</div>`;
-          html += `<span style="width:36px;${ouWinner==='under'?winBox:`font-weight:${!oBig?'700':'400'};color:${!oBig?'var(--text-primary)':'var(--text-muted)'}`}">${Math.round(d.under)}฿</span>`;
+          html += `<span style="width:36px;${ouWinner==='under'?winBox:`font-weight:${!oBig?'700':'400'};color:${!oBig?'var(--text-primary)':'var(--text-muted)'}`}">${Math.round(d.under)}</span>`;
           html += `</div>`;
           html += `<div style="display:flex;justify-content:space-between;font-size:0.66rem;color:var(--text-muted);margin-bottom:2px">`;
           html += `<span>${lang === 'th' ? 'สูง' : 'Over'} ${ouOddsO?'@'+ouOddsO:''}</span>`;
@@ -1089,8 +1089,8 @@ function renderHouseDashboard() {
           html += `<span style="text-align:right">${ouOddsU?'@'+ouOddsU:''} ${lang === 'th' ? 'ต่ำ' : 'Under'}</span>`;
           html += `</div>`;
           html += `<div style="display:flex;justify-content:space-between;font-size:0.63rem;color:var(--text-muted);margin-bottom:2px">`;
-          html += `<span>${d.overC} slip · เก็บ ${d.overBet}฿ · จ่าย ${d.overPay}฿</span>`;
-          html += `<span style="text-align:right">${d.underC} slip · เก็บ ${d.underBet}฿ · จ่าย ${d.underPay}฿</span>`;
+          html += `<span>${d.overC} slip · เก็บ ${d.overBet} · จ่าย ${d.overPay}</span>`;
+          html += `<span style="text-align:right">${d.underC} slip · เก็บ ${d.underBet} · จ่าย ${d.underPay}</span>`;
           html += `</div>`;
         }
 
@@ -1108,14 +1108,14 @@ function renderHouseDashboard() {
     html += `<div style="flex:1;text-align:center;padding:8px;border:1px solid var(--border);border-radius:var(--radius)">`;
     html += `<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:4px">${lang === 'th' ? 'ถ้าถูกหมด' : 'If all win'}</div>`;
     html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'จ่ายเพิ่ม' : 'Pay extra'}</div>`;
-    html += `<div style="font-size:1.05rem;font-weight:700;color:var(--secondary)">-${pendingWorstPay}฿</div>`;
-    html += `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:3px">${lang === 'th' ? 'net' : 'net'}: ${netSign}${pokNet - pendingWorstPay}฿</div>`;
+    html += `<div style="font-size:1.05rem;font-weight:700;color:var(--secondary)">-${pendingWorstPay}</div>`;
+    html += `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:3px">${lang === 'th' ? 'net' : 'net'}: ${netSign}${pokNet - pendingWorstPay}</div>`;
     html += `</div>`;
     html += `<div style="flex:1;text-align:center;padding:8px;border:1px solid var(--border);border-radius:var(--radius)">`;
     html += `<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:4px">${lang === 'th' ? 'ถ้าผิดหมด' : 'If all lose'}</div>`;
     html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'เก็บเพิ่ม' : 'Keep extra'}</div>`;
-    html += `<div style="font-size:1.05rem;font-weight:700;color:var(--accent)">+${pendingBestKeep}฿</div>`;
-    html += `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:3px">${lang === 'th' ? 'net' : 'net'}: +${pokNet + pendingBestKeep}฿</div>`;
+    html += `<div style="font-size:1.05rem;font-weight:700;color:var(--accent)">+${pendingBestKeep}</div>`;
+    html += `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:3px">${lang === 'th' ? 'net' : 'net'}: +${pokNet + pendingBestKeep}</div>`;
     html += `</div>`;
     html += `</div>`;
     html += `</div>`;

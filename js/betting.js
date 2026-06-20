@@ -216,7 +216,7 @@ async function renderBetting() {
       html += `<div style="margin-top:8px;display:flex;align-items:center;gap:8px">`;
       html += `<label style="font-size:0.85rem">${lang === 'th' ? 'จำนวนเงิน' : 'Amount'}</label>`;
       html += `<input type="number" id="bet-amount" min="50" step="10" value="50" style="width:100px;padding:6px 8px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:0.9rem;text-align:right">`;
-      html += `<span style="color:var(--accent)">฿</span>`;
+      html += `<span style="color:var(--accent)"></span>`;
       html += `</div>`;
       html += `<div id="bet-odds-display" style="margin-top:8px;font-size:0.85rem;color:var(--text-muted)">${lang === 'th' ? 'ราคารวม' : 'Odds'}: -</div>`;
       html += `<div id="bet-payout-display" style="margin-top:4px;font-size:1rem;font-weight:700;color:var(--accent)">${lang === 'th' ? 'จ่าย' : 'Payout'}: -</div>`;
@@ -239,9 +239,9 @@ async function renderBetting() {
     const nPend = myResolved.filter(({st}) => st.status === 'pending').length;
     const pendPayout = myResolved.filter(({st}) => st.status === 'pending').reduce((s, {slip}) => s + (slip.payout || 0), 0);
     html += `<div style="display:flex;flex-wrap:wrap;gap:12px;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius);margin-bottom:12px;font-size:0.82rem">`;
-    html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'ลงไป' : 'Bet'} <b style="color:var(--text-primary)">${totalBet}฿</b></span>`;
+    html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'ลงไป' : 'Bet'} <b style="color:var(--text-primary)">${totalBet}</b></span>`;
     html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'ถูก' : 'Won'} <b style="color:var(--accent)">${nWon}</b> · ${lang === 'th' ? 'ผิด' : 'Lost'} <b style="color:var(--wrong)">${nLost}</b> · ${lang === 'th' ? 'รอ' : 'Pend'} <b>${nPend}</b></span>`;
-    if (pendPayout > 0) html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'รอรับ' : 'Pend payout'} <b style="color:var(--accent)">${pendPayout}฿</b></span>`;
+    if (pendPayout > 0) html += `<span style="color:var(--text-muted)">${lang === 'th' ? 'รอรับ' : 'Pend payout'} <b style="color:var(--accent)">${pendPayout}</b></span>`;
     html += `</div>`;
 
     const myTabOn = SUBTAB_ON, myTabOff = SUBTAB_OFF;
@@ -402,7 +402,7 @@ async function renderBetting() {
         return `${name1}-${name2}: ${pickName} @${p.odds}`;
       }).join('\n');
 
-      const msg = `แทงตาม ${getDisplayName(slip.player)}\n${pickSummary}\nจำนวน: ${slip.bet}฿\n\nยืนยัน?`;
+      const msg = `แทงตาม ${getDisplayName(slip.player)}\n${pickSummary}\nจำนวน: ${slip.bet}\n\nยืนยัน?`;
       if (!window.confirm(msg)) return;
 
       const combinedOdds = validPicks.reduce((a, p) => a * p.odds, 1);
@@ -509,7 +509,7 @@ async function renderBetting() {
     else if (matchCount === 2 && pickCount >= 4) valid = true;
 
     if (!valid) return;
-    if (betAmount < 10) { showToast(lang === 'th' ? 'ขั้นต่ำ 10฿' : 'Min 10฿'); return; }
+    if (betAmount < 10) { showToast(lang === 'th' ? 'ขั้นต่ำ 10' : 'Min 10'); return; }
 
     const picks = pickEntries.map(([, data]) => ({
       match_id: data.matchId,
@@ -735,16 +735,16 @@ function updateBettingSummary(picks, container) {
     oddsEl.style.color = 'var(--accent)';
 
     const capMsgs = [
-      'โอ้โห แทงเยอะจัง — จ่ายสูงสุดแค่ 100,000฿ ต่อ slip นะ 😂',
-      'step เทพมากเลย แต่ขอบอกว่า max จ่าย 100,000฿ นะจ้ะ 🙏',
-      'ฝันหวานดี แต่ได้รับสูงสุดแค่ 100,000฿ ต่อ slip นะเว้ย 555',
-      'อย่าโลภ — จ่ายสูงสุด 100,000฿ ต่อ slip แค่นั้นเอง 😅',
-      'ได้ไม่เกิน 100,000฿ ต่อ slip นะ ไม่ว่าจะถูกกี่ตัว 😤',
+      'โอ้โห แทงเยอะจัง — จ่ายสูงสุดแค่ 100,000 ต่อ slip นะ 😂',
+      'step เทพมากเลย แต่ขอบอกว่า max จ่าย 100,000 นะจ้ะ 🙏',
+      'ฝันหวานดี แต่ได้รับสูงสุดแค่ 100,000 ต่อ slip นะเว้ย 555',
+      'อย่าโลภ — จ่ายสูงสุด 100,000 ต่อ slip แค่นั้นเอง 😅',
+      'ได้ไม่เกิน 100,000 ต่อ slip นะ ไม่ว่าจะถูกกี่ตัว 😤',
     ];
     const capWarn = payout > 100000
       ? `<div style="margin-top:6px;font-size:0.95rem;font-weight:800;color:#f97316">⚠️ ${capMsgs[Math.floor(Math.random() * capMsgs.length)]}</div>`
       : '';
-    payoutEl.innerHTML = `${lang === 'th' ? 'ถูก' : 'Win'}: ${payout}฿ (+${profit}) · ${lang === 'th' ? 'ผิด' : 'Lose'}: -${betAmount}฿${capWarn}`;
+    payoutEl.innerHTML = `${lang === 'th' ? 'ถูก' : 'Win'}: ${payout} (+${profit}) · ${lang === 'th' ? 'ผิด' : 'Lose'}: -${betAmount}${capWarn}`;
     payoutEl.style.color = 'var(--accent)';
     if (saveBtn) saveBtn.disabled = false;
   } else {
@@ -888,10 +888,10 @@ function renderSlipCard(slip, opts) {
   // Footer
   const displayOdds = slip.combined_odds || slip.odds || (picks.length ? picks.reduce((a, p) => a * (p.odds || 1), 1).toFixed(3) : '-');
   html += `<div style="padding-top:6px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:0.85rem">`;
-  html += `<span style="color:var(--text-muted)">${slip.bet}฿ × ${displayOdds}`;
-  if (st === 'won' || isApproved) html += ` → <b style="color:var(--accent)">+${resolved.profit}฿</b>`;
-  else if (st === 'lost')          html += ` → <b style="color:var(--secondary)">-${slip.bet}฿</b>`;
-  else                             html += ` → <b style="color:var(--accent)">${lang === 'th' ? 'จ่าย' : 'Payout'} ${slip.payout}฿</b>`;
+  html += `<span style="color:var(--text-muted)">${slip.bet} × ${displayOdds}`;
+  if (st === 'won' || isApproved) html += ` → <b style="color:var(--accent)">+${resolved.profit}</b>`;
+  else if (st === 'lost')          html += ` → <b style="color:var(--secondary)">-${slip.bet}</b>`;
+  else                             html += ` → <b style="color:var(--accent)">${lang === 'th' ? 'จ่าย' : 'Payout'} ${slip.payout}</b>`;
   html += `</span></div>`;
 
   html += `</div>`;
