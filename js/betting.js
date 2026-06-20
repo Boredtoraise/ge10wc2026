@@ -42,6 +42,8 @@ async function renderBetting() {
   });
 
   const friendPlayers = [...new Set(pendingFriendSlips.map(s => s.player))];
+  const friendReady   = pendingFriendSlips.filter(s => { const r = resolveSlip(s); return r.status === 'won' || r.status === 'lost'; });
+  const friendWaiting = pendingFriendSlips.filter(s => resolveSlip(s).status === 'pending');
 
   const tabOn = TAB_ON, tabOff = TAB_OFF;
 
@@ -192,7 +194,8 @@ async function renderBetting() {
   // Top tabs: แทงบอล | สลิปเพื่อน (N)
   html += `<div style="display:flex;gap:8px;margin-bottom:10px">`;
   html += `<button class="bet-main-tab" data-main="bet" style="${tabOn}">${lang === 'th' ? 'แทงบอล' : 'Betting'}</button>`;
-  html += `<button class="bet-main-tab" data-main="friends" style="${tabOff}">${lang === 'th' ? 'สลิปเพื่อน' : 'Friends'}${pendingFriendSlips.length ? ` (${pendingFriendSlips.length})` : ''}</button>`;
+  const friendBadge = friendReady.length ? ` · ${friendReady.length} รอยืนยัน` : pendingFriendSlips.length ? ` (${pendingFriendSlips.length})` : '';
+  html += `<button class="bet-main-tab" data-main="friends" style="${tabOff}">${lang === 'th' ? 'สลิปเพื่อน' : 'Friends'}${friendBadge}</button>`;
   html += `</div>`;
 
   // ── Tab: แทงบอล ──────────────────────────────────────────────────
@@ -279,22 +282,41 @@ async function renderBetting() {
   if (!pendingFriendSlips.length) {
     html += `<div style="color:var(--text-muted);text-align:center;padding:40px">${lang === 'th' ? 'ยังไม่มีสลิปเพื่อน' : "No friends' slips yet"}</div>`;
   } else {
-    const stOn = SUBTAB_ON, stOff = SUBTAB_OFF;
-    html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">`;
-    html += `<button class="fplayer-tab" data-fp="all" style="${stOn}">${lang === 'th' ? 'ทั้งหมด' : 'All'} (${pendingFriendSlips.length})</button>`;
-    friendPlayers.forEach(p => {
-      const n = pendingFriendSlips.filter(s => s.player === p).length;
-      html += `<button class="fplayer-tab" data-fp="${p}" style="${stOff}">${getDisplayName(p)} (${n})</button>`;
-    });
+    const fDefaultTab = friendReady.length > 0 ? 'fready' : 'fwait';
+    html += `<div style="display:flex;gap:6px;margin-bottom:12px">`;
+    html += `<button class="fstatus-tab" data-fs="fready" style="${fDefaultTab === 'fready' ? SUBTAB_ON : SUBTAB_OFF}">${lang === 'th' ? 'รอ approve' : 'Ready'} (${friendReady.length})</button>`;
+    html += `<button class="fstatus-tab" data-fs="fwait"  style="${fDefaultTab === 'fwait'  ? SUBTAB_ON : SUBTAB_OFF}">${lang === 'th' ? 'รอผล' : 'Pending'} (${friendWaiting.length})</button>`;
     html += `</div>`;
-    html += `<div class="fplayer-pane" data-fp="all">`;
-    pendingFriendSlips.forEach(s => { html += renderSlipCard(s, { showPlayer: true, showCopy: true }); });
-    html += `</div>`;
-    friendPlayers.forEach(p => {
-      html += `<div class="fplayer-pane" data-fp="${p}" style="display:none">`;
-      pendingFriendSlips.filter(s => s.player === p).forEach(s => { html += renderSlipCard(s, { showPlayer: true, showCopy: true }); });
+
+    // Pane: รอ approve
+    html += `<div class="fstatus-pane" data-fs="fready" style="${fDefaultTab === 'fready' ? '' : 'display:none'}">`;
+    if (!friendReady.length) {
+      html += `<div style="color:var(--text-muted);text-align:center;padding:24px;font-size:0.85rem">${lang === 'th' ? 'ยังไม่มี slip รอ approve' : 'No slips ready to approve'}</div>`;
+    } else {
+      const rPlayers = [...new Set(friendReady.map(s => s.player))];
+      html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">`;
+      html += `<button class="fready-ptab" data-frp="all" style="${SUBTAB_ON}">${lang === 'th' ? 'ทั้งหมด' : 'All'} (${friendReady.length})</button>`;
+      rPlayers.forEach(p => { const n = friendReady.filter(s => s.player === p).length; html += `<button class="fready-ptab" data-frp="${p}" style="${SUBTAB_OFF}">${getDisplayName(p)} (${n})</button>`; });
       html += `</div>`;
-    });
+      html += `<div class="fready-ppane" data-frp="all">`; friendReady.forEach(s => { html += renderSlipCard(s, { showPlayer: true, showCopy: true }); }); html += `</div>`;
+      rPlayers.forEach(p => { html += `<div class="fready-ppane" data-frp="${p}" style="display:none">`; friendReady.filter(s => s.player === p).forEach(s => { html += renderSlipCard(s, { showPlayer: true, showCopy: true }); }); html += `</div>`; });
+    }
+    html += `</div>`;
+
+    // Pane: รอผล
+    html += `<div class="fstatus-pane" data-fs="fwait" style="${fDefaultTab === 'fwait' ? '' : 'display:none'}">`;
+    if (!friendWaiting.length) {
+      html += `<div style="color:var(--text-muted);text-align:center;padding:24px;font-size:0.85rem">${lang === 'th' ? 'ไม่มี slip รอผล' : 'No pending slips'}</div>`;
+    } else {
+      const wPlayers = [...new Set(friendWaiting.map(s => s.player))];
+      html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">`;
+      html += `<button class="fwait-ptab" data-fwp="all" style="${SUBTAB_ON}">${lang === 'th' ? 'ทั้งหมด' : 'All'} (${friendWaiting.length})</button>`;
+      wPlayers.forEach(p => { const n = friendWaiting.filter(s => s.player === p).length; html += `<button class="fwait-ptab" data-fwp="${p}" style="${SUBTAB_OFF}">${getDisplayName(p)} (${n})</button>`; });
+      html += `</div>`;
+      html += `<div class="fwait-ppane" data-fwp="all">`; friendWaiting.forEach(s => { html += renderSlipCard(s, { showPlayer: true, showCopy: true }); }); html += `</div>`;
+      wPlayers.forEach(p => { html += `<div class="fwait-ppane" data-fwp="${p}" style="display:none">`; friendWaiting.filter(s => s.player === p).forEach(s => { html += renderSlipCard(s, { showPlayer: true, showCopy: true }); }); html += `</div>`; });
+    }
+    html += `</div>`;
   }
   html += `</div>`; // bet-main-friends
 
@@ -443,12 +465,26 @@ async function renderBetting() {
     });
   });
 
-  // Nested player sub-tabs
-  container.querySelectorAll('.fplayer-tab').forEach(btn => {
+  // สลิปเพื่อน — status tabs (รอ approve / รอผล)
+  container.querySelectorAll('.fstatus-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-      const key = btn.dataset.fp;
-      container.querySelectorAll('.fplayer-tab').forEach(b => { b.style.cssText = b.dataset.fp === key ? SUBTAB_ON : SUBTAB_OFF; });
-      container.querySelectorAll('.fplayer-pane').forEach(p => { p.style.display = p.dataset.fp === key ? '' : 'none'; });
+      const key = btn.dataset.fs;
+      container.querySelectorAll('.fstatus-tab').forEach(b => { b.style.cssText = b.dataset.fs === key ? SUBTAB_ON : SUBTAB_OFF; });
+      container.querySelectorAll('.fstatus-pane').forEach(p => { p.style.display = p.dataset.fs === key ? '' : 'none'; });
+    });
+  });
+  container.querySelectorAll('.fready-ptab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.frp;
+      container.querySelectorAll('.fready-ptab').forEach(b => { b.style.cssText = b.dataset.frp === key ? SUBTAB_ON : SUBTAB_OFF; });
+      container.querySelectorAll('.fready-ppane').forEach(p => { p.style.display = p.dataset.frp === key ? '' : 'none'; });
+    });
+  });
+  container.querySelectorAll('.fwait-ptab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.fwp;
+      container.querySelectorAll('.fwait-ptab').forEach(b => { b.style.cssText = b.dataset.fwp === key ? SUBTAB_ON : SUBTAB_OFF; });
+      container.querySelectorAll('.fwait-ppane').forEach(p => { p.style.display = p.dataset.fwp === key ? '' : 'none'; });
     });
   });
 
