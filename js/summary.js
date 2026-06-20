@@ -882,10 +882,22 @@ function renderHouseDashboard() {
 
   let html = '';
 
-  // Matches with unapproved slips
+  // Matches with unapproved slips — scoped to today's round + tomorrow (if has odds)
+  const _now = new Date();
+  const _cutoff = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate(), 14, 0, 0);
+  if (_now < _cutoff) _cutoff.setDate(_cutoff.getDate() - 1);
+  const _tomorrowStart = new Date(_cutoff.getTime() + 24 * 3600 * 1000);
+  const _tomorrowEnd   = new Date(_cutoff.getTime() + 48 * 3600 * 1000);
+  const _hasOdds = m => !!(state.ahLines[m.id] || state.ouLines[m.id]);
+
   const unapprovedSlips = getAllSlips().filter(s => s.status !== 'cancelled' && s.status !== 'approved');
   const unapprovedMatchIds = new Set(unapprovedSlips.flatMap(s => (s.picks || []).map(p => p.match_id)));
-  const todayMatches = MATCHES.filter(m => unapprovedMatchIds.has(m.id)).sort((a, b) => etToThai(a.date) - etToThai(b.date));
+  const todayMatches = MATCHES.filter(m => {
+    const t = etToThai(m.date);
+    if (t < _cutoff || t >= _tomorrowEnd) return false;
+    if (t >= _tomorrowStart && !_hasOdds(m)) return false;
+    return unapprovedMatchIds.has(m.id);
+  }).sort((a, b) => etToThai(a.date) - etToThai(b.date));
   let todayRoundPendingCount = 0;
   if (todayMatches.length > 0) {
     const todayIds = new Set(todayMatches.map(m => m.id));
