@@ -49,15 +49,13 @@ async function renderBetting() {
   if (state.isAdmin) {
     let html = '';
     html += `<div class="user-bar"><span class="user-name">${getDisplayName(state.currentPlayer)}</span><button class="logout-btn" id="bet-logout">${t('logout')}</button></div>`;
+    html += `<input type="text" id="slip-search" placeholder="${lang === 'th' ? '🔍 ค้นหา slip เช่น HOL, สูง, ou…' : '🔍 Search slip e.g. HOL, ou, over…'}" oninput="filterSlipCards(this.value)" style="width:100%;padding:8px 10px;margin-bottom:14px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:0.85rem;box-sizing:border-box">`;
     html += renderHouseDashboard();
 
     // ── Slips: split into ready-to-approve vs still-pending ──
     const allSlipsAll = getAllSlips();
     const readySlips   = pendingFriendSlips.filter(s => { const r = resolveSlip(s); return r.status === 'won' || r.status === 'lost'; });
     const waitingSlips = pendingFriendSlips.filter(s => resolveSlip(s).status === 'pending');
-
-    // Slip search
-    html += `<input type="text" id="admin-slip-search" placeholder="${lang === 'th' ? 'ค้นหาทีม เช่น HOL, สูง, ou…' : 'Search team e.g. HOL, ou, over…'}" oninput="filterSlipCards(this.value)" style="width:100%;padding:8px 10px;margin-bottom:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:0.85rem;box-sizing:border-box">`;
 
     // Section A: พร้อมยืนยัน — bulk buttons + slip cards
     html += `<div style="margin:16px 0 8px;font-size:0.85rem;color:var(--text-muted);font-weight:700">${lang === 'th' ? 'พร้อมยืนยัน' : 'Ready to Approve'} (${readySlips.length})</div>`;
@@ -193,10 +191,11 @@ async function renderBetting() {
   html += `</div>`;
 
   // Top tabs: แทงบอล | สลิปเพื่อน (N)
-  html += `<div style="display:flex;gap:8px;margin-bottom:16px">`;
+  html += `<div style="display:flex;gap:8px;margin-bottom:10px">`;
   html += `<button class="bet-main-tab" data-main="bet" style="${tabOn}">${lang === 'th' ? 'แทงบอล' : 'Betting'}</button>`;
   html += `<button class="bet-main-tab" data-main="friends" style="${tabOff}">${lang === 'th' ? 'สลิปเพื่อน' : 'Friends'}${pendingFriendSlips.length ? ` (${pendingFriendSlips.length})` : ''}</button>`;
   html += `</div>`;
+  html += `<input type="text" id="slip-search" placeholder="${lang === 'th' ? '🔍 ค้นหา slip เช่น HOL, สูง, ou…' : '🔍 Search slip e.g. HOL, ou, over…'}" oninput="filterSlipCards(this.value)" style="width:100%;padding:8px 10px;margin-bottom:14px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:0.85rem;box-sizing:border-box">`;
 
   // ── Tab: แทงบอล ──────────────────────────────────────────────────
   html += `<div id="bet-main-bet">`;
@@ -252,7 +251,6 @@ async function renderBetting() {
     const myHistory = mySlips.filter(s => s.status === 'approved');
     const myDefaultTab = myPending.length > 0 ? 'mypend' : 'myhist';
 
-    html += `<input type="text" id="user-slip-search" placeholder="${lang === 'th' ? 'ค้นหาทีม เช่น HOL, สูง, ou…' : 'Search e.g. HOL, ou, over…'}" oninput="filterSlipCards(this.value)" style="width:100%;padding:8px 10px;margin-bottom:10px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:0.85rem;box-sizing:border-box">`;
     html += `<div style="display:flex;gap:6px;margin-bottom:12px">`;
     html += `<button class="my-tab-btn" data-mytab="mypend" style="${myDefaultTab === 'mypend' ? myTabOn : myTabOff}">${lang === 'th' ? 'รอผล' : 'Pending'} (${myPending.length})</button>`;
     html += `<button class="my-tab-btn" data-mytab="myhist" style="${myDefaultTab === 'myhist' ? myTabOn : myTabOff}">${lang === 'th' ? 'ประวัติ' : 'History'} (${myHistory.length})</button>`;
