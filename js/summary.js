@@ -1070,8 +1070,8 @@ function renderHouseDashboard() {
           html += `<span style="text-align:right">${ahOddsA?'@'+ahOddsA:''} ${t2Name}${lineA?' '+lineA:''}</span>`;
           html += `</div>`;
           html += `<div style="display:flex;justify-content:space-between;font-size:0.63rem;color:var(--text-muted);margin-bottom:6px">`;
-          html += `<span>${d.ahHomeC} slip · เก็บ ${fmtM(d.ahHomeBet)} · จ่าย ${fmtM(d.ahHomePay)}</span>`;
-          html += `<span style="text-align:right">${d.ahAwayC} slip · เก็บ ${fmtM(d.ahAwayBet)} · จ่าย ${fmtM(d.ahAwayPay)}</span>`;
+          html += `<span class="pick-stat-btn" data-mid="${m.id}" data-side="ahHome" onclick="togglePickSlips('${m.id}','ahHome')" style="cursor:pointer;text-decoration:underline dotted">${d.ahHomeC} slip · เก็บ ${fmtM(d.ahHomeBet)} · จ่าย ${fmtM(d.ahHomePay)}</span>`;
+          html += `<span class="pick-stat-btn" data-mid="${m.id}" data-side="ahAway" onclick="togglePickSlips('${m.id}','ahAway')" style="cursor:pointer;text-decoration:underline dotted;text-align:right">${d.ahAwayC} slip · เก็บ ${fmtM(d.ahAwayBet)} · จ่าย ${fmtM(d.ahAwayPay)}</span>`;
           html += `</div>`;
         }
 
@@ -1097,11 +1097,12 @@ function renderHouseDashboard() {
           html += `<span style="text-align:right">${ouOddsU?'@'+ouOddsU:''} ${lang === 'th' ? 'ต่ำ' : 'Under'}</span>`;
           html += `</div>`;
           html += `<div style="display:flex;justify-content:space-between;font-size:0.63rem;color:var(--text-muted);margin-bottom:2px">`;
-          html += `<span>${d.overC} slip · เก็บ ${fmtM(d.overBet)} · จ่าย ${fmtM(d.overPay)}</span>`;
-          html += `<span style="text-align:right">${d.underC} slip · เก็บ ${fmtM(d.underBet)} · จ่าย ${fmtM(d.underPay)}</span>`;
+          html += `<span class="pick-stat-btn" data-mid="${m.id}" data-side="over" onclick="togglePickSlips('${m.id}','over')" style="cursor:pointer;text-decoration:underline dotted">${d.overC} slip · เก็บ ${fmtM(d.overBet)} · จ่าย ${fmtM(d.overPay)}</span>`;
+          html += `<span class="pick-stat-btn" data-mid="${m.id}" data-side="under" onclick="togglePickSlips('${m.id}','under')" style="cursor:pointer;text-decoration:underline dotted;text-align:right">${d.underC} slip · เก็บ ${fmtM(d.underBet)} · จ่าย ${fmtM(d.underPay)}</span>`;
           html += `</div>`;
         }
 
+        html += `<div id="pick-panel-${m.id}" style="display:none"></div>`;
         html += `</div>`;
       });
       html += `</div>`;
@@ -1256,5 +1257,50 @@ function getOUOutcome(line, totalGoals) {
   if (diff > 0) return { over: 'full', under: 'loss' };
   if (diff === 0) return { over: 'push', under: 'push' };
   return { over: 'loss', under: 'full' };
+}
+
+function togglePickSlips(matchId, side) {
+  const panel = document.getElementById('pick-panel-' + matchId);
+  if (!panel) return;
+
+  if (panel.dataset.activeSide === side) {
+    panel.style.display = 'none';
+    panel.dataset.activeSide = '';
+    document.querySelectorAll(`.pick-stat-btn[data-mid="${matchId}"]`).forEach(s => {
+      s.style.fontWeight = '';
+      s.style.color = '';
+    });
+    return;
+  }
+
+  panel.dataset.activeSide = side;
+  const m = MATCHES.find(x => x.id === matchId);
+  const filtered = getAllSlips().filter(s => {
+    if (s.status === 'cancelled') return false;
+    return (s.picks || []).some(p => {
+      if (p.match_id !== matchId) return false;
+      if (side === 'over')   return p.type === 'ou' && p.pick === 'over';
+      if (side === 'under')  return p.type === 'ou' && p.pick !== 'over';
+      if (side === 'ahHome') return p.type !== 'ou' && m && p.pick === m.team1;
+      if (side === 'ahAway') return p.type !== 'ou' && m && p.pick !== m.team1;
+      return false;
+    });
+  });
+
+  let html = `<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">`;
+  if (typeof renderSlipCard === 'function' && filtered.length) {
+    filtered.forEach(s => { html += renderSlipCard(s, { showPlayer: true }); });
+  } else {
+    html += `<div style="color:var(--text-muted);padding:8px;font-size:0.82rem;text-align:center">ไม่มี slip</div>`;
+  }
+  html += `</div>`;
+  panel.innerHTML = html;
+  panel.style.display = '';
+
+  document.querySelectorAll(`.pick-stat-btn[data-mid="${matchId}"]`).forEach(s => {
+    const active = s.dataset.side === side;
+    s.style.fontWeight = active ? '800' : '';
+    s.style.color = active ? 'var(--text-primary)' : '';
+  });
 }
 
