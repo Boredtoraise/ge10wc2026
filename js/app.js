@@ -290,6 +290,13 @@ window.addEventListener('scroll', () => {
   if (btn) btn.style.display = window.scrollY > 300 ? '' : 'none';
 }, { passive: true });
 
+function filterSlipCards(query) {
+  const q = (query || '').trim().toLowerCase();
+  document.querySelectorAll('#view-bet .slip-card').forEach(card => {
+    card.style.display = (!q || (card.dataset.search || '').includes(q)) ? '' : 'none';
+  });
+}
+
 function updateAdminUI() {
   document.querySelectorAll('.admin-only').forEach(el => {
     if (state.isAdmin) el.classList.remove('hidden');

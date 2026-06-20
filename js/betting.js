@@ -56,6 +56,9 @@ async function renderBetting() {
     const readySlips   = pendingFriendSlips.filter(s => { const r = resolveSlip(s); return r.status === 'won' || r.status === 'lost'; });
     const waitingSlips = pendingFriendSlips.filter(s => resolveSlip(s).status === 'pending');
 
+    // Slip search
+    html += `<input type="text" id="admin-slip-search" placeholder="${lang === 'th' ? 'ค้นหาทีม เช่น HOL, สูง, ou…' : 'Search team e.g. HOL, ou, over…'}" oninput="filterSlipCards(this.value)" style="width:100%;padding:8px 10px;margin-bottom:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:0.85rem;box-sizing:border-box">`;
+
     // Section A: พร้อมยืนยัน — bulk buttons + slip cards
     html += `<div style="margin:16px 0 8px;font-size:0.85rem;color:var(--text-muted);font-weight:700">${lang === 'th' ? 'พร้อมยืนยัน' : 'Ready to Approve'} (${readySlips.length})</div>`;
     if (!readySlips.length) {
@@ -249,6 +252,7 @@ async function renderBetting() {
     const myHistory = mySlips.filter(s => s.status === 'approved');
     const myDefaultTab = myPending.length > 0 ? 'mypend' : 'myhist';
 
+    html += `<input type="text" id="user-slip-search" placeholder="${lang === 'th' ? 'ค้นหาทีม เช่น HOL, สูง, ou…' : 'Search e.g. HOL, ou, over…'}" oninput="filterSlipCards(this.value)" style="width:100%;padding:8px 10px;margin-bottom:10px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);font-size:0.85rem;box-sizing:border-box">`;
     html += `<div style="display:flex;gap:6px;margin-bottom:12px">`;
     html += `<button class="my-tab-btn" data-mytab="mypend" style="${myDefaultTab === 'mypend' ? myTabOn : myTabOff}">${lang === 'th' ? 'รอผล' : 'Pending'} (${myPending.length})</button>`;
     html += `<button class="my-tab-btn" data-mytab="myhist" style="${myDefaultTab === 'myhist' ? myTabOn : myTabOff}">${lang === 'th' ? 'ประวัติ' : 'History'} (${myHistory.length})</button>`;
@@ -811,7 +815,16 @@ function renderSlipCard(slip, opts) {
   if      (st === 'lost')              cardStyle = 'border:3px solid var(--secondary);box-shadow:0 0 0 3px rgba(46,134,171,0.20);background:rgba(46,134,171,0.10)';
   else if (st === 'won' || isApproved) cardStyle = 'border:3px solid var(--accent);box-shadow:0 0 0 3px rgba(240,201,41,0.25);background:rgba(240,201,41,0.10)';
 
-  let html = `<div class="card" style="padding:10px;margin-bottom:8px;${cardStyle}">`;
+  const _sd = [slip.player, getDisplayName(slip.player)];
+  picks.forEach(p => {
+    if (p.type === 'ou') { _sd.push('ou over under สูง ต่ำ'); }
+    else { const t = TEAMS[p.pick]; _sd.push(p.pick); if (t) { _sd.push(t.name, t.nameTh); } }
+    const _m = MATCHES.find(x => x.id === p.match_id);
+    if (_m) { [_m.team1, _m.team2].forEach(tc => { const t2 = TEAMS[tc]; _sd.push(tc); if (t2) _sd.push(t2.name, t2.nameTh); }); }
+  });
+  const _search = _sd.filter(Boolean).join(' ').toLowerCase();
+
+  let html = `<div class="card slip-card" data-search="${_search}" style="padding:10px;margin-bottom:8px;${cardStyle}">`;
 
   // Header
   html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">`;
