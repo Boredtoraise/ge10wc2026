@@ -734,7 +734,10 @@ function updateBettingSummary(picks, container) {
     oddsEl.textContent = `${lang === 'th' ? 'ราคารวม' : 'Odds'}: ${combinedOdds.toFixed(3)}`;
     oddsEl.style.color = 'var(--accent)';
 
-    payoutEl.innerHTML = `${lang === 'th' ? 'ถูก' : 'Win'}: ${payout}฿ (+${profit}) · ${lang === 'th' ? 'ผิด' : 'Lose'}: -${betAmount}฿`;
+    const capWarn = payout > 100000
+      ? `<div style="margin-top:4px;font-size:0.75rem;color:var(--secondary)">⚠️ payout สูงเกิน 100,000฿ — Pok อาจปฏิเสธสลิปนี้</div>`
+      : '';
+    payoutEl.innerHTML = `${lang === 'th' ? 'ถูก' : 'Win'}: ${payout}฿ (+${profit}) · ${lang === 'th' ? 'ผิด' : 'Lose'}: -${betAmount}฿${capWarn}`;
     payoutEl.style.color = 'var(--accent)';
     if (saveBtn) saveBtn.disabled = false;
   } else {
