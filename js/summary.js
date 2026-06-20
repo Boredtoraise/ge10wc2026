@@ -812,8 +812,8 @@ function renderHouseDashboard() {
 
   let html = '';
 
-  // Today's round exposure
-  const todayMatches = getTodayMatches().sort((a, b) => etToThai(a.date) - etToThai(b.date));
+  // All matches with odds
+  const todayMatches = MATCHES.filter(m => state.ahLines[m.id] || state.ouLines[m.id]).sort((a, b) => etToThai(a.date) - etToThai(b.date));
   let todayRoundPendingCount = 0;
   if (todayMatches.length > 0) {
     const todayIds = new Set(todayMatches.map(m => m.id));
@@ -929,7 +929,7 @@ function renderHouseDashboard() {
     const anyPicks = todayMatches.some(m => dist[m.id] && (dist[m.id].ahHome + dist[m.id].ahAway + dist[m.id].over + dist[m.id].under > 0));
     if (anyPicks) {
       html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px">`;
-      html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:10px">${lang === 'th' ? 'เชียร์ใคร · รอบวันนี้' : 'Pick Distribution · Today'}</div>`;
+      html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:10px">${lang === 'th' ? 'เชียร์ใคร · ทั้งหมด' : 'Pick Distribution · All Matches'}</div>`;
       todayMatches.forEach(m => {
         const d = dist[m.id];
         if (!d || (d.ahHome + d.ahAway + d.over + d.under === 0)) return;
