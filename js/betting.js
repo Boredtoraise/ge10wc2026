@@ -742,7 +742,7 @@ function updateBettingSummary(picks, container) {
       'ได้ไม่เกิน 100,000฿ ต่อ slip นะ ไม่ว่าจะถูกกี่ตัว 😤',
     ];
     const capWarn = payout > 100000
-      ? `<div style="margin-top:4px;font-size:0.75rem;color:var(--secondary)">⚠️ ${capMsgs[Math.floor(Math.random() * capMsgs.length)]}</div>`
+      ? `<div style="margin-top:6px;font-size:0.95rem;font-weight:800;color:#f97316">⚠️ ${capMsgs[Math.floor(Math.random() * capMsgs.length)]}</div>`
       : '';
     payoutEl.innerHTML = `${lang === 'th' ? 'ถูก' : 'Win'}: ${payout}฿ (+${profit}) · ${lang === 'th' ? 'ผิด' : 'Lose'}: -${betAmount}฿${capWarn}`;
     payoutEl.style.color = 'var(--accent)';
