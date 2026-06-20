@@ -56,25 +56,34 @@ function showScheduleGroup(groupKey) {
     const hasOdds = m => !!(state.ahLines[m.id] || state.ouLines[m.id]);
 
     const allSorted = [...MATCHES].sort((a, b) => new Date(a.date) - new Date(b.date));
-    const upcoming  = allSorted.filter(m => etToThai(m.date) >= cutoff);
-    const past      = allSorted.filter(m => etToThai(m.date) < cutoff).reverse();
+    const cutoffEnd = new Date(cutoff.getTime() + 24 * 3600 * 1000);
+    const allUpcoming = allSorted.filter(m => etToThai(m.date) >= cutoff);
+    const past        = allSorted.filter(m => etToThai(m.date) < cutoff).reverse();
 
-    upcoming.sort((a, b) => {
+    const oddsSort = (a, b) => {
       if (hasOdds(a) && !hasOdds(b)) return -1;
       if (!hasOdds(a) && hasOdds(b)) return 1;
       return new Date(a.date) - new Date(b.date);
-    });
+    };
+    allUpcoming.sort(oddsSort);
+    const todayOnly = allUpcoming.filter(m => etToThai(m.date) < cutoffEnd);
 
     const tabOn  = 'padding:6px 14px;font-size:0.82rem;background:var(--primary);border:1px solid var(--primary);color:#fff;border-radius:var(--radius);font-weight:700;cursor:pointer';
     const tabOff = 'padding:6px 14px;font-size:0.82rem;background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);font-weight:700;cursor:pointer';
 
     let html = `<div style="display:flex;gap:8px;margin-bottom:12px">`;
-    html += `<button class="sch-time-btn" data-time="upcoming" style="${tabOn}">${lang === 'th' ? 'วันนี้เป็นต้นไป' : 'Upcoming'} (${upcoming.length})</button>`;
+    html += `<button class="sch-time-btn" data-time="today" style="${tabOn}">${lang === 'th' ? 'วันนี้' : 'Today'} (${todayOnly.length})</button>`;
+    html += `<button class="sch-time-btn" data-time="upcoming" style="${tabOff}">${lang === 'th' ? 'ทั้งหมด' : 'All'} (${allUpcoming.length})</button>`;
     html += `<button class="sch-time-btn" data-time="past" style="${tabOff}">${lang === 'th' ? 'ผลบอล' : 'Results'} (${past.length})</button>`;
     html += `</div>`;
 
-    html += `<div id="sch-upcoming">`;
-    upcoming.forEach(m => { html += renderScheduleMatchCard(m); });
+    html += `<div id="sch-today">`;
+    todayOnly.forEach(m => { html += renderScheduleMatchCard(m); });
+    if (!todayOnly.length) html += `<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:0.85rem">${lang === 'th' ? 'ไม่มีแมตช์วันนี้' : 'No matches today'}</div>`;
+    html += `</div>`;
+
+    html += `<div id="sch-upcoming" style="display:none">`;
+    allUpcoming.forEach(m => { html += renderScheduleMatchCard(m); });
     html += `</div>`;
 
     html += `<div id="sch-past" style="display:none">`;
@@ -87,6 +96,7 @@ function showScheduleGroup(groupKey) {
       btn.addEventListener('click', () => {
         const time = btn.dataset.time;
         content.querySelectorAll('.sch-time-btn').forEach(b => { b.style.cssText = b.dataset.time === time ? tabOn : tabOff; });
+        content.querySelector('#sch-today').style.display    = time === 'today'    ? '' : 'none';
         content.querySelector('#sch-upcoming').style.display = time === 'upcoming' ? '' : 'none';
         content.querySelector('#sch-past').style.display     = time === 'past'     ? '' : 'none';
       });

@@ -99,7 +99,7 @@ function renderUserDashboard(player) {
   const slipsDetail = calculatePlayerSlipsDetailed(player);
   const totalBalance = slipsDetail.total.profit;
 
-  const fmtMoney = (v) => { const sg = v >= 0 ? '+' : ''; return `${sg}${v}`; };
+  const fmtMoney = (v) => { const sg = v >= 0 ? '+' : '-'; return `${sg}${fmtM(Math.abs(v))}`; };
   const moneyColor = (v) => v >= 0 ? 'var(--accent)' : 'var(--wrong)';
 
   // Initial balance from players sheet
@@ -167,17 +167,17 @@ function renderUserDashboard(player) {
   html += `<div style="display:flex;gap:8px;margin-bottom:12px">`;
   html += `<div style="flex:1;text-align:center;padding:10px 6px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">`;
   html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'บวกรวม' : 'Total Won'}</div>`;
-  html += `<div style="font-size:1rem;font-weight:700;color:var(--accent)">+${totalWon}</div>`;
+  html += `<div style="font-size:1rem;font-weight:700;color:var(--accent)">+${fmtM(totalWon)}</div>`;
   html += `</div>`;
   html += `<div style="flex:1;text-align:center;padding:10px 6px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">`;
   html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'ลบรวม' : 'Total Lost'}</div>`;
-  html += `<div style="font-size:1rem;font-weight:700;color:var(--secondary)">${totalLost}</div>`;
+  html += `<div style="font-size:1rem;font-weight:700;color:var(--secondary)">${fmtM(totalLost)}</div>`;
   html += `</div>`;
   if (pendingBet > 0) {
     html += `<div style="flex:1;text-align:center;padding:10px 6px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">`;
     html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'รอผล' : 'Pending'}</div>`;
     html += `<div style="font-size:1rem;font-weight:700;color:var(--text-primary)">${pendingBet}</div>`;
-    html += `<div style="font-size:0.68rem;color:var(--text-muted)">${lang === 'th' ? 'จ่าย' : 'payout'} ${pendingPayout}</div>`;
+    html += `<div style="font-size:0.68rem;color:var(--text-muted)">${lang === 'th' ? 'จ่าย' : 'payout'} ${fmtM(pendingPayout)}</div>`;
     html += `</div>`;
   }
   html += `</div>`;
@@ -915,8 +915,8 @@ function renderHouseDashboard() {
     html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">`;
     const todayItems = [
       { label: lang === 'th' ? 'ทั้งหมด' : 'Total',   val: allSlipsForToday.length, color: 'var(--text-primary)', amt: null },
-      { label: lang === 'th' ? 'ถูกแล้ว' : 'Won',     val: todayWonCount,            color: 'var(--accent)',       amt: todayWonPaid  > 0 ? `-${todayWonPaid}`  : null, amtColor: 'var(--secondary)' },
-      { label: lang === 'th' ? 'ผิดแล้ว' : 'Lost',    val: todayLostCount,           color: 'var(--secondary)',    amt: todayLostKept > 0 ? `+${todayLostKept}` : null, amtColor: 'var(--accent)'    },
+      { label: lang === 'th' ? 'ถูกแล้ว' : 'Won',     val: todayWonCount,            color: 'var(--accent)',       amt: todayWonPaid  > 0 ? `-${fmtM(todayWonPaid)}`  : null, amtColor: 'var(--secondary)' },
+      { label: lang === 'th' ? 'ผิดแล้ว' : 'Lost',    val: todayLostCount,           color: 'var(--secondary)',    amt: todayLostKept > 0 ? `+${fmtM(todayLostKept)}` : null, amtColor: 'var(--accent)'    },
       { label: lang === 'th' ? 'รอผล'   : 'Pending',  val: todayPending.length,      color: 'var(--text-muted)',   amt: null },
     ];
     todayItems.forEach(({ label, val, color, amt, amtColor }) => {
@@ -952,6 +952,10 @@ function renderHouseDashboard() {
       html += `</div>`;
       html += `</div>`;
     }
+    html += `</div>`;
+  } else {
+    html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 14px;margin-bottom:10px;text-align:center;color:var(--text-muted);font-size:0.85rem">`;
+    html += `${lang === 'th' ? '✓ ทุก slip ยืนยันแล้ว ไม่มีค้าง' : '✓ All slips approved — nothing pending'}`;
     html += `</div>`;
   }
 
@@ -999,7 +1003,11 @@ function renderHouseDashboard() {
     });
 
     const anyPicks = todayMatches.some(m => dist[m.id] && (dist[m.id].ahHome + dist[m.id].ahAway + dist[m.id].over + dist[m.id].under > 0));
-    if (anyPicks) {
+    if (!anyPicks) {
+      html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 14px;margin-bottom:10px;text-align:center;color:var(--text-muted);font-size:0.85rem">`;
+      html += `${lang === 'th' ? 'ยังไม่มีใครแทงรอบนี้' : 'No picks yet this round'}`;
+      html += `</div>`;
+    } else {
       html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px">`;
       html += `<div style="font-size:0.78rem;font-weight:700;color:var(--text-muted);margin-bottom:10px">${lang === 'th' ? 'เชียร์ใคร · รอยืนยัน' : 'Pick Distribution · Pending'}</div>`;
       todayMatches.forEach(m => {
@@ -1062,8 +1070,8 @@ function renderHouseDashboard() {
           html += `<span style="text-align:right">${ahOddsA?'@'+ahOddsA:''} ${t2Name}${lineA?' '+lineA:''}</span>`;
           html += `</div>`;
           html += `<div style="display:flex;justify-content:space-between;font-size:0.63rem;color:var(--text-muted);margin-bottom:6px">`;
-          html += `<span>${d.ahHomeC} slip · เก็บ ${d.ahHomeBet} · จ่าย ${d.ahHomePay}</span>`;
-          html += `<span style="text-align:right">${d.ahAwayC} slip · เก็บ ${d.ahAwayBet} · จ่าย ${d.ahAwayPay}</span>`;
+          html += `<span>${d.ahHomeC} slip · เก็บ ${fmtM(d.ahHomeBet)} · จ่าย ${fmtM(d.ahHomePay)}</span>`;
+          html += `<span style="text-align:right">${d.ahAwayC} slip · เก็บ ${fmtM(d.ahAwayBet)} · จ่าย ${fmtM(d.ahAwayPay)}</span>`;
           html += `</div>`;
         }
 
@@ -1089,8 +1097,8 @@ function renderHouseDashboard() {
           html += `<span style="text-align:right">${ouOddsU?'@'+ouOddsU:''} ${lang === 'th' ? 'ต่ำ' : 'Under'}</span>`;
           html += `</div>`;
           html += `<div style="display:flex;justify-content:space-between;font-size:0.63rem;color:var(--text-muted);margin-bottom:2px">`;
-          html += `<span>${d.overC} slip · เก็บ ${d.overBet} · จ่าย ${d.overPay}</span>`;
-          html += `<span style="text-align:right">${d.underC} slip · เก็บ ${d.underBet} · จ่าย ${d.underPay}</span>`;
+          html += `<span>${d.overC} slip · เก็บ ${fmtM(d.overBet)} · จ่าย ${fmtM(d.overPay)}</span>`;
+          html += `<span style="text-align:right">${d.underC} slip · เก็บ ${fmtM(d.underBet)} · จ่าย ${fmtM(d.underPay)}</span>`;
           html += `</div>`;
         }
 
@@ -1108,14 +1116,14 @@ function renderHouseDashboard() {
     html += `<div style="flex:1;text-align:center;padding:8px;border:1px solid var(--border);border-radius:var(--radius)">`;
     html += `<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:4px">${lang === 'th' ? 'ถ้าถูกหมด' : 'If all win'}</div>`;
     html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'จ่ายเพิ่ม' : 'Pay extra'}</div>`;
-    html += `<div style="font-size:1.05rem;font-weight:700;color:var(--secondary)">-${pendingWorstPay}</div>`;
-    html += `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:3px">${lang === 'th' ? 'net' : 'net'}: ${netSign}${pokNet - pendingWorstPay}</div>`;
+    html += `<div style="font-size:1.05rem;font-weight:700;color:var(--secondary)">-${fmtM(pendingWorstPay)}</div>`;
+    html += `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:3px">${lang === 'th' ? 'net' : 'net'}: ${netSign}${fmtM(Math.abs(pokNet - pendingWorstPay))}</div>`;
     html += `</div>`;
     html += `<div style="flex:1;text-align:center;padding:8px;border:1px solid var(--border);border-radius:var(--radius)">`;
     html += `<div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:4px">${lang === 'th' ? 'ถ้าผิดหมด' : 'If all lose'}</div>`;
     html += `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:2px">${lang === 'th' ? 'เก็บเพิ่ม' : 'Keep extra'}</div>`;
     html += `<div style="font-size:1.05rem;font-weight:700;color:var(--accent)">+${fmtM(pendingBestKeep)}</div>`;
-    html += `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:3px">${lang === 'th' ? 'net' : 'net'}: +${pokNet + pendingBestKeep}</div>`;
+    html += `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:3px">${lang === 'th' ? 'net' : 'net'}: +${fmtM(pokNet + pendingBestKeep)}</div>`;
     html += `</div>`;
     html += `</div>`;
     html += `</div>`;

@@ -826,6 +826,20 @@ function renderSlipCard(slip, opts) {
     const noLocked   = !picks.some(p => { const m = (state.matchById && state.matchById[p.match_id]) || MATCHES.find(x => x.id === p.match_id); return m && isMatchLocked(m); });
     if (ownPending && (state.isAdmin || noLocked)) {
       html += `<button class="slip-delete-btn" data-ts="${slip.timestamp}" style="background:var(--wrong);border:none;color:#fff;padding:5px 14px;border-radius:6px;font-size:0.85rem;font-weight:700;cursor:pointer">🗑 ${lang === 'th' ? 'ลบสลิป' : 'Delete'}</button>`;
+      if (!state.isAdmin && noLocked) {
+        const earliest = picks.reduce((min, p) => {
+          const m = (state.matchById && state.matchById[p.match_id]) || MATCHES.find(x => x.id === p.match_id);
+          const t = m ? etToThai(m.date).getTime() - 10 * 60 * 1000 : Infinity;
+          return Math.min(min, t);
+        }, Infinity);
+        const msLeft = earliest - Date.now();
+        if (msLeft > 0) {
+          const h = Math.floor(msLeft / 3600000);
+          const m = Math.floor((msLeft % 3600000) / 60000);
+          const label = h > 0 ? `${h}h ${m}m` : `${m}m`;
+          html += `<span style="font-size:0.7rem;color:var(--text-muted)">⏱ ลบได้อีก ${label}</span>`;
+        }
+      }
     }
   }
   if (opts.showCopy) {
@@ -889,7 +903,7 @@ function renderSlipCard(slip, opts) {
   const displayOdds = slip.combined_odds || slip.odds || (picks.length ? picks.reduce((a, p) => a * (p.odds || 1), 1).toFixed(3) : '-');
   html += `<div style="padding-top:6px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:0.85rem">`;
   html += `<span style="color:var(--text-muted)">${fmtM(slip.bet)} × ${displayOdds}`;
-  if (st === 'won' || isApproved) html += ` → <b style="color:var(--accent)">+${resolved.profit}</b>`;
+  if (st === 'won' || isApproved) html += ` → <b style="color:var(--accent)">+${fmtM(resolved.profit)}</b>`;
   else if (st === 'lost')          html += ` → <b style="color:var(--secondary)">-${fmtM(slip.bet)}</b>`;
   else                             html += ` → <b style="color:var(--accent)">${lang === 'th' ? 'จ่าย' : 'Payout'} ${fmtM(slip.payout)}</b>`;
   html += `</span></div>`;
