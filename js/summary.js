@@ -455,11 +455,35 @@ function renderFunLeaderboard() {
   const last = sorted[sorted.length - 1];
   const hottest = [...active].filter(s => s.streakDir === 1).sort((a, b) => b.streakVal - a.streakVal)[0];
   const coldest = [...active].filter(s => s.streakDir === -1).sort((a, b) => b.streakVal - a.streakVal)[0];
-  if (leader?.totalProfit > 0) headlineParts.push(`${getDisplayName(leader.player)} นำโด่ง`);
-  if (hottest?.streakVal >= 3) headlineParts.push(`${getDisplayName(hottest.player)} ร้อนแรง`);
-  if (coldest?.streakVal >= 3) headlineParts.push(`${getDisplayName(coldest.player)} หนาวสั่น`);
-  if (last?.totalProfit < -300) headlineParts.push(`${getDisplayName(last.player)} ต้องการการบำบัด`);
-  const headline = headlineParts.length ? `🗞️ ${headlineParts.join(' · ')}` : '🗞️ ดราม่ากำลังก่อตัว...';
+  if (leader?.totalProfit > 0) headlineParts.push([
+    `${getDisplayName(leader.player)} นำโด่ง +${leader.totalProfit}฿`,
+    `${getDisplayName(leader.player)} กำลังสบาย อย่าไปอิจฉาเลย`,
+    `${getDisplayName(leader.player)} ยิ้มอยู่คนเดียว`,
+  ][leader.totalProfit % 3]);
+  if (hottest?.streakVal >= 2) headlineParts.push([
+    `${getDisplayName(hottest.player)} ร้อนแรง 🔥 ${hottest.streakVal} วันติด`,
+    `${getDisplayName(hottest.player)} ถูกติดต่อกัน ${hottest.streakVal} วัน ซวยยังไม่ถึงเท่านั้น`,
+    `อย่าหยุด! ${getDisplayName(hottest.player)} ติด ${hottest.streakVal} วันแล้ว 🔥`,
+  ][hottest.streakVal % 3]);
+  if (coldest?.streakVal >= 2) headlineParts.push([
+    `${getDisplayName(coldest.player)} หนาวสั่น 🧊 ${coldest.streakVal} วันติด`,
+    `${getDisplayName(coldest.player)} แพ้ ${coldest.streakVal} วันติด ไปนอนก่อนเถอะ`,
+    `${getDisplayName(coldest.player)} บอกว่าจะเลิก แต่ยังแทงอยู่ 🤣`,
+  ][coldest.streakVal % 3]);
+  if (last?.totalProfit < -200) headlineParts.push([
+    `${getDisplayName(last.player)} ต้องการการบำบัด 💀`,
+    `${getDisplayName(last.player)} ขาดทุน ${last.totalProfit}฿ แต่โอเคนะ`,
+    `ส่งกำลังใจให้ ${getDisplayName(last.player)} หน่อย 😅`,
+  ][Math.abs(last.totalProfit) % 3]);
+  const fallbacks = [
+    '🗞️ ดราม่ากำลังก่อตัว...',
+    '🗞️ ยังเร็วไป อย่าเพิ่งดีใจ',
+    '🗞️ ใครจะรวยก่อนกัน รอดูเลย',
+    '🗞️ บอลยังเหลืออีกเยอะ อย่าโอ้อวดก่อน',
+  ];
+  const headline = headlineParts.length
+    ? `🗞️ ${headlineParts.join(' · ')}`
+    : fallbacks[active.length % fallbacks.length];
 
   // จับตา alerts
   const alerts = [];
@@ -529,15 +553,19 @@ function renderFunLeaderboard() {
     html += `</div>`;
   }
 
-  // Group fun stats footer
+  // Group fun stats footer — scoped to last 24h, fallback to all-time
   const settledAll = allSlipsAll.filter(s => {
     if (s.status === 'cancelled') return false;
     if (!players.includes(s.player)) return false;
     return resolveSlip(s).status !== 'pending';
   });
+  const oneDayAgo = Date.now() - 24 * 3600 * 1000;
+  const recentSettled = settledAll.filter(s => new Date(s.timestamp).getTime() > oneDayAgo);
+  const statsSource = recentSettled.length >= 3 ? recentSettled : settledAll;
+  const statsLabel = recentSettled.length >= 3 ? '24 ชม.' : 'ทั้งหมด';
 
   if (settledAll.length > 0) {
-    const withResolved = settledAll.map(s => ({ ...s, r: resolveSlip(s) }));
+    const withResolved = statsSource.map(s => ({ ...s, r: resolveSlip(s) }));
     const worstSlip = withResolved.filter(s => s.r.status === 'lost').sort((a, b) => a.r.profit - b.r.profit)[0];
     const bestSlip  = withResolved.filter(s => s.r.status === 'won').sort((a, b) => b.r.profit - a.r.profit)[0];
     const mostPicksWon  = withResolved.filter(s => s.r.status === 'won').sort((a, b) => (b.picks||[]).length - (a.picks||[]).length)[0];
@@ -548,19 +576,39 @@ function renderFunLeaderboard() {
     const totalWins = active.reduce((s, p) => s + p.wins, 0);
     const totalSettled = active.reduce((s, p) => s + p.settled, 0);
     const groupWinRate = totalSettled > 0 ? Math.round(totalWins / totalSettled * 100) : 0;
-    const winRateRoast = groupWinRate < 40 ? 'แย่กว่าโยนเหรียญมาก 💀' : groupWinRate < 50 ? 'แย่กว่าโยนเหรียญนิดนึง 🪙' : groupWinRate < 60 ? 'พอๆ กับโยนเหรียญ 🤷' : 'เก่งกว่าโยนเหรียญ 🎯';
+
+    // seed = settled count so messages change when new slips settle, stable between renders
+    const seed = settledAll.length;
+    const pick = (arr) => arr[seed % arr.length];
+
+    const winRateRoast = groupWinRate < 40
+      ? pick(['แย่กว่าโยนเหรียญมาก 💀', 'เดากันมั่วๆ เลยนะ 😅', 'โยนเหรียญยังดีกว่า 🪙'])
+      : groupWinRate < 50
+      ? pick(['แย่กว่าโยนเหรียญนิดนึง 🪙', 'เกือบแล้ว ยังไม่ถึงครึ่ง 😬', 'ลองโยนเหรียญบ้างไหม'])
+      : groupWinRate < 60
+      ? pick(['พอๆ กับโยนเหรียญ 🤷', 'ทายถูกครึ่งนึง ไม่แน่ใจจะดีใจไหม', '50/50 อยู่นะ ระวังด้วย'])
+      : pick(['เก่งกว่าโยนเหรียญ 🎯', 'เล่นเป็น ถูกมากกว่าผิด', 'ดีนะแต่บอลยังเหลืออีกเยอะ 😏']);
+
     const coffees = Math.round(Math.abs(groupProfit) / 50);
-    const groupRoast = groupProfit < -500 ? `เผาไป ${Math.abs(groupProfit)}฿ ซื้อตั๋วบอลโลกได้เลยนะ` : groupProfit < 0 ? `เผาไป ${Math.abs(groupProfit)}฿ หรือ ${coffees} แก้วกาแฟ` : groupProfit === 0 ? 'เสมอตัว... อย่างน้อยไม่ขาดทุน' : `บวกรวม ${groupProfit}฿ Pok ร้องไห้อยู่`;
+    const groupRoast = groupProfit < -500
+      ? pick([`เผาไป ${Math.abs(groupProfit)}฿ ซื้อตั๋วบอลโลกได้เลยนะ`, `${Math.abs(groupProfit)}฿ หายไปไหน... อ๋อ Pok เก็บไว้`, `ขาดทุน ${Math.abs(groupProfit)}฿ โอเคนะ ยังมีบอลเหลืออีก`])
+      : groupProfit < 0
+      ? pick([`เผาไป ${Math.abs(groupProfit)}฿ หรือ ${coffees} แก้วกาแฟ`, `${Math.abs(groupProfit)}฿ หายไปแล้ว ไม่เป็นไร`, `ลงทุนไป ${Math.abs(groupProfit)}฿ ยังไม่ได้กำไร 😬`])
+      : groupProfit === 0
+      ? pick(['เสมอตัว อย่างน้อยไม่ขาดทุน', 'ยังไม่มีใครได้ ไม่มีใครเสีย 🤝', 'เสมอตัวเป๊ะ — ทำใจ'])
+      : pick([`บวกรวม ${groupProfit}฿ Pok ร้องไห้อยู่`, `กลุ่มได้ ${groupProfit}฿ ไปฉลองได้เลย`, `+${groupProfit}฿ Pok กำลังหาเงินมาจ่ายเพิ่ม 😭`]);
 
     html += `<div style="margin-top:4px;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius);font-size:0.78rem">`;
-    html += `<div style="font-weight:700;color:var(--text-muted);margin-bottom:6px">📊 สถิติกลุ่ม</div>`;
+    html += `<div style="font-weight:700;color:var(--text-muted);margin-bottom:6px">📊 สถิติกลุ่ม (${statsLabel})</div>`;
     if (worstSlip) {
       const pc = (worstSlip.picks || []).length;
-      html += `<div style="margin-bottom:4px">🗑️ อัปยศประจำรอบ: <b>${getDisplayName(worstSlip.player)}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${worstSlip.bet}฿ <span style="color:var(--secondary);font-weight:700">หายเกลี้ยง ${worstSlip.r.profit}฿</span></div>`;
+      const worstLabels = ['อัปยศประจำรอบ', 'slip สุดเจ็บปวด', 'เผาเงินแห่งรอบ'];
+      html += `<div style="margin-bottom:4px">🗑️ ${pick(worstLabels)}: <b>${getDisplayName(worstSlip.player)}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${worstSlip.bet}฿ <span style="color:var(--secondary);font-weight:700">หายเกลี้ยง ${worstSlip.r.profit}฿</span></div>`;
     }
     if (bestSlip) {
       const pc = (bestSlip.picks || []).length;
-      html += `<div style="margin-bottom:4px">👑 มือทองรอบนี้: <b>${getDisplayName(bestSlip.player)}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${bestSlip.bet}฿ → <span style="color:var(--accent);font-weight:700">+${bestSlip.r.profit}฿</span></div>`;
+      const bestLabels = ['มือทองรอบนี้', 'slip สุดปัง', 'คนโชคดีแห่งรอบ'];
+      html += `<div style="margin-bottom:4px">👑 ${pick(bestLabels)}: <b>${getDisplayName(bestSlip.player)}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${bestSlip.bet}฿ → <span style="color:var(--accent);font-weight:700">+${bestSlip.r.profit}฿</span></div>`;
     }
     if (mostPicksWon && (mostPicksWon.picks||[]).length >= 2) {
       const pc = (mostPicksWon.picks||[]).length;
@@ -574,7 +622,8 @@ function renderFunLeaderboard() {
       }).length;
       const allWrong = wrongCount === pc;
       const wrongLabel = allWrong ? `ผิดหมด ${pc}/${pc} 😭` : `ผิด ${wrongCount}/${pc}`;
-      html += `<div style="margin-bottom:4px">💣 step ใหญ่สุดที่ผิด: <b>${getDisplayName(mostPicksLost.player)}</b> ${pc} คู่ ลง ${mostPicksLost.bet}฿ — <span style="color:var(--secondary);font-weight:700">${wrongLabel}</span></div>`;
+      const lostLabels = ['step ใหญ่สุดที่ผิด', 'step ฝันสลาย', 'step ที่เจ็บที่สุด'];
+      html += `<div style="margin-bottom:4px">💣 ${pick(lostLabels)}: <b>${getDisplayName(mostPicksLost.player)}</b> ${pc} คู่ ลง ${mostPicksLost.bet}฿ — <span style="color:var(--secondary);font-weight:700">${wrongLabel}</span></div>`;
     }
     html += `<div style="margin-bottom:4px">🎯 win rate กลุ่ม: <b>${groupWinRate}%</b> (${totalWins}/${totalSettled}) — ${winRateRoast}</div>`;
     html += `<div style="color:${groupColor};font-weight:700">${groupSign}${groupProfit}฿ — ${groupRoast}</div>`;
