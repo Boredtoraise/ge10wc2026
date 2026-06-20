@@ -500,13 +500,91 @@ function renderFunLeaderboard() {
     }
   });
 
+  // Group stats — computed here so groupStatsHtml is ready before html is built
+  const settledAll = allSlipsAll.filter(s => {
+    if (s.status === 'cancelled') return false;
+    if (!players.includes(s.player)) return false;
+    return resolveSlip(s).status !== 'pending';
+  });
+  const oneDayAgo = Date.now() - 24 * 3600 * 1000;
+  const recentSettled = settledAll.filter(s => new Date(s.timestamp).getTime() > oneDayAgo);
+  const statsSource = recentSettled.length >= 3 ? recentSettled : settledAll;
+  const statsLabel = recentSettled.length >= 3 ? '24 ชม.' : 'ทั้งหมด';
+  let groupStatsHtml = '';
+
+  if (settledAll.length > 0) {
+    const withResolved = statsSource.map(s => ({ ...s, r: resolveSlip(s) }));
+    const worstSlip = withResolved.filter(s => s.r.status === 'lost').sort((a, b) => a.r.profit - b.r.profit)[0];
+    const bestSlip  = withResolved.filter(s => s.r.status === 'won').sort((a, b) => b.r.profit - a.r.profit)[0];
+    const mostPicksWon  = withResolved.filter(s => s.r.status === 'won').sort((a, b) => (b.picks||[]).length - (a.picks||[]).length)[0];
+    const mostPicksLost = withResolved.filter(s => s.r.status === 'lost').sort((a, b) => (b.picks||[]).length - (a.picks||[]).length)[0];
+    const groupProfit = active.reduce((sum, s) => sum + s.totalProfit, 0);
+    const groupColor = groupProfit >= 0 ? 'var(--accent)' : 'var(--secondary)';
+    const groupSign  = groupProfit >= 0 ? '+' : '';
+    const totalWins = active.reduce((s, p) => s + p.wins, 0);
+    const totalSettled = active.reduce((s, p) => s + p.settled, 0);
+    const groupWinRate = totalSettled > 0 ? Math.round(totalWins / totalSettled * 100) : 0;
+
+    const seed = settledAll.length;
+    const pick = (arr) => arr[seed % arr.length];
+
+    const winRateRoast = groupWinRate < 40
+      ? pick(['แย่กว่าโยนเหรียญมาก 💀', 'เดากันมั่วๆ เลยนะ 😅', 'โยนเหรียญยังดีกว่า 🪙'])
+      : groupWinRate < 50
+      ? pick(['แย่กว่าโยนเหรียญนิดนึง 🪙', 'เกือบแล้ว ยังไม่ถึงครึ่ง 😬', 'ลองโยนเหรียญบ้างไหม'])
+      : groupWinRate < 60
+      ? pick(['พอๆ กับโยนเหรียญ 🤷', 'ทายถูกครึ่งนึง ไม่แน่ใจจะดีใจไหม', '50/50 อยู่นะ ระวังด้วย'])
+      : pick(['เก่งกว่าโยนเหรียญ 🎯', 'เล่นเป็น ถูกมากกว่าผิด', 'ดีนะแต่บอลยังเหลืออีกเยอะ 😏']);
+
+    const coffees = Math.round(Math.abs(groupProfit) / 50);
+    const groupRoast = groupProfit < -500
+      ? pick([`เผาไป ${Math.abs(groupProfit)}฿ ซื้อตั๋วบอลโลกได้เลยนะ`, `${Math.abs(groupProfit)}฿ หายไปไหน... อ๋อ Pok เก็บไว้`, `ขาดทุน ${Math.abs(groupProfit)}฿ โอเคนะ ยังมีบอลเหลืออีก`])
+      : groupProfit < 0
+      ? pick([`เผาไป ${Math.abs(groupProfit)}฿ หรือ ${coffees} แก้วกาแฟ`, `${Math.abs(groupProfit)}฿ หายไปแล้ว ไม่เป็นไร`, `ลงทุนไป ${Math.abs(groupProfit)}฿ ยังไม่ได้กำไร 😬`])
+      : groupProfit === 0
+      ? pick(['เสมอตัว อย่างน้อยไม่ขาดทุน', 'ยังไม่มีใครได้ ไม่มีใครเสีย 🤝', 'เสมอตัวเป๊ะ — ทำใจ'])
+      : pick([`บวกรวม ${groupProfit}฿ Pok ร้องไห้อยู่`, `กลุ่มได้ ${groupProfit}฿ ไปฉลองได้เลย`, `+${groupProfit}฿ Pok กำลังหาเงินมาจ่ายเพิ่ม 😭`]);
+
+    groupStatsHtml += `<div style="margin-bottom:12px;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius);font-size:0.78rem">`;
+    groupStatsHtml += `<div style="font-weight:700;color:var(--text-muted);margin-bottom:6px">📊 สถิติกลุ่ม (${statsLabel})</div>`;
+    if (worstSlip) {
+      const pc = (worstSlip.picks || []).length;
+      const worstLabels = ['อัปยศประจำรอบ', 'slip สุดเจ็บปวด', 'เผาเงินแห่งรอบ'];
+      groupStatsHtml += `<div style="margin-bottom:4px">🗑️ ${pick(worstLabels)}: <b>${getDisplayName(worstSlip.player)}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${worstSlip.bet}฿ <span style="color:var(--secondary);font-weight:700">หายเกลี้ยง ${worstSlip.r.profit}฿</span></div>`;
+    }
+    if (bestSlip) {
+      const pc = (bestSlip.picks || []).length;
+      const bestLabels = ['มือทองรอบนี้', 'slip สุดปัง', 'คนโชคดีแห่งรอบ'];
+      groupStatsHtml += `<div style="margin-bottom:4px">👑 ${pick(bestLabels)}: <b>${getDisplayName(bestSlip.player)}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${bestSlip.bet}฿ → <span style="color:var(--accent);font-weight:700">+${bestSlip.r.profit}฿</span></div>`;
+    }
+    if (mostPicksWon && (mostPicksWon.picks||[]).length >= 2) {
+      const pc = (mostPicksWon.picks||[]).length;
+      groupStatsHtml += `<div style="margin-bottom:4px">🏅 step ใหญ่สุดที่ถูก: <b>${getDisplayName(mostPicksWon.player)}</b> ${pc} คู่ → <span style="color:var(--accent);font-weight:700">+${mostPicksWon.r.profit}฿</span></div>`;
+    }
+    if (mostPicksLost && (mostPicksLost.picks||[]).length >= 2) {
+      const pc = (mostPicksLost.picks||[]).length;
+      const wrongCount = (mostPicksLost.picks||[]).filter(p => {
+        const o = getPickOutcome(p, state.matches[p.match_id]);
+        return o === 'loss' || o === 'half_loss';
+      }).length;
+      const allWrong = wrongCount === pc;
+      const wrongLabel = allWrong ? `ผิดหมด ${pc}/${pc} 😭` : `ผิด ${wrongCount}/${pc}`;
+      const lostLabels = ['step ใหญ่สุดที่ผิด', 'step ฝันสลาย', 'step ที่เจ็บที่สุด'];
+      groupStatsHtml += `<div style="margin-bottom:4px">💣 ${pick(lostLabels)}: <b>${getDisplayName(mostPicksLost.player)}</b> ${pc} คู่ ลง ${mostPicksLost.bet}฿ — <span style="color:var(--secondary);font-weight:700">${wrongLabel}</span></div>`;
+    }
+    groupStatsHtml += `<div style="margin-bottom:4px">🎯 win rate กลุ่ม: <b>${groupWinRate}%</b> (${totalWins}/${totalSettled}) — ${winRateRoast}</div>`;
+    groupStatsHtml += `<div style="color:${groupColor};font-weight:700">${groupSign}${groupProfit}฿ — ${groupRoast}</div>`;
+    groupStatsHtml += `</div>`;
+  }
+
   const rankIcon = ['🏆', '🥈', '🥉'];
   let html = `<div class="lb-section open">`;
   html += `<div class="lb-section-header"><h3>Leaderboard</h3></div>`;
   html += `<div class="lb-section-body">`;
 
-  // Headline banner
-  html += `<div style="padding:8px 12px;margin-bottom:10px;background:var(--bg-input);border-radius:var(--radius);font-size:0.82rem;font-weight:600;color:var(--text-muted)">${headline}</div>`;
+  // Headline banner — เด่น + ฮา
+  html += `<div style="padding:12px 14px;margin-bottom:10px;background:var(--bg-input);border-left:4px solid var(--accent);border-radius:var(--radius);font-size:1rem;font-weight:800;color:var(--text-primary)">${headline}</div>`;
+  html += groupStatsHtml;
 
   sorted.forEach((s, i) => {
     const isMe = s.player === state.currentPlayer;
@@ -553,82 +631,7 @@ function renderFunLeaderboard() {
     html += `</div>`;
   }
 
-  // Group fun stats footer — scoped to last 24h, fallback to all-time
-  const settledAll = allSlipsAll.filter(s => {
-    if (s.status === 'cancelled') return false;
-    if (!players.includes(s.player)) return false;
-    return resolveSlip(s).status !== 'pending';
-  });
-  const oneDayAgo = Date.now() - 24 * 3600 * 1000;
-  const recentSettled = settledAll.filter(s => new Date(s.timestamp).getTime() > oneDayAgo);
-  const statsSource = recentSettled.length >= 3 ? recentSettled : settledAll;
-  const statsLabel = recentSettled.length >= 3 ? '24 ชม.' : 'ทั้งหมด';
-
-  if (settledAll.length > 0) {
-    const withResolved = statsSource.map(s => ({ ...s, r: resolveSlip(s) }));
-    const worstSlip = withResolved.filter(s => s.r.status === 'lost').sort((a, b) => a.r.profit - b.r.profit)[0];
-    const bestSlip  = withResolved.filter(s => s.r.status === 'won').sort((a, b) => b.r.profit - a.r.profit)[0];
-    const mostPicksWon  = withResolved.filter(s => s.r.status === 'won').sort((a, b) => (b.picks||[]).length - (a.picks||[]).length)[0];
-    const mostPicksLost = withResolved.filter(s => s.r.status === 'lost').sort((a, b) => (b.picks||[]).length - (a.picks||[]).length)[0];
-    const groupProfit = active.reduce((sum, s) => sum + s.totalProfit, 0);
-    const groupColor = groupProfit >= 0 ? 'var(--accent)' : 'var(--secondary)';
-    const groupSign  = groupProfit >= 0 ? '+' : '';
-    const totalWins = active.reduce((s, p) => s + p.wins, 0);
-    const totalSettled = active.reduce((s, p) => s + p.settled, 0);
-    const groupWinRate = totalSettled > 0 ? Math.round(totalWins / totalSettled * 100) : 0;
-
-    // seed = settled count so messages change when new slips settle, stable between renders
-    const seed = settledAll.length;
-    const pick = (arr) => arr[seed % arr.length];
-
-    const winRateRoast = groupWinRate < 40
-      ? pick(['แย่กว่าโยนเหรียญมาก 💀', 'เดากันมั่วๆ เลยนะ 😅', 'โยนเหรียญยังดีกว่า 🪙'])
-      : groupWinRate < 50
-      ? pick(['แย่กว่าโยนเหรียญนิดนึง 🪙', 'เกือบแล้ว ยังไม่ถึงครึ่ง 😬', 'ลองโยนเหรียญบ้างไหม'])
-      : groupWinRate < 60
-      ? pick(['พอๆ กับโยนเหรียญ 🤷', 'ทายถูกครึ่งนึง ไม่แน่ใจจะดีใจไหม', '50/50 อยู่นะ ระวังด้วย'])
-      : pick(['เก่งกว่าโยนเหรียญ 🎯', 'เล่นเป็น ถูกมากกว่าผิด', 'ดีนะแต่บอลยังเหลืออีกเยอะ 😏']);
-
-    const coffees = Math.round(Math.abs(groupProfit) / 50);
-    const groupRoast = groupProfit < -500
-      ? pick([`เผาไป ${Math.abs(groupProfit)}฿ ซื้อตั๋วบอลโลกได้เลยนะ`, `${Math.abs(groupProfit)}฿ หายไปไหน... อ๋อ Pok เก็บไว้`, `ขาดทุน ${Math.abs(groupProfit)}฿ โอเคนะ ยังมีบอลเหลืออีก`])
-      : groupProfit < 0
-      ? pick([`เผาไป ${Math.abs(groupProfit)}฿ หรือ ${coffees} แก้วกาแฟ`, `${Math.abs(groupProfit)}฿ หายไปแล้ว ไม่เป็นไร`, `ลงทุนไป ${Math.abs(groupProfit)}฿ ยังไม่ได้กำไร 😬`])
-      : groupProfit === 0
-      ? pick(['เสมอตัว อย่างน้อยไม่ขาดทุน', 'ยังไม่มีใครได้ ไม่มีใครเสีย 🤝', 'เสมอตัวเป๊ะ — ทำใจ'])
-      : pick([`บวกรวม ${groupProfit}฿ Pok ร้องไห้อยู่`, `กลุ่มได้ ${groupProfit}฿ ไปฉลองได้เลย`, `+${groupProfit}฿ Pok กำลังหาเงินมาจ่ายเพิ่ม 😭`]);
-
-    html += `<div style="margin-top:4px;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius);font-size:0.78rem">`;
-    html += `<div style="font-weight:700;color:var(--text-muted);margin-bottom:6px">📊 สถิติกลุ่ม (${statsLabel})</div>`;
-    if (worstSlip) {
-      const pc = (worstSlip.picks || []).length;
-      const worstLabels = ['อัปยศประจำรอบ', 'slip สุดเจ็บปวด', 'เผาเงินแห่งรอบ'];
-      html += `<div style="margin-bottom:4px">🗑️ ${pick(worstLabels)}: <b>${getDisplayName(worstSlip.player)}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${worstSlip.bet}฿ <span style="color:var(--secondary);font-weight:700">หายเกลี้ยง ${worstSlip.r.profit}฿</span></div>`;
-    }
-    if (bestSlip) {
-      const pc = (bestSlip.picks || []).length;
-      const bestLabels = ['มือทองรอบนี้', 'slip สุดปัง', 'คนโชคดีแห่งรอบ'];
-      html += `<div style="margin-bottom:4px">👑 ${pick(bestLabels)}: <b>${getDisplayName(bestSlip.player)}</b> ${pc >= 3 ? `step ${pc} คู่` : 'single'} ลง ${bestSlip.bet}฿ → <span style="color:var(--accent);font-weight:700">+${bestSlip.r.profit}฿</span></div>`;
-    }
-    if (mostPicksWon && (mostPicksWon.picks||[]).length >= 2) {
-      const pc = (mostPicksWon.picks||[]).length;
-      html += `<div style="margin-bottom:4px">🏅 step ใหญ่สุดที่ถูก: <b>${getDisplayName(mostPicksWon.player)}</b> ${pc} คู่ → <span style="color:var(--accent);font-weight:700">+${mostPicksWon.r.profit}฿</span></div>`;
-    }
-    if (mostPicksLost && (mostPicksLost.picks||[]).length >= 2) {
-      const pc = (mostPicksLost.picks||[]).length;
-      const wrongCount = (mostPicksLost.picks||[]).filter(p => {
-        const o = getPickOutcome(p, state.matches[p.match_id]);
-        return o === 'loss' || o === 'half_loss';
-      }).length;
-      const allWrong = wrongCount === pc;
-      const wrongLabel = allWrong ? `ผิดหมด ${pc}/${pc} 😭` : `ผิด ${wrongCount}/${pc}`;
-      const lostLabels = ['step ใหญ่สุดที่ผิด', 'step ฝันสลาย', 'step ที่เจ็บที่สุด'];
-      html += `<div style="margin-bottom:4px">💣 ${pick(lostLabels)}: <b>${getDisplayName(mostPicksLost.player)}</b> ${pc} คู่ ลง ${mostPicksLost.bet}฿ — <span style="color:var(--secondary);font-weight:700">${wrongLabel}</span></div>`;
-    }
-    html += `<div style="margin-bottom:4px">🎯 win rate กลุ่ม: <b>${groupWinRate}%</b> (${totalWins}/${totalSettled}) — ${winRateRoast}</div>`;
-    html += `<div style="color:${groupColor};font-weight:700">${groupSign}${groupProfit}฿ — ${groupRoast}</div>`;
-    html += `</div>`;
-  }
+  // (group stats rendered above — see groupStatsHtml)
 
   // Badge legend
   const badgeLegend = [
