@@ -1276,7 +1276,7 @@ function togglePickSlips(matchId, side) {
   panel.dataset.activeSide = side;
   const m = MATCHES.find(x => x.id === matchId);
   const filtered = getAllSlips().filter(s => {
-    if (s.status === 'cancelled') return false;
+    if (s.status === 'cancelled' || s.status === 'approved') return false;
     return (s.picks || []).some(p => {
       if (p.match_id !== matchId) return false;
       if (side === 'over')   return p.type === 'ou' && p.pick === 'over';
