@@ -633,7 +633,7 @@ function renderFunLeaderboard() {
       const approvedPnl = approvedPnlByPlayer[s.player] || 0;
       const balance = initBal + approvedPnl;
       const balColor = balance > 0 ? 'var(--accent)' : '#ef4444';
-      html += `<div style="font-size:0.82rem;font-weight:700;color:${balColor}">💰 ${balance.toLocaleString()}฿</div>`;
+      html += `<div style="font-size:0.82rem;font-weight:700;color:${balColor}">💰 ${balance.toLocaleString('th-TH')}</div>`;
     }
     html += `</div>`;
     html += `</div></div>`;
