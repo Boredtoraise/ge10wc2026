@@ -424,6 +424,13 @@ function renderFunLeaderboard() {
   const byWinRate = [...active].filter(s => s.settled >= 2).sort((a, b) => (b.winRate || 0) - (a.winRate || 0));
   const biggestBetLost = [...active].filter(s => s.totalProfit < 0).sort((a, b) => b.totalBet - a.totalBet)[0];
 
+  // Approved P&L per player (for balance display)
+  const approvedPnlByPlayer = {};
+  allSlipsAll.filter(s => s.status === 'approved' && players.includes(s.player)).forEach(s => {
+    if (!approvedPnlByPlayer[s.player]) approvedPnlByPlayer[s.player] = 0;
+    approvedPnlByPlayer[s.player] += resolveSlip(s).profit;
+  });
+
   // Pending exposure per player
   const pendingByPlayer = {};
   allSlipsAll.filter(s => s.status !== 'cancelled' && players.includes(s.player)).forEach(s => {
@@ -615,6 +622,15 @@ function renderFunLeaderboard() {
     html += `</div>`;
     if (pending) {
       html += `<div style="margin-top:2px;font-size:0.7rem">⏳ รอ: <span style="color:var(--accent)">+${pending.maxWin}฿</span> / <span style="color:var(--secondary)">-${pending.maxLose}฿</span></div>`;
+    }
+    const playerData = state.players.find(p => p.player_id === s.player);
+    const initBal = playerData && playerData.initial_balance !== '' && playerData.initial_balance != null
+      ? parseFloat(playerData.initial_balance) || 0 : null;
+    if (initBal !== null) {
+      const approvedPnl = approvedPnlByPlayer[s.player] || 0;
+      const balance = initBal + approvedPnl;
+      const balColor = balance >= initBal ? 'var(--accent)' : 'var(--secondary)';
+      html += `<div style="margin-top:2px;font-size:0.7rem;color:var(--text-muted)">💰 ยอด: <span style="color:${balColor};font-weight:700">${balance.toLocaleString()}฿</span></div>`;
     }
     html += `</div>`;
     html += `<span style="font-size:1.15rem;font-weight:800;color:${profitColor};white-space:nowrap">${profitStr}</span>`;

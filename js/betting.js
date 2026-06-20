@@ -109,8 +109,8 @@ async function renderBetting() {
     container.innerHTML = html;
     container.querySelector('#bet-logout')?.addEventListener('click', () => {
       state.currentPlayer = null;
-      sessionStorage.removeItem('wc2026_player');
-      sessionStorage.removeItem('wc2026_pin');
+      localStorage.removeItem('wc2026_player');
+      localStorage.removeItem('wc2026_pin');
       renderBetting();
     });
     container.querySelectorAll('.wait-player-tab').forEach(btn => {
@@ -574,8 +574,8 @@ async function renderBetting() {
   // Logout
   container.querySelector('#bet-logout')?.addEventListener('click', () => {
     state.currentPlayer = null;
-    sessionStorage.removeItem('wc2026_player');
-    sessionStorage.removeItem('wc2026_pin');
+    localStorage.removeItem('wc2026_player');
+    localStorage.removeItem('wc2026_pin');
     renderBetting();
   });
 }

@@ -180,9 +180,9 @@ function init() {
   const debugEl = document.getElementById('debug-msg');
   if (debugEl) debugEl.remove();
 
-  const savedPlayer = sessionStorage.getItem('wc2026_player');
+  const savedPlayer = localStorage.getItem('wc2026_player');
   if (savedPlayer) state.currentPlayer = savedPlayer;
-  if (sessionStorage.getItem('wc2026_admin') === 'true') state.isAdmin = true;
+  if (localStorage.getItem('wc2026_admin') === 'true') state.isAdmin = true;
 
   window.addEventListener('hashchange', () => {
     const hash = location.hash.slice(1) || 'schedule';

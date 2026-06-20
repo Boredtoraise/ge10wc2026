@@ -16,8 +16,8 @@ async function fetchAPI(params) {
 async function loginPlayer(playerId, pin) {
   if (!API_BASE_URL) {
     state.currentPlayer = playerId;
-    sessionStorage.setItem('wc2026_player', playerId);
-    sessionStorage.setItem('wc2026_pin', pin);
+    localStorage.setItem('wc2026_player', playerId);
+    localStorage.setItem('wc2026_pin', pin);
     return { success: true };
   }
   try {
@@ -30,9 +30,9 @@ async function loginPlayer(playerId, pin) {
     if (result.success) {
       state.currentPlayer = playerId;
       state.isAdmin = result.is_admin || false;
-      sessionStorage.setItem('wc2026_player', playerId);
-      sessionStorage.setItem('wc2026_pin', pin);
-      sessionStorage.setItem('wc2026_admin', state.isAdmin ? 'true' : 'false');
+      localStorage.setItem('wc2026_player', playerId);
+      localStorage.setItem('wc2026_pin', pin);
+      localStorage.setItem('wc2026_admin', state.isAdmin ? 'true' : 'false');
     }
     return result;
   } catch (e) {
@@ -62,7 +62,7 @@ async function submitSlip(slip) {
       body: JSON.stringify({
         action: 'submit_slip',
         player: state.currentPlayer,
-        pin: sessionStorage.getItem('wc2026_pin'),
+        pin: localStorage.getItem('wc2026_pin'),
         slip: slip,
       }),
     });
@@ -95,7 +95,7 @@ async function cancelSlip(slipTimestamp) {
       body: JSON.stringify({
         action: 'cancel_slip',
         player: state.currentPlayer,
-        pin: sessionStorage.getItem('wc2026_pin'),
+        pin: localStorage.getItem('wc2026_pin'),
         slip_id: slipTimestamp,
       }),
     });
@@ -118,7 +118,7 @@ async function approveSlip(slipTimestamp) {
       body: JSON.stringify({
         action: 'approve_slip',
         player: state.currentPlayer,
-        pin: sessionStorage.getItem('wc2026_pin'),
+        pin: localStorage.getItem('wc2026_pin'),
         slip_id: slipTimestamp,
       }),
     });
@@ -136,7 +136,7 @@ async function updateLines(updates) {
       body: JSON.stringify({
         action: 'update_lines',
         player: state.currentPlayer,
-        pin: sessionStorage.getItem('wc2026_pin'),
+        pin: localStorage.getItem('wc2026_pin'),
         updates: updates,
       }),
     });
@@ -154,7 +154,7 @@ async function updateScores(updates) {
       body: JSON.stringify({
         action: 'update_scores',
         player: state.currentPlayer,
-        pin: sessionStorage.getItem('wc2026_pin'),
+        pin: localStorage.getItem('wc2026_pin'),
         updates: updates,
       }),
     });

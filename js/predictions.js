@@ -94,8 +94,8 @@ function renderPredictions() {
   // Logout
   container.querySelector('#logout-btn')?.addEventListener('click', () => {
     state.currentPlayer = null;
-    sessionStorage.removeItem('wc2026_player');
-    sessionStorage.removeItem('wc2026_pin');
+    localStorage.removeItem('wc2026_player');
+    localStorage.removeItem('wc2026_pin');
     renderPredictions();
   });
 }

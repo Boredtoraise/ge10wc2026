@@ -151,9 +151,9 @@ function renderAdmin() {
   container.querySelector('#admin-logout')?.addEventListener('click', () => {
     state.currentPlayer = null;
     state.isAdmin = false;
-    sessionStorage.removeItem('wc2026_player');
-    sessionStorage.removeItem('wc2026_pin');
-    sessionStorage.removeItem('wc2026_admin');
+    localStorage.removeItem('wc2026_player');
+    localStorage.removeItem('wc2026_pin');
+    localStorage.removeItem('wc2026_admin');
     updateAdminUI();
     renderAdmin();
   });
