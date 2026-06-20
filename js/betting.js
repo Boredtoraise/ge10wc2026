@@ -734,8 +734,17 @@ function updateBettingSummary(picks, container) {
     oddsEl.textContent = `${lang === 'th' ? 'ราคารวม' : 'Odds'}: ${combinedOdds.toFixed(3)}`;
     oddsEl.style.color = 'var(--accent)';
 
+    const capMsgs = [
+      'แทงเยอะเชียวนะ กูจ่ายแค่แสนเดียวนะ 😂',
+      'โอ้โห step เทพ แต่ขอบอกว่า max แสนนะจ้ะ 🙏',
+      'ฝันหวานดี แต่กูจ่ายแค่ 100,000฿ นะเว้ย 555',
+      'อย่าโลภ แสนบาทก็พอแล้วเน้อ 😅',
+      'กูรวย แต่ไม่รวยขนาดนั้นนะโว้ย max 100k',
+      'แสนเดียวพอ อย่ามาตุ๊กตากู 😤',
+      'เห็นแก่ได้ชะมัด จ่ายแค่แสนนึงนะ 🤣',
+    ];
     const capWarn = payout > 100000
-      ? `<div style="margin-top:4px;font-size:0.75rem;color:var(--secondary)">⚠️ จ่ายสูงสุด 100,000฿ ต่อ slip</div>`
+      ? `<div style="margin-top:4px;font-size:0.75rem;color:var(--secondary)">⚠️ ${capMsgs[Math.floor(Math.random() * capMsgs.length)]}</div>`
       : '';
     payoutEl.innerHTML = `${lang === 'th' ? 'ถูก' : 'Win'}: ${payout}฿ (+${profit}) · ${lang === 'th' ? 'ผิด' : 'Lose'}: -${betAmount}฿${capWarn}`;
     payoutEl.style.color = 'var(--accent)';
