@@ -735,7 +735,7 @@ function updateBettingSummary(picks, container) {
     oddsEl.style.color = 'var(--accent)';
 
     const capWarn = payout > 100000
-      ? `<div style="margin-top:4px;font-size:0.75rem;color:var(--secondary)">⚠️ payout สูงเกิน 100,000฿ — Pok อาจปฏิเสธสลิปนี้</div>`
+      ? `<div style="margin-top:4px;font-size:0.75rem;color:var(--secondary)">⚠️ จ่ายสูงสุด 100,000฿ ต่อ slip</div>`
       : '';
     payoutEl.innerHTML = `${lang === 'th' ? 'ถูก' : 'Win'}: ${payout}฿ (+${profit}) · ${lang === 'th' ? 'ผิด' : 'Lose'}: -${betAmount}฿${capWarn}`;
     payoutEl.style.color = 'var(--accent)';
