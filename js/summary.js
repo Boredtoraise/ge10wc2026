@@ -307,7 +307,7 @@ function calculatePlayerSlipsDetailed(player) {
       let label = '', resultBadge = '';
 
       if (p.type === 'ou') {
-        const ouLine = state.ouLines[p.match_id] || '';
+        const ouLine = p.line || state.ouLines[p.match_id] || '';
         label = `${p.pick === 'over' ? (lang === 'th' ? 'สูง' : 'O') : (lang === 'th' ? 'ต่ำ' : 'U')} ${ouLine}`;
         if (result && typeof result.team1_score === 'number' && typeof result.team2_score === 'number') {
           const outcome = getOUOutcome(parseFloat(ouLine), result.team1_score + result.team2_score);
@@ -321,13 +321,13 @@ function calculatePlayerSlipsDetailed(player) {
       } else {
         const picked = TEAMS[p.pick];
         label = `${picked ? (lang === 'th' ? picked.nameTh : picked.name) : p.pick}`;
-        const ahLine = state.ahLines[p.match_id];
+        const ahLine = p.line || state.ahLines[p.match_id];
         if (ahLine && match) {
           const isHome = p.pick === match.team1;
           label += ' ' + formatAhFav(ahLine, isHome);
         }
         if (match && result && typeof result.team1_score === 'number' && typeof result.team2_score === 'number') {
-          const ahLine = state.ahLines[p.match_id];
+          const ahLine = p.line || state.ahLines[p.match_id];
           if (ahLine) {
             const outcome = getAHOutcome(parseFloat(ahLine), result.team1_score, result.team2_score);
             const side = p.pick === match.team1 ? 'team1' : 'team2';

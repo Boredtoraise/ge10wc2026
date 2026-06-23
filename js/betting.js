@@ -802,7 +802,7 @@ function getPickResultBadge(pick, match) {
   if (!result || typeof result.team1_score !== 'number' || typeof result.team2_score !== 'number') return '';
 
   if (pick.type === 'ou') {
-    const ouLine = state.ouLines[match.id];
+    const ouLine = pick.line || state.ouLines[match.id];
     if (!ouLine) return '';
     const total = result.team1_score + result.team2_score;
     const outcome = getOUOutcome(parseFloat(ouLine), total);
@@ -813,7 +813,7 @@ function getPickResultBadge(pick, match) {
     if (res === 'half_loss') return '<span class="badge badge-wrong">½✗</span>';
     return '<span class="badge badge-wrong">✗</span>';
   } else {
-    const ahLine = state.ahLines[match.id];
+    const ahLine = pick.line || state.ahLines[match.id];
     if (!ahLine) return '';
     const outcome = getAHOutcome(parseFloat(ahLine), result.team1_score, result.team2_score);
     const side = pick.pick === match.team1 ? 'team1' : 'team2';
