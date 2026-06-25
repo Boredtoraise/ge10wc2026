@@ -949,7 +949,7 @@ function renderSlipCard(slip, opts) {
   html += `<div style="padding-top:6px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:0.85rem">`;
   html += `<span style="color:var(--text-muted)">${fmtM(slip.bet)} × ${displayOdds}`;
   if (st === 'won' || isApproved) html += ` → <b style="color:var(--accent)">+${fmtM(resolved.profit)}</b>`;
-  else if (st === 'lost')          html += ` → <b style="color:var(--secondary)">-${fmtM(slip.bet)}</b>`;
+  else if (st === 'lost')          html += ` → <b style="color:var(--secondary)">${fmtM(resolved.profit)}</b>`;
   else                             html += ` → <b style="color:var(--accent)">${lang === 'th' ? 'จ่าย' : 'Payout'} ${fmtM(slip.payout)}</b>`;
   html += `</span></div>`;
 
