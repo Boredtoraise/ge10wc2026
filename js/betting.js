@@ -544,6 +544,14 @@ async function renderBetting() {
     if (!valid) return;
     if (betAmount < 10) { showToast(lang === 'th' ? 'ขั้นต่ำ 10' : 'Min 10'); return; }
 
+    const dup = checkDuplicatePicks(betPicks);
+    if (dup) {
+      const msg = dup.type === 'exact'
+        ? (lang === 'th' ? 'มีสลิปนี้อยู่แล้ว\nแน่ใจจะแทงซ้ำ?' : 'Duplicate slip — place anyway?')
+        : (lang === 'th' ? `มี ${dup.count} pick ซ้ำกับสลิปที่มีอยู่\nแน่ใจจะแทงซ้ำ?` : `${dup.count} duplicate pick(s) — place anyway?`);
+      if (!window.confirm(msg)) return;
+    }
+
     const picks = pickEntries.map(([, data]) => ({
       match_id: data.matchId,
       pick: data.pick,
@@ -753,6 +761,20 @@ function renderBettingCard(m) {
   return html;
 }
 
+function checkDuplicatePicks(picks) {
+  const pending = (state.slips || []).filter(s => s.status === 'pending');
+  if (!pending.length || !Object.keys(picks).length) return null;
+  const newKeys = new Set(Object.values(picks).map(p => `${p.matchId}_${p.pickType}_${p.pick}`));
+  for (const slip of pending) {
+    const slipKeys = new Set((slip.picks || []).map(p => `${p.match_id}_${p.type}_${p.pick}`));
+    const overlap = [...newKeys].filter(k => slipKeys.has(k));
+    if (!overlap.length) continue;
+    if (overlap.length === newKeys.size && newKeys.size === slipKeys.size) return { type: 'exact', slip };
+    return { type: 'partial', count: overlap.length, slip };
+  }
+  return null;
+}
+
 function updateBettingSummary(picks, container) {
   const lang = currentLang;
   const keys = Object.keys(picks);
@@ -813,6 +835,13 @@ function updateBettingSummary(picks, container) {
       : '';
     payoutEl.innerHTML = `${lang === 'th' ? 'ถูก' : 'Win'}: ${fmtM(payout)} (+${fmtM(profit)}) · ${lang === 'th' ? 'ผิด' : 'Lose'}: -${fmtM(betAmount)}${capWarn}`;
     payoutEl.style.color = 'var(--accent)';
+    const dup = checkDuplicatePicks(picks);
+    if (dup) {
+      const dupMsg = dup.type === 'exact'
+        ? (lang === 'th' ? '⚠️ มีสลิปนี้อยู่แล้ว — แน่ใจจะแทงซ้ำ?' : '⚠️ Duplicate slip — place anyway?')
+        : (lang === 'th' ? `⚠️ ${dup.count} pick ซ้ำกับสลิปที่มีอยู่` : `⚠️ ${dup.count} duplicate pick(s)`);
+      payoutEl.innerHTML += `<div style="margin-top:4px;font-size:0.82rem;color:#f97316;font-weight:700">${dupMsg}</div>`;
+    }
     if (saveBtn) saveBtn.disabled = false;
   } else {
     const combinedOdds = Object.values(picks).reduce((acc, p) => acc * p.odds, 1);
