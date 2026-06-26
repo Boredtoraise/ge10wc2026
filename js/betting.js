@@ -546,10 +546,7 @@ async function renderBetting() {
 
     const dup = checkDuplicatePicks(betPicks);
     if (dup) {
-      const msg = dup.type === 'exact'
-        ? (lang === 'th' ? 'มีสลิปนี้อยู่แล้ว\nแน่ใจจะแทงซ้ำ?' : 'Duplicate slip — place anyway?')
-        : (lang === 'th' ? `มี ${dup.count} pick ซ้ำกับสลิปที่มีอยู่\nแน่ใจจะแทงซ้ำ?` : `${dup.count} duplicate pick(s) — place anyway?`);
-      if (!window.confirm(msg)) return;
+      if (!window.confirm(lang === 'th' ? 'มีสลิปนี้อยู่แล้ว\nแน่ใจจะแทงซ้ำ?' : 'Duplicate slip — place anyway?')) return;
     }
 
     const picks = pickEntries.map(([, data]) => ({
@@ -768,9 +765,7 @@ function checkDuplicatePicks(picks) {
   for (const slip of pending) {
     const slipKeys = new Set((slip.picks || []).map(p => `${p.match_id}_${p.type}_${p.pick}`));
     const overlap = [...newKeys].filter(k => slipKeys.has(k));
-    if (!overlap.length) continue;
     if (overlap.length === newKeys.size && newKeys.size === slipKeys.size) return { type: 'exact', slip };
-    return { type: 'partial', count: overlap.length, slip };
   }
   return null;
 }
@@ -837,10 +832,7 @@ function updateBettingSummary(picks, container) {
     payoutEl.style.color = 'var(--accent)';
     const dup = checkDuplicatePicks(picks);
     if (dup) {
-      const dupMsg = dup.type === 'exact'
-        ? (lang === 'th' ? '⚠️ มีสลิปนี้อยู่แล้ว — แน่ใจจะแทงซ้ำ?' : '⚠️ Duplicate slip — place anyway?')
-        : (lang === 'th' ? `⚠️ ${dup.count} pick ซ้ำกับสลิปที่มีอยู่` : `⚠️ ${dup.count} duplicate pick(s)`);
-      payoutEl.innerHTML += `<div style="margin-top:4px;font-size:0.82rem;color:#f97316;font-weight:700">${dupMsg}</div>`;
+      payoutEl.innerHTML += `<div style="margin-top:4px;font-size:0.82rem;color:#f97316;font-weight:700">${lang === 'th' ? '⚠️ มีสลิปนี้อยู่แล้ว — แน่ใจจะแทงซ้ำ?' : '⚠️ Duplicate slip — place anyway?'}</div>`;
     }
     if (saveBtn) saveBtn.disabled = false;
   } else {
