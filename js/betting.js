@@ -22,8 +22,8 @@ async function renderBetting() {
 
   const byKickoff = (a, b) => new Date(a.date) - new Date(b.date);
 
-  const available = MATCHES.filter(m => (state.ahLines[m.id] || state.ouLines[m.id]) && !isMatchLocked(m)).sort(byKickoff);
-  const locked    = MATCHES.filter(m => (state.ahLines[m.id] || state.ouLines[m.id]) && isMatchLocked(m)).sort((a, b) => new Date(b.date) - new Date(a.date));
+  const available = MATCHES.filter(m => (state.ahLines[m.id] || state.ouLines[m.id] || state.cornerLines[m.id]) && !isMatchLocked(m)).sort(byKickoff);
+  const locked    = MATCHES.filter(m => (state.ahLines[m.id] || state.ouLines[m.id] || state.cornerLines[m.id]) && isMatchLocked(m)).sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const slipSource  = getAllSlips();
   const allFiltered = slipSource.filter(s => s.status !== 'cancelled').sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -381,10 +381,7 @@ async function renderBetting() {
 
       // Click matching bet-pick buttons to select them
       validPicks.forEach(p => {
-        const isOu = p.type === 'ou';
-        const sel = isOu
-          ? `.bet-pick.ou-btn[data-match="${p.match_id}"][data-pick="${p.pick}"]`
-          : `.bet-pick:not(.ou-btn)[data-match="${p.match_id}"][data-pick="${p.pick}"]`;
+        const sel = `.bet-pick[data-match="${p.match_id}"][data-type="${p.type}"][data-pick="${p.pick}"]`;
         const pickBtn = container.querySelector(sel);
         if (pickBtn && !pickBtn.classList.contains('selected')) pickBtn.click();
       });
@@ -498,30 +495,25 @@ async function renderBetting() {
   });
 
 
-  // Pick state: key = "matchId_ah" or "matchId_ou"
+  // Pick state: key = "matchId_ah" / "matchId_ou" / "matchId_corner"
   let betPicks = {};
 
   // Click handlers for picks (toggle on/off)
   container.querySelectorAll('.bet-pick').forEach(btn => {
     btn.addEventListener('click', () => {
-      const matchId = btn.dataset.match;
-      const pick = btn.dataset.pick;
-      const odds = parseFloat(btn.dataset.odds);
-      const isOu = btn.classList.contains('ou-btn');
-      const key = matchId + (isOu ? '_ou' : '_ah');
+      const matchId  = btn.dataset.match;
+      const pick     = btn.dataset.pick;
+      const odds     = parseFloat(btn.dataset.odds);
+      const pickType = btn.dataset.type || (btn.classList.contains('ou-btn') ? 'ou' : 'ah');
+      const key      = matchId + '_' + pickType;
 
-      // Toggle: if already selected, deselect
       if (btn.classList.contains('selected')) {
         btn.classList.remove('selected');
         delete betPicks[key];
       } else {
-        // Deselect same type siblings
-        const selector = isOu
-          ? `.bet-pick.ou-btn[data-match="${matchId}"]`
-          : `.bet-pick:not(.ou-btn)[data-match="${matchId}"]`;
-        container.querySelectorAll(selector).forEach(b => b.classList.remove('selected'));
+        container.querySelectorAll(`.bet-pick[data-match="${matchId}"][data-type="${pickType}"]`).forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
-        betPicks[key] = { matchId, pick, odds, isOu };
+        betPicks[key] = { matchId, pick, odds, pickType };
       }
       updateBettingSummary(betPicks, container);
     });
@@ -551,8 +543,10 @@ async function renderBetting() {
       match_id: data.matchId,
       pick: data.pick,
       odds: data.odds,
-      type: data.isOu ? 'ou' : 'ah',
-      line: data.isOu ? state.ouLines[data.matchId] : state.ahLines[data.matchId],
+      type: data.pickType,
+      line: data.pickType === 'corner' ? state.cornerLines[data.matchId]
+          : data.pickType === 'ou'     ? state.ouLines[data.matchId]
+          :                              state.ahLines[data.matchId],
     }));
 
     const combinedOdds = picks.reduce((acc, p) => acc * p.odds, 1);
@@ -622,12 +616,15 @@ function renderBettingCardLocked(m) {
   const t2 = TEAMS[m.team2];
   if (!t1 || !t2) return '';
 
-  const ahLine = state.ahLines[m.id] || '';
-  const ouLine = state.ouLines[m.id] || '';
-  const ahOddsH = state.ahOddsH[m.id] || 1.80;
-  const ahOddsA = state.ahOddsA[m.id] || 1.90;
-  const ouOddsO = state.ouOddsO[m.id] || 1.90;
-  const ouOddsU = state.ouOddsU[m.id] || 1.90;
+  const ahLine     = state.ahLines[m.id] || '';
+  const ouLine     = state.ouLines[m.id] || '';
+  const cornerLine = state.cornerLines[m.id] || '';
+  const ahOddsH    = state.ahOddsH[m.id] || 1.80;
+  const ahOddsA    = state.ahOddsA[m.id] || 1.90;
+  const ouOddsO    = state.ouOddsO[m.id] || 1.90;
+  const ouOddsU    = state.ouOddsU[m.id] || 1.90;
+  const cOddsO     = state.cornerOddsO[m.id] || 1.90;
+  const cOddsU     = state.cornerOddsU[m.id] || 1.90;
   const t1Name = lang === 'th' ? t1.nameTh : t1.name;
   const t2Name = lang === 'th' ? t2.nameTh : t2.name;
   const result = state.matches[m.id];
@@ -637,8 +634,7 @@ function renderBettingCardLocked(m) {
   const scoreLabel = hasScore ? `${s1} - ${s2}` : (lang === 'th' ? 'กำลังแข่ง' : 'Live');
   const dis = 'disabled';
 
-  // Figure out which side won
-  let ahWinSide = null, ouWinSide = null;
+  let ahWinSide = null, ouWinSide = null, cornerWinSide = null;
   if (hasScore && ahLine) {
     const ahOutcome = getAHOutcome(parseFloat(ahLine), s1, s2);
     if (ahOutcome.team1 === 'full' || ahOutcome.team1 === 'half') ahWinSide = 'team1';
@@ -648,6 +644,12 @@ function renderBettingCardLocked(m) {
     const ouOutcome = getOUOutcome(parseFloat(ouLine), s1 + s2);
     if (ouOutcome.over === 'full' || ouOutcome.over === 'half') ouWinSide = 'over';
     else if (ouOutcome.under === 'full' || ouOutcome.under === 'half') ouWinSide = 'under';
+  }
+  const cr = result?.corner_result;
+  if (cornerLine && cr != null && cr !== '') {
+    const cOut = getOUOutcome(parseFloat(cornerLine), parseFloat(cr));
+    if (cOut.over === 'full' || cOut.over === 'half') cornerWinSide = 'over';
+    else if (cOut.under === 'full' || cOut.under === 'half') cornerWinSide = 'under';
   }
 
   const btnStyle = (isWinner) => isWinner
@@ -672,10 +674,19 @@ function renderBettingCardLocked(m) {
   }
 
   if (ouLine) {
-    html += `<div style="display:flex;align-items:center;gap:4px">`;
+    html += `<div style="display:flex;align-items:center;gap:4px;margin-bottom:6px">`;
     html += `<span style="background:var(--accent);color:#000;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;white-space:nowrap">${lang === 'th' ? 'สูงต่ำ' : 'O/U'} ${ouLine}</span>`;
     html += `<button ${btnStyle(ouWinSide === 'over')} class="ah-btn ou-btn">${lang === 'th' ? 'สูง' : 'Over'} <span class="odds-tag">@${ouOddsO}</span></button>`;
     html += `<button ${btnStyle(ouWinSide === 'under')} class="ah-btn ou-btn">${lang === 'th' ? 'ต่ำ' : 'Under'} <span class="odds-tag">@${ouOddsU}</span></button>`;
+    html += `</div>`;
+  }
+
+  if (cornerLine) {
+    const cLabel = cr != null && cr !== '' ? ` (${cr})` : '';
+    html += `<div style="display:flex;align-items:center;gap:4px">`;
+    html += `<span style="background:var(--text-muted);color:var(--bg-card);padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;white-space:nowrap">⛳ ${cornerLine}${cLabel}</span>`;
+    html += `<button ${btnStyle(cornerWinSide === 'over')} class="ah-btn">${lang === 'th' ? 'มุมสูง' : 'Over'} <span class="odds-tag">@${cOddsO}</span></button>`;
+    html += `<button ${btnStyle(cornerWinSide === 'under')} class="ah-btn">${lang === 'th' ? 'มุมต่ำ' : 'Under'} <span class="odds-tag">@${cOddsU}</span></button>`;
     html += `</div>`;
   }
 
@@ -689,12 +700,15 @@ function renderBettingCard(m) {
   const t2 = TEAMS[m.team2];
   if (!t1 || !t2) return '';
 
-  const ahLine = state.ahLines[m.id] || '';
-  const ouLine = state.ouLines[m.id] || '';
-  const ahOddsH = state.ahOddsH[m.id] || 1.80;
-  const ahOddsA = state.ahOddsA[m.id] || 1.90;
-  const ouOddsO = state.ouOddsO[m.id] || 1.90;
-  const ouOddsU = state.ouOddsU[m.id] || 1.90;
+  const ahLine     = state.ahLines[m.id] || '';
+  const ouLine     = state.ouLines[m.id] || '';
+  const cornerLine = state.cornerLines[m.id] || '';
+  const ahOddsH    = state.ahOddsH[m.id] || 1.80;
+  const ahOddsA    = state.ahOddsA[m.id] || 1.90;
+  const ouOddsO    = state.ouOddsO[m.id] || 1.90;
+  const ouOddsU    = state.ouOddsU[m.id] || 1.90;
+  const cOddsO     = state.cornerOddsO[m.id] || 1.90;
+  const cOddsU     = state.cornerOddsU[m.id] || 1.90;
   const t1Name = lang === 'th' ? t1.nameTh : t1.name;
   const t2Name = lang === 'th' ? t2.nameTh : t2.name;
 
@@ -704,23 +718,29 @@ function renderBettingCard(m) {
   html += `<span style="font-size:0.75rem">${t1.flag} ${t1Name} vs ${t2.flag} ${t2Name}</span>`;
   html += `</div>`;
 
-  // AH — colored badge + 2 buttons in one row
   if (ahLine) {
     const ahH = formatAhFav(ahLine, true);
     const ahA = formatAhFav(ahLine, false);
     html += `<div style="display:flex;align-items:center;gap:4px;margin-bottom:6px">`;
     html += `<span style="background:var(--secondary);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;white-space:nowrap">AH</span>`;
-    html += `<button class="ah-btn bet-pick" data-match="${m.id}" data-pick="${m.team1}" data-odds="${ahOddsH}" style="flex:1;font-size:0.8rem">${t1.flag} ${t1Name} <span style="font-weight:700">${ahH}</span> <span class="odds-tag">@${ahOddsH}</span></button>`;
-    html += `<button class="ah-btn bet-pick" data-match="${m.id}" data-pick="${m.team2}" data-odds="${ahOddsA}" style="flex:1;font-size:0.8rem">${t2.flag} ${t2Name} <span style="font-weight:700">${ahA}</span> <span class="odds-tag">@${ahOddsA}</span></button>`;
+    html += `<button class="ah-btn bet-pick" data-match="${m.id}" data-pick="${m.team1}" data-odds="${ahOddsH}" data-type="ah" style="flex:1;font-size:0.8rem">${t1.flag} ${t1Name} <span style="font-weight:700">${ahH}</span> <span class="odds-tag">@${ahOddsH}</span></button>`;
+    html += `<button class="ah-btn bet-pick" data-match="${m.id}" data-pick="${m.team2}" data-odds="${ahOddsA}" data-type="ah" style="flex:1;font-size:0.8rem">${t2.flag} ${t2Name} <span style="font-weight:700">${ahA}</span> <span class="odds-tag">@${ahOddsA}</span></button>`;
     html += `</div>`;
   }
 
-  // O/U — colored badge + 2 buttons in one row
   if (ouLine) {
-    html += `<div style="display:flex;align-items:center;gap:4px">`;
+    html += `<div style="display:flex;align-items:center;gap:4px;margin-bottom:6px">`;
     html += `<span style="background:var(--accent);color:#000;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;white-space:nowrap">${lang === 'th' ? 'สูงต่ำ' : 'O/U'} ${ouLine}</span>`;
-    html += `<button class="ah-btn ou-btn bet-pick" data-match="${m.id}" data-pick="over" data-odds="${ouOddsO}" style="flex:1;font-size:0.8rem">${lang === 'th' ? 'สูง' : 'Over'} <span class="odds-tag">@${ouOddsO}</span></button>`;
-    html += `<button class="ah-btn ou-btn bet-pick" data-match="${m.id}" data-pick="under" data-odds="${ouOddsU}" style="flex:1;font-size:0.8rem">${lang === 'th' ? 'ต่ำ' : 'Under'} <span class="odds-tag">@${ouOddsU}</span></button>`;
+    html += `<button class="ah-btn ou-btn bet-pick" data-match="${m.id}" data-pick="over"  data-odds="${ouOddsO}" data-type="ou" style="flex:1;font-size:0.8rem">${lang === 'th' ? 'สูง' : 'Over'} <span class="odds-tag">@${ouOddsO}</span></button>`;
+    html += `<button class="ah-btn ou-btn bet-pick" data-match="${m.id}" data-pick="under" data-odds="${ouOddsU}" data-type="ou" style="flex:1;font-size:0.8rem">${lang === 'th' ? 'ต่ำ' : 'Under'} <span class="odds-tag">@${ouOddsU}</span></button>`;
+    html += `</div>`;
+  }
+
+  if (cornerLine) {
+    html += `<div style="display:flex;align-items:center;gap:4px">`;
+    html += `<span style="background:var(--text-muted);color:var(--bg-card);padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;white-space:nowrap">⛳ ${cornerLine}</span>`;
+    html += `<button class="ah-btn corner-btn bet-pick" data-match="${m.id}" data-pick="over"  data-odds="${cOddsO}" data-type="corner" style="flex:1;font-size:0.8rem">${lang === 'th' ? 'มุมสูง' : 'Over'} <span class="odds-tag">@${cOddsO}</span></button>`;
+    html += `<button class="ah-btn corner-btn bet-pick" data-match="${m.id}" data-pick="under" data-odds="${cOddsU}" data-type="corner" style="flex:1;font-size:0.8rem">${lang === 'th' ? 'มุมต่ำ' : 'Under'} <span class="odds-tag">@${cOddsU}</span></button>`;
     html += `</div>`;
   }
 
@@ -799,6 +819,20 @@ function renderSlip(slip, idx) {
 
 function getPickResultBadge(pick, match) {
   const result = state.matches[match.id];
+
+  if (pick.type === 'corner') {
+    if (!result || result.corner_result == null || result.corner_result === '') return '';
+    const cornerLine = pick.line || state.cornerLines[match.id];
+    if (!cornerLine) return '';
+    const outcome = getOUOutcome(parseFloat(cornerLine), parseFloat(result.corner_result));
+    const res = outcome[pick.pick];
+    if (res === 'full') return '<span class="badge badge-exact">✓</span>';
+    if (res === 'half') return '<span class="badge badge-exact">½✓</span>';
+    if (res === 'push') return '<span class="badge badge-correct">Push</span>';
+    if (res === 'half_loss') return '<span class="badge badge-wrong">½✗</span>';
+    return '<span class="badge badge-wrong">✗</span>';
+  }
+
   if (!result || typeof result.team1_score !== 'number' || typeof result.team2_score !== 'number') return '';
 
   if (pick.type === 'ou') {
@@ -907,12 +941,14 @@ function renderSlipCard(slip, opts) {
     if (!match) return;
     const t1 = TEAMS[match.team1];
     const t2 = TEAMS[match.team2];
-    const isOu = p.type === 'ou';
     const t1Name = t1 ? (lang === 'th' ? t1.nameTh : t1.name) : match.team1;
     const t2Name = t2 ? (lang === 'th' ? t2.nameTh : t2.name) : match.team2;
 
     let pickLabel = '';
-    if (isOu) {
+    if (p.type === 'corner') {
+      const lineLabel = p.line || state.cornerLines[match.id] || '';
+      pickLabel = `⛳ มุม${p.pick === 'over' ? (lang === 'th' ? 'สูง' : 'Over') : (lang === 'th' ? 'ต่ำ' : 'Under')} ${lineLabel}`;
+    } else if (p.type === 'ou') {
       const lineLabel = p.line || state.ouLines[match.id] || '';
       pickLabel = `${match.team1}-${match.team2} ${p.pick === 'over' ? (lang === 'th' ? 'สูง' : 'Over') : (lang === 'th' ? 'ต่ำ' : 'Under')} ${lineLabel}`;
     } else {

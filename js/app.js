@@ -16,6 +16,9 @@ const state = {
   ahOddsA: {},
   ouOddsO: {},
   ouOddsU: {},
+  cornerLines: {},
+  cornerOddsO: {},
+  cornerOddsU: {},
 };
 
 function parsePicks(s) {
@@ -59,6 +62,7 @@ const STATUS_CONFIG = {
 };
 
 function formatPickLabel(p, lang) {
+  if (p.type === 'corner') return `⛳ มุม${p.pick === 'over' ? 'สูง' : 'ต่ำ'} ${p.line || ''}`.trim();
   if (p.type === 'ou') return `${p.pick === 'over' ? 'สูง' : 'ต่ำ'} ${p.line || ''}`.trim();
   const m = state.matchById ? state.matchById[p.match_id] : MATCHES.find(x => x.id === p.match_id);
   const isHome = m ? p.pick === m.team1 : false;
@@ -76,6 +80,9 @@ function buildLinesFromMatches() {
   state.ahOddsA = {};
   state.ouOddsO = {};
   state.ouOddsU = {};
+  state.cornerLines = {};
+  state.cornerOddsO = {};
+  state.cornerOddsU = {};
   state.matchById = {};
   MATCHES.forEach(m => { state.matchById[m.id] = m; });
 
@@ -89,6 +96,11 @@ function buildLinesFromMatches() {
       state.ouLines[m.match_id] = String(m.ou_line);
       state.ouOddsO[m.match_id] = parseFloat(m.ou_odds_o) || 1.90;
       state.ouOddsU[m.match_id] = parseFloat(m.ou_odds_u) || 1.90;
+    }
+    if (m.corner_line != null && m.corner_line !== '') {
+      state.cornerLines[m.match_id] = String(m.corner_line);
+      state.cornerOddsO[m.match_id] = parseFloat(m.corner_odds_o) || 1.90;
+      state.cornerOddsU[m.match_id] = parseFloat(m.corner_odds_u) || 1.90;
     }
   });
 }

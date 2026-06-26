@@ -306,7 +306,20 @@ function calculatePlayerSlipsDetailed(player) {
       const result = state.matches[p.match_id];
       let label = '', resultBadge = '';
 
-      if (p.type === 'ou') {
+      if (p.type === 'corner') {
+        const cLine = p.line || state.cornerLines[p.match_id] || '';
+        label = `⛳ มุม${p.pick === 'over' ? (lang === 'th' ? 'สูง' : 'O') : (lang === 'th' ? 'ต่ำ' : 'U')} ${cLine}`;
+        const cr = result?.corner_result;
+        if (cLine && cr != null && cr !== '') {
+          const outcome = getOUOutcome(parseFloat(cLine), parseFloat(cr));
+          const res = outcome[p.pick];
+          if (res === 'full') resultBadge = '<span class="badge badge-exact">✓</span>';
+          else if (res === 'half') resultBadge = '<span class="badge badge-exact">½✓</span>';
+          else if (res === 'push') resultBadge = '<span class="badge badge-correct">Push</span>';
+          else if (res === 'half_loss') resultBadge = '<span class="badge badge-wrong">½✗</span>';
+          else resultBadge = '<span class="badge badge-wrong">✗</span>';
+        }
+      } else if (p.type === 'ou') {
         const ouLine = p.line || state.ouLines[p.match_id] || '';
         label = `${p.pick === 'over' ? (lang === 'th' ? 'สูง' : 'O') : (lang === 'th' ? 'ต่ำ' : 'U')} ${ouLine}`;
         if (result && typeof result.team1_score === 'number' && typeof result.team2_score === 'number') {
@@ -1198,6 +1211,14 @@ function resolveSlip(slip) {
 }
 
 function getPickOutcome(pick, result) {
+  if (pick.type === 'corner') {
+    if (!result || result.corner_result == null || result.corner_result === '') return null;
+    const cornerLine = pick.line || state.cornerLines[pick.match_id];
+    if (!cornerLine) return null;
+    const outcome = getOUOutcome(parseFloat(cornerLine), parseFloat(result.corner_result));
+    return outcome[pick.pick];
+  }
+
   if (!result || typeof result.team1_score !== 'number' || typeof result.team2_score !== 'number') return null;
 
   if (pick.type === 'ou') {
