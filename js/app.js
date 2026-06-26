@@ -80,12 +80,12 @@ function buildLinesFromMatches() {
   MATCHES.forEach(m => { state.matchById[m.id] = m; });
 
   Object.values(state.matches).forEach(m => {
-    if (m.ah_line) {
+    if (m.ah_line != null && m.ah_line !== '') {
       state.ahLines[m.match_id] = String(m.ah_line);
       state.ahOddsH[m.match_id] = parseFloat(m.ah_odds_h) || 1.80;
       state.ahOddsA[m.match_id] = parseFloat(m.ah_odds_a) || 1.90;
     }
-    if (m.ou_line) {
+    if (m.ou_line != null && m.ou_line !== '') {
       state.ouLines[m.match_id] = String(m.ou_line);
       state.ouOddsO[m.match_id] = parseFloat(m.ou_odds_o) || 1.90;
       state.ouOddsU[m.match_id] = parseFloat(m.ou_odds_u) || 1.90;
