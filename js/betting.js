@@ -530,9 +530,14 @@ async function renderBetting() {
     const pickCount = pickEntries.length;
     const matchCount = new Set(pickEntries.map(([, d]) => d.matchId)).size;
 
-    // Validate: single (1 pick) or step (2 matches × 4 picks or 3+ matches)
+    // Validate: max 2 picks per match; single (1 pick), step (2 in 1 match, or multi-match)
+    const _ppm = {};
+    pickEntries.forEach(([, d]) => { _ppm[d.matchId] = (_ppm[d.matchId] || 0) + 1; });
+    const _tooMany = Object.values(_ppm).some(n => n > 2);
     let valid = false;
-    if (pickCount === 1) valid = true;
+    if (_tooMany) valid = false;
+    else if (pickCount === 1) valid = true;
+    else if (pickCount === 2 && matchCount === 1) valid = true;
     else if (matchCount >= 3) valid = true;
     else if (matchCount === 2 && pickCount >= 4) valid = true;
 
@@ -760,21 +765,27 @@ function updateBettingSummary(picks, container) {
 
   if (!summaryEl) return;
 
-  // Validate: 1 pick = single, 2 matches min 4 picks (AH+O/U), 3+ matches = step
+  // Validate: max 2 picks per match, 1 pick = single, 2 picks (1 match) = step, 3+ = step
   let pickType = '';
   let valid = true;
 
-  if (keys.length === 1) {
+  const picksPerMatch = {};
+  Object.values(picks).forEach(p => { picksPerMatch[p.matchId] = (picksPerMatch[p.matchId] || 0) + 1; });
+  const tooManyInMatch = Object.values(picksPerMatch).some(n => n > 2);
+
+  if (tooManyInMatch) {
+    pickType = lang === 'th' ? '1 คู่ max 2 picks (AH/O/U/มุม)' : 'Max 2 picks per match';
+    valid = false;
+  } else if (keys.length === 1) {
     pickType = 'SINGLE';
+  } else if (keys.length === 2 && matchCount === 1) {
+    pickType = 'STEP';
   } else if (keys.length >= 4 && matchCount >= 2) {
     pickType = 'STEP';
   } else if (keys.length >= 3 && matchCount >= 3) {
     pickType = 'STEP';
   } else if (matchCount === 2 && keys.length < 4) {
     pickType = lang === 'th' ? '2 คู่ต้อง 4 picks (AH+O/U)' : '2 matches need 4 picks (AH+O/U)';
-    valid = false;
-  } else if (matchCount === 1 && keys.length >= 2) {
-    pickType = lang === 'th' ? '1 คู่ทำ step ไม่ได้' : 'Can\'t step on 1 match';
     valid = false;
   } else {
     pickType = lang === 'th' ? 'ต้อง 3+ คู่ หรือ 2 คู่×4 picks' : 'Need 3+ matches or 2 matches × 4 picks';
