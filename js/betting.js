@@ -536,7 +536,11 @@ async function renderBetting() {
     const _tooMany = Object.values(_ppm).some(n => n > 2);
     let valid = false;
     if (_tooMany) valid = false;
-    else if (pickCount === 1) valid = true;
+    else if (pickCount === 1) {
+      const sd = pickEntries[0][1];
+      const sm = (state.matchById && state.matchById[sd.matchId]) || MATCHES.find(x => x.id === sd.matchId);
+      if (!sm || isMatchToday(sm)) valid = true;
+    }
     else if (pickCount === 2 && matchCount === 1) valid = true;
     else if (matchCount >= 3) valid = true;
     else if (matchCount === 2 && pickCount >= 4) valid = true;
@@ -794,7 +798,14 @@ function updateBettingSummary(picks, container) {
     pickType = lang === 'th' ? '1 คู่ max 2 picks (AH/O/U/มุม)' : 'Max 2 picks per match';
     valid = false;
   } else if (keys.length === 1) {
-    pickType = 'SINGLE';
+    const sd = Object.values(picks)[0];
+    const sm = (state.matchById && state.matchById[sd.matchId]) || MATCHES.find(x => x.id === sd.matchId);
+    if (sm && !isMatchToday(sm)) {
+      pickType = lang === 'th' ? 'เต็ง 1 แทงได้แค่วันที่แข่ง' : 'Single: match-day only';
+      valid = false;
+    } else {
+      pickType = 'SINGLE';
+    }
   } else if (keys.length === 2 && matchCount === 1) {
     pickType = 'STEP';
   } else if (keys.length >= 4 && matchCount >= 2) {

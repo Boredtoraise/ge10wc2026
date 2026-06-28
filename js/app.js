@@ -26,6 +26,13 @@ function parsePicks(s) {
   try { return { ...s, picks: JSON.parse(s.picks_json || '[]') }; } catch (e) { return { ...s, picks: [] }; }
 }
 
+function isMatchToday(match) {
+  const matchUTC = etToThai(match.date);
+  const matchThaiDate = new Date(matchUTC.getTime() + 7 * 3600000).toISOString().slice(0, 10);
+  const nowThaiDate   = new Date(Date.now()          + 7 * 3600000).toISOString().slice(0, 10);
+  return matchThaiDate === nowThaiDate;
+}
+
 // Check if match is locked (kickoff passed OR has score)
 function isMatchLocked(match) {
   const thaiTime = etToThai(match.date);
