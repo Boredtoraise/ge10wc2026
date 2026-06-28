@@ -27,10 +27,12 @@ function parsePicks(s) {
 }
 
 function isMatchToday(match) {
-  const matchUTC = etToThai(match.date);
-  const matchThaiDate = new Date(matchUTC.getTime() + 7 * 3600000).toISOString().slice(0, 10);
-  const nowThaiDate   = new Date(Date.now()          + 7 * 3600000).toISOString().slice(0, 10);
-  return matchThaiDate === nowThaiDate;
+  // "วันแข่ง" เริ่มที่ 14:00 ไทย — shift boundary จาก midnight เป็น 14:00
+  const THAI = 7 * 3600000;
+  const CUT  = 14 * 3600000;
+  const matchDay = Math.floor((etToThai(match.date).getTime() + THAI - CUT) / 86400000);
+  const nowDay   = Math.floor((Date.now()                     + THAI - CUT) / 86400000);
+  return matchDay === nowDay;
 }
 
 // Check if match is locked (kickoff passed OR has score)
