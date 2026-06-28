@@ -87,6 +87,13 @@ function buildLinesFromMatches() {
   MATCHES.forEach(m => { state.matchById[m.id] = m; });
 
   Object.values(state.matches).forEach(m => {
+    // Override KO match teams from Sheet (group stage stays hardcoded)
+    const local = state.matchById[m.match_id];
+    if (local && local.stage !== 'group') {
+      if (m.team1 && TEAMS[m.team1]) local.team1 = m.team1;
+      if (m.team2 && TEAMS[m.team2]) local.team2 = m.team2;
+    }
+
     if (m.ah_line != null && m.ah_line !== '') {
       state.ahLines[m.match_id] = String(m.ah_line);
       state.ahOddsH[m.match_id] = parseFloat(m.ah_odds_h) || 1.80;
