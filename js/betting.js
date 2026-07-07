@@ -17,7 +17,10 @@ async function renderBetting() {
 
   if (!state.allSlips.length && typeof API_BASE_URL !== 'undefined' && API_BASE_URL) {
     const allSlips = await fetchAPI('allslips');
-    if (allSlips) state.allSlips = allSlips;
+    if (allSlips) {
+      state.allSlips = allSlips.map(parsePicks);
+      if (state.currentPlayer) state.slips = state.allSlips.filter(s => s.player === state.currentPlayer);
+    }
   }
 
   const byKickoff = (a, b) => new Date(a.date) - new Date(b.date);

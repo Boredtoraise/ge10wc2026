@@ -162,7 +162,10 @@ async function renderSummaryLazy() {
     container.innerHTML = sk;
     try {
       const allSlips = await fetchAPI('allslips');
-      if (allSlips) state.allSlips = allSlips;
+      if (allSlips) {
+        state.allSlips = allSlips.map(parsePicks);
+        if (state.currentPlayer) state.slips = state.allSlips.filter(s => s.player === state.currentPlayer);
+      }
     } finally {
       state._fetchingAllSlips = false;
     }
@@ -236,6 +239,11 @@ function init() {
     if (cp && Date.now() - cp.t < 60 * 60 * 1000) {
       state.players = cp.d;
     }
+    const cs = JSON.parse(localStorage.getItem('wc2026_allslips') || 'null');
+    if (cs && Date.now() - cs.t < 10 * 60 * 1000) {
+      state.allSlips = cs.d.map(parsePicks);
+      if (state.currentPlayer) state.slips = state.allSlips.filter(s => s.player === state.currentPlayer);
+    }
   } catch(e) {}
 
   // Show immediately with hardcoded + cached data — don't wait for API
@@ -254,18 +262,17 @@ function init() {
 
 }
 
-async function refreshData() {
+async function refreshData(fresh) {
   if (typeof API_BASE_URL === 'undefined' || !API_BASE_URL) return;
   try {
+    // fresh=1 bypasses the server-side cache (manual ↻ refresh)
+    const suffix = fresh ? '&fresh=1' : '';
     // Build all API calls — fire in parallel
     const calls = {
-      matches: fetchAPI('matches'),
+      matches: fetchAPI('matches' + suffix),
       players: fetchAPI('players'),
-      allSlips: fetchAPI('allslips'),
+      allSlips: fetchAPI('allslips' + suffix),
     };
-    if (state.currentPlayer) {
-      calls.slips = fetchAPI('slips&player=' + state.currentPlayer);
-    }
 
     const results = await Promise.all(Object.values(calls));
     const keys = Object.keys(calls);
@@ -280,11 +287,11 @@ async function refreshData() {
       state.players = data.players;
       try { localStorage.setItem('wc2026_players', JSON.stringify({ t: Date.now(), d: data.players })); } catch(e) {}
     }
-    if (data.slips) {
-      state.slips = data.slips.map(parsePicks);
-    }
     if (data.allSlips) {
       state.allSlips = data.allSlips.map(parsePicks);
+      // My slips derived from allSlips — no separate 'slips' call needed
+      if (state.currentPlayer) state.slips = state.allSlips.filter(s => s.player === state.currentPlayer);
+      try { localStorage.setItem('wc2026_allslips', JSON.stringify({ t: Date.now(), d: data.allSlips })); } catch(e) {}
     }
   } catch (e) {
     console.warn('API unavailable, using cached data', e);
@@ -297,7 +304,7 @@ async function manualRefresh() {
   btn.textContent = '…';
   showLoading();
   try {
-    await refreshData();
+    await refreshData(true);
     buildLinesFromMatches();
     await renderCurrentView();
     updateTabBadges();
