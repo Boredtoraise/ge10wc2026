@@ -1070,13 +1070,14 @@ function renderBettingLoginForm(container) {
 
     showLoading();
     const result = await loginPlayer(name, pin);
-    hideLoading();
 
     if (result.success) {
       await refreshData();
+      hideLoading();
       buildLinesFromMatches();
       renderBetting();
     } else {
+      hideLoading();
       container.querySelector('#bet-login-error').textContent = t('login.wrong');
     }
   });
