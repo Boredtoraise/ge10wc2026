@@ -271,8 +271,13 @@ async function refreshData(fresh) {
     const calls = {
       matches: fetchAPI('matches' + suffix),
       players: fetchAPI('players'),
-      allSlips: fetchAPI('allslips' + suffix),
     };
+    // allslips is ~1MB (uncached) — skip on regular login/init, only eager-load
+    // for admin (needs the approve-queue badge) or an explicit manual refresh.
+    // Everyone else gets it lazily when they open a tab that needs it (betting/summary).
+    if (fresh || state.isAdmin) {
+      calls.allSlips = fetchAPI('allslips' + suffix);
+    }
 
     const results = await Promise.all(Object.values(calls));
     const keys = Object.keys(calls);

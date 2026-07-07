@@ -1073,9 +1073,9 @@ function renderBettingLoginForm(container) {
 
     if (result.success) {
       await refreshData();
-      hideLoading();
       buildLinesFromMatches();
-      renderBetting();
+      await renderBetting();
+      hideLoading();
     } else {
       hideLoading();
       container.querySelector('#bet-login-error').textContent = t('login.wrong');
