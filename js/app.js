@@ -9,6 +9,7 @@ const state = {
   players: [],
   slips: [],
   allSlips: [],
+  pendingSlips: [], // other players' unresolved slips only — cheap fallback when allSlips isn't loaded
   // Lines + odds loaded from Sheet
   ahLines: {},
   ouLines: {},
@@ -53,7 +54,12 @@ function formatAhFav(line, isHome) {
 }
 
 function getAllSlips() {
-  return state.allSlips.length ? state.allSlips : (state.slips || []);
+  if (state.allSlips.length) return state.allSlips;
+  // Cheap fallback: own full history + everyone else's still-pending slips.
+  // Missing other players' settled history — fine for the betting tab, but
+  // callers that need full history (summary/insight) lazy-load state.allSlips first.
+  const pending = (state.pendingSlips || []).filter(s => s.player !== state.currentPlayer);
+  return [...(state.slips || []), ...pending];
 }
 
 function getDisplayName(playerId) {
@@ -274,9 +280,13 @@ async function refreshData(fresh) {
     };
     // allslips is ~1MB (uncached) — skip on regular login/init, only eager-load
     // for admin (needs the approve-queue badge) or an explicit manual refresh.
-    // Everyone else gets it lazily when they open a tab that needs it (betting/summary).
+    // Everyone else gets it lazily when they open a tab that needs it (summary),
+    // and gets a cheap pendingslips + own-slips pair for the betting tab instead.
     if (fresh || state.isAdmin) {
       calls.allSlips = fetchAPI('allslips' + suffix);
+    } else {
+      calls.pendingSlips = fetchAPI('pendingslips' + suffix);
+      if (state.currentPlayer) calls.mySlips = fetchAPI('slips&player=' + state.currentPlayer);
     }
 
     const results = await Promise.all(Object.values(calls));
@@ -297,6 +307,12 @@ async function refreshData(fresh) {
       // My slips derived from allSlips — no separate 'slips' call needed
       if (state.currentPlayer) state.slips = state.allSlips.filter(s => s.player === state.currentPlayer);
       try { localStorage.setItem('wc2026_allslips', JSON.stringify({ t: Date.now(), d: data.allSlips })); } catch(e) {}
+    }
+    if (data.pendingSlips) {
+      state.pendingSlips = data.pendingSlips.map(parsePicks);
+    }
+    if (data.mySlips) {
+      state.slips = data.mySlips.map(parsePicks);
     }
   } catch (e) {
     console.warn('API unavailable, using cached data', e);

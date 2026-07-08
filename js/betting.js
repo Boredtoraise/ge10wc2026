@@ -15,11 +15,26 @@ async function renderBetting() {
     return;
   }
 
-  if (!state.allSlips.length && typeof API_BASE_URL !== 'undefined' && API_BASE_URL) {
-    const allSlips = await fetchAPI('allslips');
-    if (allSlips) {
-      state.allSlips = allSlips.map(parsePicks);
-      if (state.currentPlayer) state.slips = state.allSlips.filter(s => s.player === state.currentPlayer);
+  if (typeof API_BASE_URL !== 'undefined' && API_BASE_URL) {
+    if (state.isAdmin) {
+      if (!state.allSlips.length) {
+        const allSlips = await fetchAPI('allslips');
+        if (allSlips) {
+          state.allSlips = allSlips.map(parsePicks);
+          state.slips = state.allSlips.filter(s => s.player === state.currentPlayer);
+        }
+      }
+    } else {
+      const needMine = !state.slips.length;
+      const needPending = !state.pendingSlips.length;
+      if (needMine || needPending) {
+        const [mine, pending] = await Promise.all([
+          needMine ? fetchAPI('slips&player=' + state.currentPlayer) : Promise.resolve(null),
+          needPending ? fetchAPI('pendingslips') : Promise.resolve(null),
+        ]);
+        if (mine) state.slips = mine.map(parsePicks);
+        if (pending) state.pendingSlips = pending.map(parsePicks);
+      }
     }
   }
 
